@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  # --- PONTO DE ENTRADA ---
+  reverse-proxy:
+    image: nginx:stable-alpine
+    container_name: rjchronos_proxy_dev
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - rjchronos-net
+    depends_on:
+      - frontend
+      - backend
+      - genieacs
+
+  # --- SEUS SERVIÇOS EM DESENVOLVIMENTO ---
+  frontend:
+    container_name: rjchronos_frontend_dev
+    build: ./frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - rjchronos-net
+
+  backend:
+    container_name: rjchronos_backend_dev
+    build: ./backend
+    volumes:
+      - ./backend:/app
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
+      - GENIACS_API_URL=http://genieacs:7557/
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - rjchronos-net
+    depends_on:
+      - db-app
+
+  # --- STACK GENIEACS ---
+  genieacs:
+    container_name: rjchronos_genieacs_dev
+    build:
+      context: ./genieacs
+      dockerfile: Dockerfile
+    ports:
+      - "7547:7547" # Porta para comunicação TR-069
+    environment:
+      - GENIACS_MONGO_URL=mongodb://db-acs:27017/genieacs
+      - GENIACS_REDIS_HOST=redis
+      - UI_JWT_SECRET=${UI_JWT_SECRET}
+    networks:
+      - rjchronos-net
+    depends_on:
+      - db-acs
+      - redis
+
+  # --- BANCOS DE DADOS E SERVIÇOS DE APOIO ---
+  db-app:
+    image: postgres:15-alpine
+    container_name: rjchronos_db_app_dev
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres_app_data_dev:/var/lib/postgresql/data
+    networks:
+      - rjchronos-net
+
+  db-acs:
+    image: mongo:latest
+    container_name: rjchronos_db_acs_dev
+    volumes:
+      - mongo_acs_data_dev:/data/db
+    networks:
+      - rjchronos-net
+
+  redis:
+    image: redis:alpine
+    container_name: rjchronos_redis_dev
+    networks:
+      - rjchronos-net
+
+# --- VOLUMES E REDE ---
+volumes:
+  postgres_app_data_dev:
+  mongo_acs_data_dev:
+
+networks:
+  rjchronos-net:
+    driver: bridge
