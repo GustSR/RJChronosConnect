@@ -21,6 +21,7 @@ RUN ls -l /opt/
 #RUN npm install -g --unsafe-perm genieacs@1.2.13
 
 WORKDIR /opt/genieacs-1.2.13
+RUN npm install -g esbuild
 RUN npm ci --unsafe-perm 
 #RUN npm i -D tslib
 RUN npm run build
@@ -44,7 +45,7 @@ FROM debian:bookworm-slim
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-      supervisor ca-certificates iputils-ping logrotate \
+      supervisor ca-certificates iputils-ping logrotate netcat-openbsd curl net-tools \
  && rm -rf /var/lib/apt/lists/*
 
 # Copy Node runtime and GenieACS artefacts from the build stage
@@ -60,6 +61,7 @@ RUN chmod +x /usr/local/bin/run_with_env.sh
 
 # logrotate rule
 COPY genieacs.logrotate /etc/logrotate.d/genieacs
+
 
 # create runtime user
 RUN useradd --system --no-create-home --home /opt/genieacs genieacs \

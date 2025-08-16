@@ -25,6 +25,12 @@ services:
       - /app/node_modules
     networks:
       - rjchronos-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   backend:
     container_name: rjchronos_backend_dev
@@ -51,10 +57,9 @@ services:
       - "7557:7557"
       - "7567:7567"
       - "3000:3000"
-    volumes:
-      - opt_volume:/opt
+    
     environment:
-      - GENIACS_MONGO_URL=mongodb://db-acs:27017/genieacs?authSource=admin
+      - MONGODB_CONNECTION_URL=mongodb://db-acs:27017/genieacs?authSource=admin
       - GENIACS_REDIS_HOST=redis
       - UI_JWT_SECRET=${UI_JWT_SECRET}
       - GENIEACS_CWMP_ACCESS_LOG_FILE=/var/log/genieacs/genieacs-cwmp-access.log
@@ -68,11 +73,18 @@ services:
     depends_on:
       - db-acs
       - redis
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "7547"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   # --- SERVIÇOS ADICIONAIS GENIEACS ---
   genieacs-sim:
     depends_on:
-      - 'genieacs'
+      genieacs:
+        condition: service_healthy
     image: drumsergio/genieacs-sim:latest
     container_name: "rjchronos_genieacs-sim_dev"
     networks:

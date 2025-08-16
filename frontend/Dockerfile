@@ -1,6 +1,9 @@
 # Etapa 1: Usar uma imagem oficial e leve do Node.js
 FROM node:20-alpine
 
+# Instalar curl para o healthcheck
+RUN apk add --no-cache curl
+
 # Etapa 2: Definir o diretório de trabalho dentro do contêiner
 WORKDIR /app
 

@@ -142,9 +142,9 @@ async function getBuildMetadata(): Promise<string> {
   const date = new Date().toISOString().slice(2, 10).replaceAll("-", "");
 
   const [commit, diff, newFiles] = await Promise.all([
-    execAsync("git rev-parse HEAD"),
-    execAsync("git diff HEAD"),
-    execAsync("git ls-files --others --exclude-standard"),
+    Promise.resolve({ stdout: '' }),
+    Promise.resolve({ stdout: '' }),
+    Promise.resolve({ stdout: '' }),
   ]).then((res) => res.map((r) => r.stdout.trim()));
 
   if (!diff && !newFiles) return date + commit.slice(0, 4);
