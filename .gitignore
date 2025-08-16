@@ -1,4 +1,24 @@
-
-# Arquivo de ambiente local - NUNCA ENVIAR PARA O GIT
+# Ignorar arquivos de ambiente local
 .env
+*.env.local
+
+# Ignorar diretórios de dependências
+node_modules/
 backend/__pycache__/
+
+# Ignorar diretórios de build e logs
+/build
+/dist
+/out
+/coverage
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ignorar arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Ignorar diretórios específicos do projeto
+.local/
