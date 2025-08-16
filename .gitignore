@@ -1,3 +1,4 @@
 
 # Arquivo de ambiente local - NUNCA ENVIAR PARA O GIT
 .env
+backend/__pycache__/

@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Etapa 4: Instalar as dependências do projeto
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Etapa 5: Copiar todo o resto do código-fonte do frontend
 COPY . .

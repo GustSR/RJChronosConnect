@@ -48,15 +48,49 @@ services:
       dockerfile: Dockerfile
     ports:
       - "7547:7547" # Porta para comunicação TR-069
+      - "7557:7557"
+      - "7567:7567"
+      - "3000:3000"
+    volumes:
+      - opt_volume:/opt
     environment:
-      - GENIACS_MONGO_URL=mongodb://db-acs:27017/genieacs
+      - GENIACS_MONGO_URL=mongodb://db-acs:27017/genieacs?authSource=admin
       - GENIACS_REDIS_HOST=redis
       - UI_JWT_SECRET=${UI_JWT_SECRET}
+      - GENIEACS_CWMP_ACCESS_LOG_FILE=/var/log/genieacs/genieacs-cwmp-access.log
+      - GENIEACS_NBI_ACCESS_LOG_FILE=/var/log/genieacs/genieacs-nbi-access.log
+      - GENIEACS_FS_ACCESS_LOG_FILE=/var/log/genieacs/genieacs-fs-access.log
+      - GENIEACS_UI_ACCESS_LOG_FILE=/var/log/genieacs/genieacs-ui-access.log
+      - GENIEACS_DEBUG_FILE=/var/log/genieacs/genieacs-debug.yaml
+      - GENIEACS_EXT_DIR=/opt/genieacs/ext
     networks:
       - rjchronos-net
     depends_on:
       - db-acs
       - redis
+
+  # --- SERVIÇOS ADICIONAIS GENIEACS ---
+  genieacs-sim:
+    depends_on:
+      - 'genieacs'
+    image: drumsergio/genieacs-sim:latest
+    container_name: "rjchronos_genieacs-sim_dev"
+    networks:
+      - rjchronos-net
+
+  genieacs-mcp:
+    depends_on:
+      - 'genieacs'
+    image: drumsergio/genieacs-mcp:latest
+    container_name: "rjchronos_genieacs-mcp_dev"
+    environment:
+      - ACS_URL=http://genieacs:7557
+      - ACS_USER=admin
+      - ACS_PASS=admin # Set by default after the wizard, please change
+    ports:
+      - "8080:8080"
+    networks:
+      - rjchronos-net
 
   # --- BANCOS DE DADOS E SERVIÇOS DE APOIO ---
   db-app:
@@ -72,10 +106,14 @@ services:
       - rjchronos-net
 
   db-acs:
-    image: mongo:latest
+    image: mongo:8.0
     container_name: rjchronos_db_acs_dev
+    environment:
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/var/log/mongodb
     volumes:
       - mongo_acs_data_dev:/data/db
+      - mongo_acs_configdb_dev:/data/configdb
     networks:
       - rjchronos-net
 
@@ -89,6 +127,8 @@ services:
 volumes:
   postgres_app_data_dev:
   mongo_acs_data_dev:
+  mongo_acs_configdb_dev:
+  opt_volume:
 
 networks:
   rjchronos-net:
