@@ -41,7 +41,7 @@ jobs:
       # Este é o nosso principal teste de integração por enquanto.
       # Se este passo falhar, significa que um Dockerfile está quebrado.
       - name: Construir imagens Docker
-        run: docker-compose build
+        run: docker compose build
 
       # --- Passos Futuros (descomentar quando os testes e linters estiverem prontos) ---
       # - name: Rodar Linters
