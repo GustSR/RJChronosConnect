@@ -59,9 +59,9 @@ services:
       - "3000:3000"
     
     environment:
-      - MONGODB_CONNECTION_URL=mongodb://db-acs:27017/genieacs?authSource=admin
+      - GENIEACS_MONGODB_CONNECTION_URL=mongodb://db-acs:27017/genieacs
       - GENIACS_REDIS_HOST=redis
-      - UI_JWT_SECRET=${UI_JWT_SECRET}
+      - GENIEACS_UI_JWT_SECRET=a_super_secret_key_for_dev_env_1234567890_abcdef
       - GENIEACS_CWMP_ACCESS_LOG_FILE=/var/log/genieacs/genieacs-cwmp-access.log
       - GENIEACS_NBI_ACCESS_LOG_FILE=/var/log/genieacs/genieacs-nbi-access.log
       - GENIEACS_FS_ACCESS_LOG_FILE=/var/log/genieacs/genieacs-fs-access.log

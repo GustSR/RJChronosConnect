@@ -22,3 +22,6 @@ Thumbs.db
 
 # Ignorar diretórios específicos do projeto
 .local/
+
+# Ignorar arquivos do Gemini
+GEMINI.md
