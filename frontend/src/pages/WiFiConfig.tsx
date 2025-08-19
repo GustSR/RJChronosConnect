@@ -37,6 +37,9 @@ import {
   Divider,
   Stack,
   Tooltip,
+  CircularProgress,
+  Alert,
+  Snackbar,
 } from '@mui/material';
 import {
   Wifi,
@@ -62,8 +65,10 @@ import {
   Warning,
   Error,
 } from '@mui/icons-material';
+import { useWiFiConfigs, useUpdateDeviceWiFiConfig, useRefreshDeviceWiFiConfig } from '@/hooks/useWiFi';
+import { WiFiConfigUpdate } from '@/services/wifiService';
 
-// Mock WiFi profiles data
+// Mock WiFi profiles data (kept for fallback)
 const wifiProfiles = [
   {
     id: 'profile-001',
@@ -235,6 +240,9 @@ export default function WiFiConfig() {
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
   const [showCreateProfile, setShowCreateProfile] = useState(false);
   const [showApplyProfile, setShowApplyProfile] = useState(false);
+  const [showEditDevice, setShowEditDevice] = useState(false);
+  const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' }>({ open: false, message: '', severity: 'info' });
   const [newProfile, setNewProfile] = useState({
     name: '',
     ssid: '',
@@ -246,7 +254,14 @@ export default function WiFiConfig() {
     hidden: false,
     guestNetwork: false,
   });
+  const [deviceUpdate, setDeviceUpdate] = useState<WiFiConfigUpdate>({});
+  const [originalDeviceData, setOriginalDeviceData] = useState<WiFiConfigUpdate>({});
   const theme = useTheme();
+
+  // React Query hooks
+  const { data: wifiData, isLoading, error, refetch } = useWiFiConfigs();
+  const updateDeviceConfig = useUpdateDeviceWiFiConfig();
+  const refreshDeviceConfig = useRefreshDeviceWiFiConfig();
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -269,6 +284,106 @@ export default function WiFiConfig() {
     });
   };
 
+  const handleRefreshDevice = async (deviceId: string) => {
+    try {
+      await refreshDeviceConfig.mutateAsync(deviceId);
+      setSnackbar({ open: true, message: 'Sincronização solicitada com sucesso', severity: 'success' });
+    } catch (error) {
+      setSnackbar({ open: true, message: 'Erro ao sincronizar dispositivo', severity: 'error' });
+    }
+  };
+
+  const handleEditDevice = (deviceId: string) => {
+    const device = wifiData?.devices.find(d => d.id === deviceId);
+    if (device) {
+      const originalData = {
+        ssid: device.wifi_config.ssid,
+        security: device.wifi_config.security,
+        band: device.wifi_config.band,
+        channel: device.wifi_config.channel,
+        power: device.wifi_config.power,
+        hidden: device.wifi_config.hidden,
+        enabled: device.wifi_config.enabled,
+      };
+      
+      setSelectedDevice(deviceId);
+      setOriginalDeviceData(originalData);
+      setDeviceUpdate(originalData);
+      setShowEditDevice(true);
+    }
+  };
+
+  const handleUpdateDevice = async () => {
+    if (!selectedDevice) return;
+
+    // Enviar apenas campos que foram alterados
+    const changedFields: WiFiConfigUpdate = {};
+    Object.keys(deviceUpdate).forEach((key) => {
+      const typedKey = key as keyof WiFiConfigUpdate;
+      if (deviceUpdate[typedKey] !== originalDeviceData[typedKey]) {
+        changedFields[typedKey] = deviceUpdate[typedKey];
+      }
+    });
+
+    console.log('🚀 ENVIANDO UPDATE DEVICE:');
+    console.log('  Device ID:', selectedDevice);
+    console.log('  Dados originais:', originalDeviceData);
+    console.log('  Dados atuais:', deviceUpdate);
+    console.log('  Campos alterados:', changedFields);
+
+    if (Object.keys(changedFields).length === 0) {
+      setSnackbar({ open: true, message: 'Nenhuma alteração detectada', severity: 'info' });
+      return;
+    }
+
+    try {
+      const result = await updateDeviceConfig.mutateAsync({
+        deviceId: selectedDevice,
+        updates: changedFields
+      });
+      
+      console.log('✅ RESULTADO DO UPDATE:', result);
+      
+      setSnackbar({ 
+        open: true, 
+        message: `Configuração atualizada com sucesso (${result.tasks_executed}/${result.total_tasks} parâmetros)`, 
+        severity: 'success' 
+      });
+      setShowEditDevice(false);
+      setSelectedDevice(null);
+      setDeviceUpdate({});
+      setOriginalDeviceData({});
+    } catch (error) {
+      setSnackbar({ open: true, message: 'Erro ao atualizar configuração do dispositivo', severity: 'error' });
+    }
+  };
+
+  const handleSync = () => {
+    refetch();
+    setSnackbar({ open: true, message: 'Sincronizando dados...', severity: 'info' });
+  };
+
+  // Use real data or fallback to mock data
+  const profiles = wifiData?.profiles || wifiProfiles;
+  const devices = wifiData?.devices || connectedDevices;
+  const stats = wifiData?.stats || wifiStats;
+
+  if (isLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert severity="error" sx={{ mb: 2 }}>
+        Erro ao carregar dados WiFi: {error.message}
+      </Alert>
+    );
+  }
+
   return (
     <Box>
       {/* Header */}
@@ -283,7 +398,7 @@ export default function WiFiConfig() {
         </Box>
         
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button variant="outlined" startIcon={<Refresh />}>
+          <Button variant="outlined" startIcon={<Refresh />} onClick={handleSync}>
             Sincronizar
           </Button>
           
@@ -298,7 +413,7 @@ export default function WiFiConfig() {
         <Grid item xs={12} sm={6} md={3}>
           <MetricCard
             title="Perfis Ativos"
-            value={`${wifiStats.activeProfiles}/${wifiStats.totalProfiles}`}
+            value={`${stats.active_profiles}/${stats.total_profiles}`}
             subtitle="Configurações em uso"
             color="primary"
             icon={NetworkWifi}
@@ -308,7 +423,7 @@ export default function WiFiConfig() {
         <Grid item xs={12} sm={6} md={3}>
           <MetricCard
             title="CPEs Online"
-            value={wifiStats.onlineDevices}
+            value={stats.online_devices}
             subtitle="Dispositivos conectados"
             color="success"
             icon={Router}
@@ -318,7 +433,7 @@ export default function WiFiConfig() {
         <Grid item xs={12} sm={6} md={3}>
           <MetricCard
             title="Sinal Médio"
-            value={`${wifiStats.avgSignal.toFixed(1)}dBm`}
+            value={`${stats.avg_signal.toFixed(1)}dBm`}
             subtitle="Qualidade do sinal"
             color="warning"
             icon={SignalWifi4Bar}
@@ -328,7 +443,7 @@ export default function WiFiConfig() {
         <Grid item xs={12} sm={6} md={3}>
           <MetricCard
             title="Conexões Ativas"
-            value={wifiStats.totalConnections}
+            value={stats.total_connections}
             subtitle="Dispositivos conectados"
             color="secondary"
             icon={DeviceHub}
@@ -354,7 +469,7 @@ export default function WiFiConfig() {
               <Typography variant="h6" fontWeight={600}>
                 Perfis de Configuração Wi-Fi
               </Typography>
-              <Chip label={`${wifiProfiles.length} perfis`} color="primary" variant="outlined" />
+              <Chip label={`${profiles.length} perfis`} color="primary" variant="outlined" />
             </Box>
             
             <TableContainer>
@@ -372,7 +487,7 @@ export default function WiFiConfig() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {wifiProfiles.map((profile) => (
+                  {profiles.map((profile) => (
                     <TableRow key={profile.id} hover>
                       <TableCell>
                         <Typography variant="body2" fontWeight={600}>
@@ -397,7 +512,7 @@ export default function WiFiConfig() {
                       <TableCell>{getStatusChip(profile.status)}</TableCell>
                       <TableCell>
                         <Typography variant="body2" fontWeight={600}>
-                          {profile.appliedDevices}
+                          {profile.applied_devices}
                         </Typography>
                       </TableCell>
                       <TableCell>
@@ -428,7 +543,7 @@ export default function WiFiConfig() {
               <Typography variant="h6" fontWeight={600}>
                 CPEs com Wi-Fi Configurado
               </Typography>
-              <Chip label={`${connectedDevices.length} dispositivos`} color="primary" variant="outlined" />
+              <Chip label={`${devices.length} dispositivos`} color="primary" variant="outlined" />
             </Box>
             
             <TableContainer>
@@ -436,8 +551,8 @@ export default function WiFiConfig() {
                 <TableHead>
                   <TableRow>
                     <TableCell><strong>Dispositivo</strong></TableCell>
-                    <TableCell><strong>Cliente</strong></TableCell>
-                    <TableCell><strong>Perfil Atual</strong></TableCell>
+                    <TableCell><strong>Modelo</strong></TableCell>
+                    <TableCell><strong>Segurança</strong></TableCell>
                     <TableCell><strong>SSID</strong></TableCell>
                     <TableCell><strong>Conexões</strong></TableCell>
                     <TableCell><strong>Sinal</strong></TableCell>
@@ -446,15 +561,15 @@ export default function WiFiConfig() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {connectedDevices.map((device) => (
+                  {devices.map((device) => (
                     <TableRow key={device.id} hover>
                       <TableCell>
                         <Typography variant="body2" fontWeight={600}>
                           {device.name}
                         </Typography>
                       </TableCell>
-                      <TableCell>{device.customer}</TableCell>
-                      <TableCell>{device.currentProfile}</TableCell>
+                      <TableCell>{device.model}</TableCell>
+                      <TableCell>{device.wifi_config.security}</TableCell>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Wifi fontSize="small" />
@@ -463,25 +578,34 @@ export default function WiFiConfig() {
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" fontWeight={600}>
-                          {device.connectedDevices}
+                          {device.connected_devices}
                         </Typography>
                       </TableCell>
                       <TableCell>
                         <Typography 
                           variant="body2" 
-                          color={device.signalStrength > -50 ? 'success.main' : 'warning.main'}
+                          color={device.signal_strength > -50 ? 'success.main' : 'warning.main'}
                           fontWeight={600}
                         >
-                          {device.signalStrength}dBm
+                          {device.signal_strength}dBm
                         </Typography>
                       </TableCell>
                       <TableCell>{getStatusChip(device.status)}</TableCell>
                       <TableCell>
                         <Box sx={{ display: 'flex', gap: 1 }}>
-                          <IconButton size="small" color="primary">
+                          <IconButton 
+                            size="small" 
+                            color="primary" 
+                            onClick={() => handleEditDevice(device.id)}
+                          >
                             <Settings fontSize="small" />
                           </IconButton>
-                          <IconButton size="small" color="secondary">
+                          <IconButton 
+                            size="small" 
+                            color="secondary"
+                            onClick={() => handleRefreshDevice(device.id)}
+                            disabled={refreshDeviceConfig.isPending}
+                          >
                             <Refresh fontSize="small" />
                           </IconButton>
                         </Box>
@@ -696,6 +820,144 @@ export default function WiFiConfig() {
           <Button variant="contained">Aplicar</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Edit Device Dialog */}
+      <Dialog open={showEditDevice} onClose={() => {
+        setShowEditDevice(false);
+        setSelectedDevice(null);
+        setDeviceUpdate({});
+        setOriginalDeviceData({});
+      }} maxWidth="md" fullWidth>
+        <DialogTitle>Editar Configuração WiFi</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="SSID"
+                value={deviceUpdate.ssid || ''}
+                onChange={(e) => setDeviceUpdate({ ...deviceUpdate, ssid: e.target.value })}
+              />
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Segurança</InputLabel>
+                <Select
+                  value={deviceUpdate.security || 'WPA2'}
+                  label="Segurança"
+                  onChange={(e) => setDeviceUpdate({ ...deviceUpdate, security: e.target.value })}
+                >
+                  <MenuItem value="WPA3">WPA3</MenuItem>
+                  <MenuItem value="WPA2">WPA2</MenuItem>
+                  <MenuItem value="WEP">WEP</MenuItem>
+                  <MenuItem value="Open">Aberta</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            {deviceUpdate.security && deviceUpdate.security !== 'Open' && (
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Nova Senha (deixe em branco para não alterar)"
+                  type="password"
+                  value={deviceUpdate.password || ''}
+                  onChange={(e) => setDeviceUpdate({ ...deviceUpdate, password: e.target.value })}
+                />
+              </Grid>
+            )}
+            
+            <Grid item xs={12} md={4}>
+              <FormControl fullWidth>
+                <InputLabel>Banda</InputLabel>
+                <Select
+                  value={deviceUpdate.band || '2.4GHz'}
+                  label="Banda"
+                  onChange={(e) => setDeviceUpdate({ ...deviceUpdate, band: e.target.value })}
+                >
+                  <MenuItem value="2.4GHz">2.4GHz</MenuItem>
+                  <MenuItem value="5GHz">5GHz</MenuItem>
+                  <MenuItem value="Dual">Dual Band</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                label="Canal"
+                value={deviceUpdate.channel || 'Auto'}
+                onChange={(e) => setDeviceUpdate({ ...deviceUpdate, channel: e.target.value })}
+              />
+            </Grid>
+            
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                label="Potência (%)"
+                type="number"
+                value={deviceUpdate.power || 100}
+                onChange={(e) => setDeviceUpdate({ ...deviceUpdate, power: parseInt(e.target.value) })}
+                inputProps={{ min: 1, max: 100 }}
+              />
+            </Grid>
+            
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={deviceUpdate.hidden || false}
+                    onChange={(e) => setDeviceUpdate({ ...deviceUpdate, hidden: e.target.checked })}
+                  />
+                }
+                label="Rede oculta"
+              />
+            </Grid>
+            
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={deviceUpdate.enabled !== false}
+                    onChange={(e) => setDeviceUpdate({ ...deviceUpdate, enabled: e.target.checked })}
+                  />
+                }
+                label="WiFi habilitado"
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setShowEditDevice(false);
+            setSelectedDevice(null);
+            setDeviceUpdate({});
+            setOriginalDeviceData({});
+          }}>Cancelar</Button>
+          <Button 
+            variant="contained" 
+            onClick={handleUpdateDevice}
+            disabled={updateDeviceConfig.isPending}
+          >
+            {updateDeviceConfig.isPending ? 'Atualizando...' : 'Atualizar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert 
+          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          severity={snackbar.severity}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

@@ -379,3 +379,316 @@ def calculate_dashboard_metrics(devices: List[Dict[str, Any]]) -> Dict[str, Any]
             "avg_latency": 0.0,
             "sla_compliance": 0.0
         }
+
+def extract_wifi_config_from_device(device_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Extrai configurações WiFi de um dispositivo GenieACS
+    
+    Args:
+        device_data: Dados raw do dispositivo do GenieACS
+        
+    Returns:
+        Configurações WiFi formatadas
+    """
+    try:
+        device_id = device_data.get("_id", "unknown")
+        
+        # Extrair configurações WiFi
+        wifi_enabled = safe_get_nested(
+            device_data,
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Enable._value",
+            True  # Default para True se não conseguir ler o valor
+        )
+        
+        ssid = safe_get_nested(
+            device_data,
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID._value",
+            ""
+        )
+        
+        # Tipo de segurança baseado no BeaconType
+        beacon_type = safe_get_nested(
+            device_data,
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.BeaconType._value",
+            "None"
+        )
+        
+        # Mapear BeaconType para tipo de segurança
+        security_map = {
+            "None": "Open",
+            "Basic": "WEP", 
+            "WPA": "WPA",
+            "11i": "WPA2",
+            "WPAand11i": "WPA2"
+        }
+        security = security_map.get(beacon_type, "WPA2")
+        
+        # Canal WiFi
+        channel = safe_get_nested(
+            device_data,
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Channel._value",
+            "Auto"
+        )
+        
+        # Determinar banda baseado no canal
+        if isinstance(channel, int):
+            if channel <= 14:
+                band = "2.4GHz"
+            elif channel >= 36:
+                band = "5GHz"
+            else:
+                band = "2.4GHz"
+        else:
+            band = "2.4GHz"
+        
+        # Auto channel enable
+        auto_channel = safe_get_nested(
+            device_data,
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AutoChannelEnable._value",
+            False
+        )
+        
+        if auto_channel:
+            channel = "Auto"
+        
+        # SSID Advertisement (para determinar se é hidden)
+        ssid_broadcast = safe_get_nested(
+            device_data,
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSIDAdvertisementEnabled._value",
+            True
+        )
+        
+        # Potência de transmissão (alguns modelos Huawei)
+        power = safe_get_nested(
+            device_data,
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.X_HUAWEI_PowerValue._value",
+            100
+        )
+        
+        # Informações do dispositivo
+        manufacturer, model = extract_manufacturer_model(device_data)
+        
+        wifi_config = {
+            "device_id": device_id,
+            "device_name": f"{manufacturer} {model}",
+            "device_model": model,
+            "ssid": ssid,
+            "security": security,
+            "band": band,
+            "channel": str(channel),
+            "power": int(power) if power else 100,
+            "hidden": not bool(ssid_broadcast),
+            "enabled": bool(wifi_enabled),
+            "beacon_type": beacon_type,
+            "auto_channel": bool(auto_channel),
+            
+            # Metadados para debug
+            "_genieacs_metadata": {
+                "raw_beacon_type": beacon_type,
+                "raw_channel": channel,
+                "raw_power": power,
+                "raw_ssid_broadcast": ssid_broadcast,
+                "device_parameters_available": bool(ssid)  # Se conseguiu ler parâmetros
+            }
+        }
+        
+        return wifi_config
+        
+    except Exception as e:
+        logger.error(f"Erro ao extrair configuração WiFi do dispositivo: {e}")
+        return None
+
+def create_wifi_parameter_updates(device_id: str, updates: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Cria lista de parâmetros para atualizar configurações WiFi via GenieACS
+    
+    Args:
+        device_id: ID do dispositivo
+        updates: Dicionário com atualizações a serem feitas
+        
+    Returns:
+        Lista de tasks para o GenieACS
+    """
+    try:
+        logger.info(f"🔄 CRIANDO TASKS WiFi para dispositivo {device_id}")
+        logger.info(f"   Updates recebidos: {updates}")
+        
+        tasks = []
+        base_path = "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1"
+        
+        # Mapeamento de campos para parâmetros TR-069
+        parameter_map = {
+            "ssid": f"{base_path}.SSID",
+            "enabled": f"{base_path}.Enable",
+            "channel": f"{base_path}.Channel",
+            "hidden": f"{base_path}.SSIDAdvertisementEnabled",  # Invertido: hidden=True -> SSIDAdvertisement=False
+            "power": f"{base_path}.X_HUAWEI_PowerValue"  # Específico Huawei
+        }
+        
+        # Mapeamento especial para segurança
+        security_map = {
+            "Open": "None",
+            "WEP": "Basic",
+            "WPA": "WPA", 
+            "WPA2": "11i",
+            "WPA3": "11i"  # Fallback para WPA2 se WPA3 não suportado
+        }
+        
+        logger.info(f"📋 Mapeamento de parâmetros: {parameter_map}")
+        
+        # Processar cada atualização
+        for field, value in updates.items():
+            logger.info(f"🔍 Processando field: {field} = {value}")
+            if field in parameter_map and value is not None:
+                parameter_name = parameter_map[field]
+                
+                # Tratamento especial para cada tipo de parâmetro
+                if field == "hidden":
+                    # hidden=True significa SSIDAdvertisement=False
+                    parameter_value = not bool(value)
+                elif field == "security":
+                    # Atualizar BeaconType
+                    beacon_value = security_map.get(value, "11i")
+                    tasks.append({
+                        "name": "setParameterValues",
+                        "parameterValues": [[f"{base_path}.BeaconType", beacon_value]]
+                    })
+                    continue
+                elif field == "channel":
+                    # Se channel for "Auto", habilitar AutoChannelEnable
+                    if str(value).lower() == "auto":
+                        tasks.append({
+                            "name": "setParameterValues", 
+                            "parameterValues": [[f"{base_path}.AutoChannelEnable", True]]
+                        })
+                        continue
+                    else:
+                        # Desabilitar auto channel e definir canal específico
+                        tasks.append({
+                            "name": "setParameterValues",
+                            "parameterValues": [[f"{base_path}.AutoChannelEnable", False]]
+                        })
+                        parameter_value = int(value)
+                else:
+                    parameter_value = value
+                
+                # Adicionar task para este parâmetro
+                tasks.append({
+                    "name": "setParameterValues",
+                    "parameterValues": [[parameter_name, parameter_value]]
+                })
+        
+        # Se há mudança de senha e security != Open
+        if "password" in updates and updates.get("security", "WPA2") != "Open":
+            password = updates["password"]
+            if password:
+                # Para WPA/WPA2, usar PreSharedKey
+                tasks.append({
+                    "name": "setParameterValues",
+                    "parameterValues": [[f"{base_path}.PreSharedKey.1.KeyPassphrase", password]]
+                })
+        
+        logger.info(f"✅ TASKS CRIADAS: {len(tasks)} tasks para dispositivo {device_id}")
+        for i, task in enumerate(tasks):
+            logger.info(f"   Task {i+1}: {task}")
+        return tasks
+        
+    except Exception as e:
+        logger.error(f"Erro ao criar tasks de atualização WiFi: {e}")
+        return []
+
+def format_wifi_configs_for_frontend(wifi_configs: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Formata configurações WiFi para o frontend
+    
+    Args:
+        wifi_configs: Lista de configurações WiFi dos dispositivos
+        
+    Returns:
+        Dados formatados para o frontend
+    """
+    try:
+        # Estatísticas gerais
+        total_devices = len(wifi_configs)
+        enabled_devices = len([w for w in wifi_configs if w.get("enabled", False)])
+        
+        # Agrupar por SSID
+        ssid_groups = {}
+        for config in wifi_configs:
+            ssid = config.get("ssid", "Unknown")
+            if ssid not in ssid_groups:
+                ssid_groups[ssid] = []
+            ssid_groups[ssid].append(config)
+        
+        # Criar perfis baseados nos SSIDs
+        profiles = []
+        for ssid, devices in ssid_groups.items():
+            if not ssid or ssid == "Unknown":
+                continue
+                
+            # Usar configuração do primeiro dispositivo como base
+            base_config = devices[0]
+            
+            profile = {
+                "id": f"profile-{ssid.replace(' ', '-').lower()}",
+                "name": f"Perfil {ssid}",
+                "ssid": ssid,
+                "security": base_config.get("security", "WPA2"),
+                "band": base_config.get("band", "2.4GHz"),
+                "channel": base_config.get("channel", "Auto"),
+                "power": base_config.get("power", 100),
+                "hidden": base_config.get("hidden", False),
+                "enabled": base_config.get("enabled", True),
+                "status": "active" if any(d.get("enabled") for d in devices) else "inactive",
+                "applied_devices": len(devices),
+                "devices": devices
+            }
+            profiles.append(profile)
+        
+        # Dispositivos individuais
+        devices = []
+        for config in wifi_configs:
+            device = {
+                "id": config.get("device_id", "unknown"),
+                "name": config.get("device_name", "Unknown Device"),
+                "model": config.get("device_model", "Unknown"),
+                "ssid": config.get("ssid", ""),
+                "security": config.get("security", "Unknown"),
+                "signal_strength": -45,  # Placeholder - seria obtido de outros parâmetros
+                "status": "online" if config.get("enabled") else "offline",
+                "connected_devices": 0,  # Placeholder - seria obtido de estatísticas
+                "last_update": datetime.now().isoformat(),
+                "wifi_config": config
+            }
+            devices.append(device)
+        
+        # Estatísticas
+        stats = {
+            "total_profiles": len(profiles),
+            "active_profiles": len([p for p in profiles if p["status"] == "active"]),
+            "total_devices": total_devices,
+            "online_devices": enabled_devices,
+            "avg_signal": -45.0,  # Placeholder
+            "total_connections": 0  # Placeholder
+        }
+        
+        return {
+            "profiles": profiles,
+            "devices": devices,
+            "stats": stats
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao formatar configurações WiFi para frontend: {e}")
+        return {
+            "profiles": [],
+            "devices": [],
+            "stats": {
+                "total_profiles": 0,
+                "active_profiles": 0,
+                "total_devices": 0,
+                "online_devices": 0,
+                "avg_signal": -50.0,
+                "total_connections": 0
+            }
+        }

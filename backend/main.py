@@ -14,7 +14,10 @@ from genieacs_transformers import (
     transform_genieacs_to_cpe,
     transform_genieacs_to_onu,
     transform_genieacs_fault_to_alert,
-    calculate_dashboard_metrics
+    calculate_dashboard_metrics,
+    extract_wifi_config_from_device,
+    create_wifi_parameter_updates,
+    format_wifi_configs_for_frontend
 )
 
 # Configure logging
@@ -65,6 +68,27 @@ class User(BaseModel):
     last_name: Optional[str] = None
     role: str = "operator"
     created_at: datetime
+
+class WiFiConfig(BaseModel):
+    device_id: str
+    ssid: str
+    security: str
+    password: Optional[str] = None
+    band: Optional[str] = None
+    channel: Optional[str] = None
+    power: Optional[int] = None
+    hidden: bool = False
+    enabled: bool = True
+
+class WiFiConfigUpdate(BaseModel):
+    ssid: Optional[str] = None
+    security: Optional[str] = None
+    password: Optional[str] = None
+    band: Optional[str] = None
+    channel: Optional[str] = None
+    power: Optional[int] = None
+    hidden: Optional[bool] = None
+    enabled: Optional[bool] = None
 
 # Mock data
 mock_cpes = [
@@ -297,5 +321,162 @@ async def get_dashboard_metrics():
             "avg_latency": 15.2,
             "sla_compliance": 99.8
         }
+
+# WiFi Configuration Endpoints
+@app.get("/api/wifi/configs")
+async def get_wifi_configs():
+    """
+    Retorna configurações WiFi de todos os dispositivos
+    """
+    try:
+        client = await get_genieacs_client()
+        raw_devices = await client.get_devices()
+        
+        wifi_configs = []
+        for device_data in raw_devices:
+            wifi_config = extract_wifi_config_from_device(device_data)
+            if wifi_config:
+                wifi_configs.append(wifi_config)
+        
+        formatted_data = format_wifi_configs_for_frontend(wifi_configs)
+        
+        logger.info(f"Retornando configurações WiFi de {len(wifi_configs)} dispositivos")
+        return formatted_data
+        
+    except Exception as e:
+        logger.error(f"Erro ao buscar configurações WiFi: {e}")
+        # Fallback para dados mock em caso de erro
+        return {
+            "profiles": [],
+            "devices": [],
+            "stats": {
+                "total_profiles": 0,
+                "active_profiles": 0,
+                "total_devices": 0,
+                "online_devices": 0,
+                "avg_signal": -50.0,
+                "total_connections": 0
+            }
+        }
+
+@app.get("/api/wifi/configs/{device_id}")
+async def get_device_wifi_config(device_id: str):
+    """
+    Retorna configuração WiFi de um dispositivo específico
+    """
+    try:
+        client = await get_genieacs_client()
+        device_data = await client.get_device_by_id(device_id)
+        
+        if not device_data:
+            raise HTTPException(status_code=404, detail="Dispositivo não encontrado")
+        
+        wifi_config = extract_wifi_config_from_device(device_data)
+        
+        if not wifi_config:
+            raise HTTPException(status_code=404, detail="Configuração WiFi não encontrada")
+        
+        return wifi_config
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao buscar configuração WiFi do dispositivo {device_id}: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+@app.put("/api/wifi/configs/{device_id}")
+async def update_device_wifi_config(device_id: str, updates: WiFiConfigUpdate):
+    """
+    Atualiza configuração WiFi de um dispositivo
+    """
+    try:
+        client = await get_genieacs_client()
+        
+        # Verificar se dispositivo existe
+        device_data = await client.get_device_by_id(device_id)
+        if not device_data:
+            raise HTTPException(status_code=404, detail="Dispositivo não encontrado")
+        
+        # Converter updates para dict, removendo valores None
+        update_dict = {k: v for k, v in updates.dict().items() if v is not None}
+        
+        logger.info(f"🎯 UPDATE WiFi REQUEST para dispositivo {device_id}:")
+        logger.info(f"   Updates raw: {updates.dict()}")
+        logger.info(f"   Updates filtrados (sem None): {update_dict}")
+        
+        if not update_dict:
+            raise HTTPException(status_code=400, detail="Nenhuma atualização fornecida")
+        
+        # Criar tasks de atualização
+        tasks = create_wifi_parameter_updates(device_id, update_dict)
+        
+        if not tasks:
+            raise HTTPException(status_code=400, detail="Nenhuma task válida gerada")
+        
+        # Executar cada task via GenieACS
+        success_count = 0
+        for task in tasks:
+            try:
+                # Aplicar task no dispositivo
+                if task["name"] == "setParameterValues":
+                    for param_name, param_value in task["parameterValues"]:
+                        success = await client.set_parameter(device_id, param_name, param_value)
+                        if success:
+                            success_count += 1
+                        else:
+                            logger.warning(f"Falha ao definir {param_name} = {param_value}")
+            except Exception as task_error:
+                logger.error(f"Erro ao executar task: {task_error}")
+        
+        if success_count == 0:
+            raise HTTPException(status_code=500, detail="Falha ao aplicar configurações")
+        
+        # Retornar configuração atualizada
+        logger.info(f"Aplicadas {success_count}/{len(tasks)} configurações WiFi no dispositivo {device_id}")
+        
+        return {
+            "success": True,
+            "message": f"Configurações WiFi atualizadas ({success_count}/{len(tasks)} sucessos)",
+            "applied_updates": update_dict,
+            "tasks_executed": success_count,
+            "total_tasks": len(tasks)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao atualizar configuração WiFi do dispositivo {device_id}: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+@app.post("/api/wifi/refresh/{device_id}")
+async def refresh_device_wifi_config(device_id: str):
+    """
+    Força refresh das configurações WiFi de um dispositivo
+    """
+    try:
+        client = await get_genieacs_client()
+        
+        # Verificar se dispositivo existe
+        device_data = await client.get_device_by_id(device_id)
+        if not device_data:
+            raise HTTPException(status_code=404, detail="Dispositivo não encontrado")
+        
+        # Executar refresh
+        success = await client.refresh_device(device_id)
+        
+        if not success:
+            raise HTTPException(status_code=500, detail="Falha ao executar refresh")
+        
+        return {
+            "success": True,
+            "message": "Refresh de configurações WiFi solicitado",
+            "device_id": device_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao fazer refresh do dispositivo {device_id}: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 

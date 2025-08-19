@@ -76,14 +76,22 @@ class GenieACSClient:
             Dados do dispositivo ou None se não encontrado
         """
         try:
-            response = await self.client.get(f"{self.base_url}/devices/{device_id}")
-            response.raise_for_status()
-            return response.json()
+            # GenieACS não suporta /devices/{id}, então fazemos query na lista completa
+            query = {"_id": device_id}
+            params = {"query": json.dumps(query)}
             
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 404:
+            response = await self.client.get(f"{self.base_url}/devices", params=params)
+            response.raise_for_status()
+            devices = response.json()
+            
+            if devices and len(devices) > 0:
+                logger.info(f"Dispositivo {device_id} encontrado")
+                return devices[0]
+            else:
                 logger.warning(f"Dispositivo {device_id} não encontrado")
                 return None
+            
+        except httpx.HTTPStatusError as e:
             logger.error(f"Erro HTTP ao buscar dispositivo {device_id}: {e}")
             return None
         except Exception as e:
@@ -167,20 +175,36 @@ class GenieACSClient:
                 "parameterValues": [[parameter, value]]
             }
             
+            logger.info(f"🔧 ENVIANDO TASK para GenieACS:")
+            logger.info(f"   Device ID: {device_id}")
+            logger.info(f"   Parameter: {parameter}")
+            logger.info(f"   Value: {value}")
+            logger.info(f"   URL: {self.base_url}/devices/{device_id}/tasks")
+            logger.info(f"   Data: {data}")
+            
             response = await self.client.post(
                 f"{self.base_url}/devices/{device_id}/tasks",
                 json=data
             )
+            
+            logger.info(f"📨 RESPOSTA do GenieACS:")
+            logger.info(f"   Status Code: {response.status_code}")
+            logger.info(f"   Headers: {dict(response.headers)}")
+            logger.info(f"   Content: {response.text}")
+            
             response.raise_for_status()
             
-            logger.info(f"Parâmetro {parameter} definido para {value} no dispositivo {device_id}")
+            logger.info(f"✅ Parâmetro {parameter} definido para {value} no dispositivo {device_id}")
             return True
             
         except httpx.HTTPError as e:
-            logger.error(f"Erro ao definir parâmetro {parameter}: {e}")
+            logger.error(f"❌ ERRO HTTP ao definir parâmetro {parameter}: {e}")
+            if hasattr(e, 'response') and e.response:
+                logger.error(f"   Response status: {e.response.status_code}")
+                logger.error(f"   Response body: {e.response.text}")
             return False
         except Exception as e:
-            logger.error(f"Erro inesperado ao definir parâmetro {parameter}: {e}")
+            logger.error(f"❌ ERRO inesperado ao definir parâmetro {parameter}: {e}")
             return False
     
     async def refresh_device(self, device_id: str) -> bool:
