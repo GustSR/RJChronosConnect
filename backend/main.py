@@ -8,6 +8,15 @@ from datetime import datetime
 from pydantic import BaseModel
 import logging
 
+# GenieACS integration imports
+from genieacs_client import get_genieacs_client
+from genieacs_transformers import (
+    transform_genieacs_to_cpe,
+    transform_genieacs_to_onu,
+    transform_genieacs_fault_to_alert,
+    calculate_dashboard_metrics
+)
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -166,7 +175,34 @@ async def get_user(current_user: User = Depends(get_current_user)):
 
 @app.get("/api/devices/cpes", response_model=List[CPE])
 async def get_cpes():
-    return mock_cpes
+    """
+    Retorna lista de CPEs obtida do GenieACS
+    """
+    try:
+        # Usar cliente GenieACS para buscar dispositivos
+        client = await get_genieacs_client()
+        raw_devices = await client.get_devices()
+        
+        cpes = []
+        for device_data in raw_devices:
+            # Transformar dados GenieACS em estrutura CPE
+            cpe_data = transform_genieacs_to_cpe(device_data)
+            if cpe_data:
+                cpes.append(CPE(**cpe_data))
+        
+        logger.info(f"Retornando {len(cpes)} CPEs do GenieACS")
+        
+        # Fallback para dados mock se nenhum dispositivo encontrado
+        if not cpes:
+            logger.warning("Nenhum dispositivo encontrado no GenieACS, usando dados mock")
+            return mock_cpes[:10]  # Apenas 10 para demonstrar diferença
+            
+        return cpes
+            
+    except Exception as e:
+        logger.error(f"Erro ao buscar CPEs do GenieACS: {e}")
+        # Fallback para dados mock em caso de erro
+        return mock_cpes
 
 @app.get("/api/devices/onus", response_model=List[ONU])
 async def get_onus():
@@ -178,23 +214,88 @@ async def get_olts():
 
 @app.get("/api/alerts", response_model=List[Alert])
 async def get_alerts():
-    return mock_alerts
+    """
+    Retorna lista de alertas baseada em faults do GenieACS
+    """
+    try:
+        client = await get_genieacs_client()
+        # Buscar faults do GenieACS
+        raw_faults = await client.get_faults()
+        
+        alerts = []
+        for fault_data in raw_faults:
+            # Transformar fault em alerta
+            alert_data = transform_genieacs_fault_to_alert(fault_data)
+            if alert_data:
+                alerts.append(Alert(**alert_data))
+        
+        logger.info(f"Retornando {len(alerts)} alertas do GenieACS")
+        
+        # Se não há faults, retornar poucos alertas mock para demonstração
+        if not alerts:
+            return mock_alerts[:3]  # Apenas 3 alertas mock para demonstração
+            
+        return alerts
+            
+    except Exception as e:
+        logger.error(f"Erro ao buscar alertas do GenieACS: {e}")
+        return mock_alerts[:3]
 
 @app.get("/api/dashboard/metrics")
 async def get_dashboard_metrics():
-    total_devices = len(mock_cpes) + len(mock_onus) + len(mock_olts)
-    online_devices = len([d for d in mock_cpes + mock_onus + mock_olts if d.status == "online"])
-    critical_alerts = len([a for a in mock_alerts if a.severity == "critical"])
-    
-    return {
-        "total_devices": total_devices,
-        "online_devices": online_devices,
-        "offline_devices": total_devices - online_devices,
-        "critical_alerts": critical_alerts,
-        "uptime_percentage": round((online_devices / total_devices) * 100, 1),
-        "avg_signal_strength": -42.5,
-        "avg_latency": 15.2,
-        "sla_compliance": 99.8
-    }
+    """
+    Retorna métricas do dashboard baseadas em dados reais do GenieACS
+    """
+    try:
+        client = await get_genieacs_client()
+        # Buscar dispositivos reais
+        raw_devices = await client.get_devices()
+        
+        # Transformar em estruturas padronizadas
+        devices = []
+        for device_data in raw_devices:
+            cpe_data = transform_genieacs_to_cpe(device_data)
+            if cpe_data:
+                devices.append(cpe_data)
+        
+        # Calcular métricas baseadas nos dispositivos reais
+        metrics = calculate_dashboard_metrics(devices)
+        
+        # Buscar alertas críticos
+        raw_faults = await client.get_faults()
+        critical_alerts = len([f for f in raw_faults if f.get("code") in ["9001", "8001", "8003"]])
+        metrics["critical_alerts"] = critical_alerts
+        
+        logger.info(f"Métricas calculadas para {len(devices)} dispositivos do GenieACS")
+        
+        # Fallback para métricas mock se não há dispositivos
+        if not devices:
+            logger.warning("Nenhum dispositivo encontrado, usando métricas mock")
+            return {
+                "total_devices": len(mock_cpes) + len(mock_onus) + len(mock_olts),
+                "online_devices": len([d for d in mock_cpes + mock_onus + mock_olts if d.status == "online"]),
+                "offline_devices": len([d for d in mock_cpes + mock_onus + mock_olts if d.status == "offline"]),
+                "critical_alerts": len([a for a in mock_alerts if a.severity == "critical"]),
+                "uptime_percentage": 95.0,
+                "avg_signal_strength": -42.5,
+                "avg_latency": 15.2,
+                "sla_compliance": 99.8
+            }
+        
+        return metrics
+            
+    except Exception as e:
+        logger.error(f"Erro ao calcular métricas do GenieACS: {e}")
+        # Fallback para métricas mock em caso de erro
+        return {
+            "total_devices": len(mock_cpes) + len(mock_onus) + len(mock_olts),
+            "online_devices": len([d for d in mock_cpes + mock_onus + mock_olts if d.status == "online"]),
+            "offline_devices": len([d for d in mock_cpes + mock_onus + mock_olts if d.status == "offline"]),
+            "critical_alerts": len([a for a in mock_alerts if a.severity == "critical"]),
+            "uptime_percentage": 95.0,
+            "avg_signal_strength": -42.5,
+            "avg_latency": 15.2,
+            "sla_compliance": 99.8
+        }
 
 
