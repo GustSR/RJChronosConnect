@@ -10,6 +10,7 @@ export interface WiFiConfig {
   device_name: string;
   device_model: string;
   ssid: string;
+  password?: string;
   security: string;
   band?: string;
   channel?: string;
@@ -93,8 +94,8 @@ export const getWiFiConfigs = async (): Promise<WiFiData> => {
 /**
  * Get WiFi configuration for a specific device
  */
-export const getDeviceWiFiConfig = async (deviceId: string): Promise<WiFiConfig> => {
-  const response = await apiClient.get(`/wifi/configs/${deviceId}`);
+export const getDeviceWiFiConfig = async (deviceId: string, band: string = "2.4GHz"): Promise<WiFiConfig> => {
+  const response = await apiClient.get(`/wifi/configs/${deviceId}?band=${band}`);
   return response.data;
 };
 
@@ -103,9 +104,10 @@ export const getDeviceWiFiConfig = async (deviceId: string): Promise<WiFiConfig>
  */
 export const updateDeviceWiFiConfig = async (
   deviceId: string,
-  updates: WiFiConfigUpdate
+  updates: WiFiConfigUpdate,
+  band: string = "2.4GHz"
 ): Promise<WiFiUpdateResponse> => {
-  const response = await apiClient.put(`/wifi/configs/${deviceId}`, updates);
+  const response = await apiClient.put(`/wifi/configs/${deviceId}?band=${band}`, updates);
   return response.data;
 };
 

@@ -157,7 +157,7 @@ class GenieACSClient:
             logger.error(f"Erro inesperado ao buscar tasks: {e}")
             return []
     
-    async def set_parameter(self, device_id: str, parameter: str, value: Any) -> bool:
+    async def set_parameter(self, device_id: str, parameter: str, value: Any, immediate: bool = True) -> bool:
         """
         Define um parâmetro em um dispositivo
         
@@ -165,6 +165,7 @@ class GenieACSClient:
             device_id: ID do dispositivo
             parameter: Nome do parâmetro TR-069
             value: Valor a ser definido
+            immediate: Se True, força connection request imediato (padrão: True)
             
         Returns:
             True se sucesso, False caso contrário
@@ -179,13 +180,17 @@ class GenieACSClient:
             logger.info(f"   Device ID: {device_id}")
             logger.info(f"   Parameter: {parameter}")
             logger.info(f"   Value: {value}")
-            logger.info(f"   URL: {self.base_url}/devices/{device_id}/tasks")
+            
+            # Construir URL com connection_request se immediate=True
+            url = f"{self.base_url}/devices/{device_id}/tasks"
+            if immediate:
+                url += "?connection_request"
+                logger.info(f"🚀 USANDO CONNECTION REQUEST IMEDIATO")
+            
+            logger.info(f"   URL: {url}")
             logger.info(f"   Data: {data}")
             
-            response = await self.client.post(
-                f"{self.base_url}/devices/{device_id}/tasks",
-                json=data
-            )
+            response = await self.client.post(url, json=data)
             
             logger.info(f"📨 RESPOSTA do GenieACS:")
             logger.info(f"   Status Code: {response.status_code}")
@@ -207,6 +212,143 @@ class GenieACSClient:
             logger.error(f"❌ ERRO inesperado ao definir parâmetro {parameter}: {e}")
             return False
     
+    async def refresh_wifi_passwords(self, device_id: str) -> bool:
+        """
+        Força refresh específico dos parâmetros de senha WiFi
+        
+        Args:
+            device_id: ID do dispositivo
+            
+        Returns:
+            True se sucesso, False caso contrário
+        """
+        try:
+            # Refresh específico para parâmetros de senha WiFi
+            wifi_password_objects = [
+                "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey",
+                "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.PreSharedKey",
+                "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.WPA",
+                "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.WPA"
+            ]
+            
+            success_count = 0
+            for obj_name in wifi_password_objects:
+                try:
+                    data = {
+                        "name": "refreshObject",
+                        "objectName": obj_name
+                    }
+                    
+                    url = f"{self.base_url}/devices/{device_id}/tasks?connection_request"
+                    
+                    logger.info(f"🔄 REFRESH WiFi passwords - {obj_name}")
+                    
+                    response = await self.client.post(url, json=data)
+                    response.raise_for_status()
+                    success_count += 1
+                    
+                except Exception as e:
+                    logger.warning(f"⚠️ Falha ao refresh {obj_name}: {e}")
+            
+            logger.info(f"✅ Refresh WiFi passwords: {success_count}/{len(wifi_password_objects)} sucessos")
+            return success_count > 0
+            
+        except Exception as e:
+            logger.error(f"❌ ERRO no refresh WiFi passwords: {e}")
+            return False
+
+    async def summon_device(self, device_id: str) -> bool:
+        """
+        Força um 'summon' imediato do dispositivo (equivalente ao botão Summon no GenieACS UI)
+        
+        Args:
+            device_id: ID do dispositivo
+            
+        Returns:
+            True se sucesso, False caso contrário
+        """
+        try:
+            data = {
+                "name": "refreshObject",
+                "objectName": ""  # Root refresh - força refresh de todos os parâmetros
+            }
+            
+            url = f"{self.base_url}/devices/{device_id}/tasks?connection_request"
+            
+            logger.info(f"🌟 SUMMON DEVICE (como botão GenieACS UI):")
+            logger.info(f"   Device ID: {device_id}")
+            logger.info(f"   URL: {url}")
+            logger.info(f"   Data: {data}")
+            
+            response = await self.client.post(url, json=data)
+            
+            logger.info(f"📨 RESPOSTA SUMMON:")
+            logger.info(f"   Status Code: {response.status_code}")
+            logger.info(f"   Content: {response.text}")
+            
+            response.raise_for_status()
+            
+            logger.info(f"✅ Dispositivo {device_id} summonado com sucesso!")
+            return True
+            
+        except httpx.HTTPError as e:
+            logger.error(f"❌ ERRO HTTP ao summonar dispositivo {device_id}: {e}")
+            if hasattr(e, 'response') and e.response:
+                logger.error(f"   Response status: {e.response.status_code}")
+                logger.error(f"   Response body: {e.response.text}")
+            return False
+        except Exception as e:
+            logger.error(f"❌ ERRO inesperado ao summonar dispositivo {device_id}: {e}")
+            return False
+    
+    async def refresh_ip_parameters(self, device_id: str) -> bool:
+        """
+        Força refresh específico dos parâmetros de IP (ExternalIPAddress)
+        
+        Args:
+            device_id: ID do dispositivo
+            
+        Returns:
+            True se sucesso, False caso contrário
+        """
+        try:
+            # Lista de parâmetros IP para tentar (baseado no que descobrimos)
+            ip_parameters = [
+                "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.2.ExternalIPAddress",
+                "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ExternalIPAddress",
+                "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.WANIPConnection.1.ExternalIPAddress",
+                "InternetGatewayDevice.Services.X_HUAWEI_WANRemoteAccess.IPAddress2",
+                "InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.IPInterfaceIPAddress",
+                "Device.IP.Interface.1.IPv4Address.1.IPAddress"
+            ]
+            
+            success_count = 0
+            
+            for param in ip_parameters:
+                try:
+                    data = {
+                        "name": "refreshObject",
+                        "objectName": param
+                    }
+                    
+                    url = f"{self.base_url}/devices/{device_id}/tasks?connection_request"
+                    
+                    response = await self.client.post(url, json=data)
+                    if response.status_code in [200, 202]:
+                        success_count += 1
+                        logger.info(f"✅ Refresh IP parameter: {param}")
+                    
+                except Exception as e:
+                    logger.warning(f"⚠️ Falha ao refresh {param}: {e}")
+                    continue
+            
+            logger.info(f"🌐 IP Parameters refresh: {success_count}/{len(ip_parameters)} sucessos")
+            return success_count > 0
+            
+        except Exception as e:
+            logger.error(f"❌ ERRO ao fazer refresh de parâmetros IP: {e}")
+            return False
+
     async def refresh_device(self, device_id: str) -> bool:
         """
         Força uma atualização de um dispositivo

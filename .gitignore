@@ -23,7 +23,6 @@ Thumbs.db
 
 # Ignorar diretórios específicos do projeto
 .local/
-images_troubleshootings/
 
 # Ignorar arquivos do Gemini/Claude
 GEMINI.md

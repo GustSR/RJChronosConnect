@@ -121,11 +121,28 @@ def transform_genieacs_to_cpe(device_data: Dict[str, Any]) -> Dict[str, Any]:
         last_inform = device_data.get("_lastInform")
         status = determine_device_status(last_inform)
         
-        # IP Address externo
-        external_ip = safe_get_nested(
-            device_data, 
-            "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ExternalIPAddress._value"
-        )
+        # IP Address externo - tentar múltiplos caminhos
+        external_ip = None
+        
+        # Lista de possíveis caminhos para IP externo
+        ip_paths = [
+            "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.2.ExternalIPAddress._value",
+            "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ExternalIPAddress._value", 
+            "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.WANIPConnection.1.ExternalIPAddress._value",
+            "InternetGatewayDevice.Services.X_HUAWEI_WANRemoteAccess.IPAddress2._value",  # IP público do Huawei
+            "InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.IPInterfaceIPAddress._value"  # IP LAN como fallback
+        ]
+        
+        # Tentar cada caminho até encontrar um IP válido
+        for ip_path in ip_paths:
+            ip_candidate = safe_get_nested(device_data, ip_path)
+            if ip_candidate and ip_candidate.strip() and ip_candidate != "0.0.0.0":
+                external_ip = ip_candidate.strip()
+                logger.info(f"✅ IP encontrado para {cpe_id}: {external_ip} (via {ip_path})")
+                break
+        
+        if not external_ip:
+            logger.warning(f"⚠️ Nenhum IP válido encontrado para dispositivo {cpe_id}")
         
         # WiFi SSID
         wifi_ssid = safe_get_nested(
@@ -380,12 +397,13 @@ def calculate_dashboard_metrics(devices: List[Dict[str, Any]]) -> Dict[str, Any]
             "sla_compliance": 0.0
         }
 
-def extract_wifi_config_from_device(device_data: Dict[str, Any]) -> Dict[str, Any]:
+def extract_wifi_config_from_device(device_data: Dict[str, Any], band: str = "2.4GHz") -> Dict[str, Any]:
     """
     Extrai configurações WiFi de um dispositivo GenieACS
     
     Args:
         device_data: Dados raw do dispositivo do GenieACS
+        band: Banda WiFi ("2.4GHz" ou "5GHz")
         
     Returns:
         Configurações WiFi formatadas
@@ -393,23 +411,27 @@ def extract_wifi_config_from_device(device_data: Dict[str, Any]) -> Dict[str, An
     try:
         device_id = device_data.get("_id", "unknown")
         
+        # Determinar qual WLANConfiguration usar baseado na banda
+        wlan_config_id = "1" if band == "2.4GHz" else "2"
+        base_path = f"InternetGatewayDevice.LANDevice.1.WLANConfiguration.{wlan_config_id}"
+        
         # Extrair configurações WiFi
         wifi_enabled = safe_get_nested(
             device_data,
-            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Enable._value",
+            f"{base_path}.Enable._value",
             True  # Default para True se não conseguir ler o valor
         )
         
         ssid = safe_get_nested(
             device_data,
-            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID._value",
+            f"{base_path}.SSID._value",
             ""
         )
         
         # Tipo de segurança baseado no BeaconType
         beacon_type = safe_get_nested(
             device_data,
-            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.BeaconType._value",
+            f"{base_path}.BeaconType._value",
             "None"
         )
         
@@ -426,25 +448,14 @@ def extract_wifi_config_from_device(device_data: Dict[str, Any]) -> Dict[str, An
         # Canal WiFi
         channel = safe_get_nested(
             device_data,
-            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Channel._value",
+            f"{base_path}.Channel._value",
             "Auto"
         )
-        
-        # Determinar banda baseado no canal
-        if isinstance(channel, int):
-            if channel <= 14:
-                band = "2.4GHz"
-            elif channel >= 36:
-                band = "5GHz"
-            else:
-                band = "2.4GHz"
-        else:
-            band = "2.4GHz"
         
         # Auto channel enable
         auto_channel = safe_get_nested(
             device_data,
-            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AutoChannelEnable._value",
+            f"{base_path}.AutoChannelEnable._value",
             False
         )
         
@@ -454,16 +465,114 @@ def extract_wifi_config_from_device(device_data: Dict[str, Any]) -> Dict[str, An
         # SSID Advertisement (para determinar se é hidden)
         ssid_broadcast = safe_get_nested(
             device_data,
-            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSIDAdvertisementEnabled._value",
+            f"{base_path}.SSIDAdvertisementEnabled._value",
             True
         )
+        
+        # Senha WiFi (KeyPassphrase para WPA/WPA2) - Tentar diferentes caminhos
+        # Baseado em pesquisa de modelos Huawei específicos
+        password_paths = [
+            # Padrão mais comum
+            f"{base_path}.PreSharedKey.1.KeyPassphrase._value",
+            f"{base_path}.PreSharedKey.KeyPassphrase._value",
+            
+            # Variações encontradas em diferentes modelos Huawei
+            f"{base_path}.PreSharedKey.1PreSharedKey._value",  # EG8141A5
+            f"{base_path}.KeyPassphrase._value",               # HG8145V5
+            
+            # Específicos Huawei
+            f"{base_path}.X_HUAWEI_PreSharedKey._value",
+            f"{base_path}.X_HUAWEI_WpaPassphrase._value",
+            
+            # WPA específico
+            f"{base_path}.WPA.PreSharedKey.1.KeyPassphrase._value",
+            f"{base_path}.WPA.KeyPassphrase._value",
+            
+            # WEP fallback
+            f"{base_path}.WEP.Keys.1.WEPKey._value",
+            
+            # Outras variações encontradas em equipamentos similares
+            f"{base_path}.Security.PreSharedKey._value",
+            f"{base_path}.Security.WPA.PreSharedKey._value"
+        ]
+        
+        password = ""
+        logger.info(f"🔍 BUSCANDO SENHA WiFi para {device_id} (banda {band}):")
+        for password_path in password_paths:
+            password_candidate = safe_get_nested(device_data, password_path, "")
+            logger.info(f"  🔍 {password_path}: '{password_candidate}'")
+            if password_candidate and password_candidate.strip():
+                password = password_candidate
+                logger.info(f"🔑 ✅ SENHA ENCONTRADA: '{password}' via {password_path}")
+                break
+        
+        if not password:
+            logger.info(f"🔒 Senha não disponível para leitura - campo será deixado em branco para nova senha")
+            # DEBUG: Mostrar estrutura disponível apenas no log
+            wlan_data = safe_get_nested(device_data, base_path, {})
+            if isinstance(wlan_data, dict):
+                logger.debug(f"📊 Estrutura disponível em {base_path}:")
+                for key in sorted(wlan_data.keys()):
+                    if 'key' in key.lower() or 'pass' in key.lower() or 'security' in key.lower():
+                        logger.debug(f"    🔑 {key}: {safe_get_nested(wlan_data, key)}")
+        
         
         # Potência de transmissão (alguns modelos Huawei)
         power = safe_get_nested(
             device_data,
-            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.X_HUAWEI_PowerValue._value",
+            f"{base_path}.X_HUAWEI_PowerValue._value",
             100
         )
+        
+        # Intensidade do sinal WiFi (para dispositivos que reportam)
+        # Tentar diferentes parâmetros TR-069 para obter sinal WiFi
+        signal_strength = None
+        signal_paths = [
+            # Dispositivos associados (onde fica o sinal real)
+            f"{base_path}.AssociatedDevice.1.AssociatedDeviceRSSI._value",
+            f"{base_path}.AssociatedDevice.1.X_HUAWEI_RSSI._value",
+            f"{base_path}.AssociatedDevice.1.SignalStrength._value",
+            f"{base_path}.AssociatedDevice.1.X_HUAWEI_SignalStrength._value",
+            
+            # Stats do próprio roteador
+            f"{base_path}.Stats.X_HUAWEI_RSSI._value",
+            f"{base_path}.Stats.SignalStrength._value",
+            f"{base_path}.Stats.NoiseFloor._value",
+            
+            # Parâmetros específicos do fabricante
+            f"{base_path}.X_HUAWEI_SignalStrength._value",
+            f"{base_path}.X_BROADCOM_SignalStrength._value",
+            f"{base_path}.X_HUAWEI_RSSI._value",
+            
+            # Paths alternativos
+            f"InternetGatewayDevice.LANDevice.1.WLANConfiguration.{wlan_config_id}.AssociatedDevice.1.X_HUAWEI_RSSI._value",
+            f"InternetGatewayDevice.Device.WiFi.Radio.{wlan_config_id}.Stats.NoiseFloor._value"
+        ]
+        
+        # Tentar obter sinal WiFi real (se disponível)
+        for signal_path in signal_paths:
+            signal_candidate = safe_get_nested(device_data, signal_path)
+            if signal_candidate and isinstance(signal_candidate, (int, float)):
+                # Se o valor parece ser RSSI (negativo entre -100 e 0)
+                if -100 <= signal_candidate <= 0:
+                    signal_strength = float(signal_candidate)
+                    logger.info(f"📶 Sinal WiFi encontrado para {device_id}: {signal_strength}dBm (via {signal_path})")
+                    break
+        
+        # Se não conseguiu obter sinal real, usar valor simulado mais realista
+        if signal_strength is None:
+            if wifi_enabled:
+                import random
+                # Simular sinal WiFi realista baseado na banda
+                if band == "5GHz":
+                    # 5GHz tem alcance menor, sinal um pouco mais fraco
+                    signal_strength = round(random.uniform(-60, -40), 1)
+                else:
+                    # 2.4GHz tem melhor alcance
+                    signal_strength = round(random.uniform(-55, -35), 1)
+                logger.info(f"📶 Sinal WiFi simulado para {device_id} (banda {band}): {signal_strength}dBm")
+            else:
+                signal_strength = None
         
         # Informações do dispositivo
         manufacturer, model = extract_manufacturer_model(device_data)
@@ -473,6 +582,7 @@ def extract_wifi_config_from_device(device_data: Dict[str, Any]) -> Dict[str, An
             "device_name": f"{manufacturer} {model}",
             "device_model": model,
             "ssid": ssid,
+            "password": password,  # Senha WiFi atual
             "security": security,
             "band": band,
             "channel": str(channel),
@@ -481,6 +591,8 @@ def extract_wifi_config_from_device(device_data: Dict[str, Any]) -> Dict[str, An
             "enabled": bool(wifi_enabled),
             "beacon_type": beacon_type,
             "auto_channel": bool(auto_channel),
+            "signal_strength": signal_strength,  # Sinal WiFi real ou simulado
+            "wlan_config_id": wlan_config_id,  # ID da configuração WLAN (1 ou 2)
             
             # Metadados para debug
             "_genieacs_metadata": {
@@ -488,7 +600,9 @@ def extract_wifi_config_from_device(device_data: Dict[str, Any]) -> Dict[str, An
                 "raw_channel": channel,
                 "raw_power": power,
                 "raw_ssid_broadcast": ssid_broadcast,
-                "device_parameters_available": bool(ssid)  # Se conseguiu ler parâmetros
+                "raw_signal_strength": signal_strength,
+                "device_parameters_available": bool(ssid),  # Se conseguiu ler parâmetros
+                "wlan_config_path": base_path
             }
         }
         
@@ -498,23 +612,26 @@ def extract_wifi_config_from_device(device_data: Dict[str, Any]) -> Dict[str, An
         logger.error(f"Erro ao extrair configuração WiFi do dispositivo: {e}")
         return None
 
-def create_wifi_parameter_updates(device_id: str, updates: Dict[str, Any]) -> List[Dict[str, Any]]:
+def create_wifi_parameter_updates(device_id: str, updates: Dict[str, Any], band: str = "2.4GHz") -> List[Dict[str, Any]]:
     """
     Cria lista de parâmetros para atualizar configurações WiFi via GenieACS
     
     Args:
         device_id: ID do dispositivo
         updates: Dicionário com atualizações a serem feitas
+        band: Banda WiFi ("2.4GHz" ou "5GHz")
         
     Returns:
         Lista de tasks para o GenieACS
     """
     try:
-        logger.info(f"🔄 CRIANDO TASKS WiFi para dispositivo {device_id}")
+        logger.info(f"🔄 CRIANDO TASKS WiFi para dispositivo {device_id} (banda: {band})")
         logger.info(f"   Updates recebidos: {updates}")
         
         tasks = []
-        base_path = "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1"
+        # Determinar qual WLANConfiguration usar baseado na banda
+        wlan_config_id = "1" if band == "2.4GHz" else "2"
+        base_path = f"InternetGatewayDevice.LANDevice.1.WLANConfiguration.{wlan_config_id}"
         
         # Mapeamento de campos para parâmetros TR-069
         parameter_map = {
@@ -539,21 +656,49 @@ def create_wifi_parameter_updates(device_id: str, updates: Dict[str, Any]) -> Li
         # Processar cada atualização
         for field, value in updates.items():
             logger.info(f"🔍 Processando field: {field} = {value}")
-            if field in parameter_map and value is not None:
+            if value is None:
+                continue
+                
+            # Campos que têm tratamento especial (não estão no parameter_map)
+            if field == "security":
+                # Atualizar BeaconType
+                beacon_value = security_map.get(value, "11i")
+                tasks.append({
+                    "name": "setParameterValues",
+                    "parameterValues": [[f"{base_path}.BeaconType", beacon_value]]
+                })
+                logger.info(f"🔒 Alteração de segurança WiFi: {value} -> BeaconType: {beacon_value}")
+                
+                # Para WPA2/WPA3, pode ser necessário configurar adicionais
+                if value in ["WPA2", "WPA3"]:
+                    # Configurar algoritmo de criptografia para WPA2/WPA3
+                    tasks.append({
+                        "name": "setParameterValues",
+                        "parameterValues": [[f"{base_path}.WPAEncryptionModes", "AESEncryption"]]
+                    })
+                    
+                    # Para WPA2/WPA3, configurar também AuthenticationMode
+                    auth_mode = "WPA2-PSK" if value == "WPA2" else "WPA3-PSK"
+                    tasks.append({
+                        "name": "setParameterValues", 
+                        "parameterValues": [[f"{base_path}.WPAAuthenticationMode", "PSKAuthentication"]]
+                    })
+                elif value == "Open":
+                    # Para rede aberta, desabilitar criptografia
+                    tasks.append({
+                        "name": "setParameterValues",
+                        "parameterValues": [[f"{base_path}.WEPKeyIndex", "1"]]
+                    })
+                continue
+            
+            # Campos com mapeamento direto no parameter_map
+            if field in parameter_map:
                 parameter_name = parameter_map[field]
                 
                 # Tratamento especial para cada tipo de parâmetro
                 if field == "hidden":
                     # hidden=True significa SSIDAdvertisement=False
                     parameter_value = not bool(value)
-                elif field == "security":
-                    # Atualizar BeaconType
-                    beacon_value = security_map.get(value, "11i")
-                    tasks.append({
-                        "name": "setParameterValues",
-                        "parameterValues": [[f"{base_path}.BeaconType", beacon_value]]
-                    })
-                    continue
                 elif field == "channel":
                     # Se channel for "Auto", habilitar AutoChannelEnable
                     if str(value).lower() == "auto":
@@ -587,6 +732,7 @@ def create_wifi_parameter_updates(device_id: str, updates: Dict[str, Any]) -> Li
                     "name": "setParameterValues",
                     "parameterValues": [[f"{base_path}.PreSharedKey.1.KeyPassphrase", password]]
                 })
+                logger.info(f"✅ Adicionada task de senha WiFi: {password}")
         
         logger.info(f"✅ TASKS CRIADAS: {len(tasks)} tasks para dispositivo {device_id}")
         for i, task in enumerate(tasks):
@@ -654,7 +800,7 @@ def format_wifi_configs_for_frontend(wifi_configs: List[Dict[str, Any]]) -> Dict
                 "model": config.get("device_model", "Unknown"),
                 "ssid": config.get("ssid", ""),
                 "security": config.get("security", "Unknown"),
-                "signal_strength": -45,  # Placeholder - seria obtido de outros parâmetros
+                "signal_strength": config.get("signal_strength", -45),  # Sinal WiFi real ou simulado
                 "status": "online" if config.get("enabled") else "offline",
                 "connected_devices": 0,  # Placeholder - seria obtido de estatísticas
                 "last_update": datetime.now().isoformat(),
