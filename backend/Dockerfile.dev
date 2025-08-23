@@ -1,0 +1,31 @@
+# =================================================================
+# Dockerfile de DESENVOLVIMENTO para o Backend (Python + FastAPI)
+# =================================================================
+
+# Usar uma imagem base do Python moderna e leve
+FROM python:3.11-slim
+
+# Configurar variáveis de ambiente para desenvolvimento em contêiner
+# 1. Impede o Python de criar arquivos .pyc
+# 2. Garante que os logs apareçam em tempo real
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# Definir o diretório de trabalho
+WORKDIR /app
+
+# Copiar o arquivo de dependências e instalar PRIMEIRO
+# Otimização de cache: as dependências só serão reinstaladas
+# se o arquivo requirements.txt for alterado.
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar o restante do código-fonte do backend
+COPY . .
+
+# Expor a porta em que o Uvicorn irá rodar
+EXPOSE 8000
+
+# Comando para iniciar o servidor FastAPI com auto-reload
+# Ideal para desenvolvimento, reinicia o servidor a cada mudança no código.
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
