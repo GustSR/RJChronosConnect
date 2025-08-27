@@ -6,13 +6,25 @@ Este documento descreve as diretrizes e o fluxo de trabalho para os colaboradore
 
 Antes de começar, certifique-se de que seu ambiente de desenvolvimento está configurado conforme o nosso guia: **[Guia do Ambiente de Desenvolvimento](DEVELOPMENT.md)**.
 
+## Estrutura do Projeto
+
+O projeto é um monorepo com os seguintes diretórios principais:
+
+-   `backend/`: A aplicação da API em FastAPI (Python).
+-   `frontend/`: A aplicação de interface em React (TypeScript).
+-   `genieacs/`: Configuração e Dockerfile para o serviço GenieACS.
+-   `infrastructure/`: Arquivos de configuração de infraestrutura (Nginx, etc.).
+-   `DEVELOPMENT.md`, `README.md`: Documentação geral do projeto.
+
+Antes de iniciar uma tarefa, familiarize-se com a pasta relevante.
+
 ## Fluxo de Trabalho (Git)
 
-Adotamos um fluxo de trabalho baseado em **feature branches** a partir da branch `main`.
+Adotamos um fluxo de trabalho baseado em **feature branches** a partir da branch `dev`. A branch `main` é reservada para releases estáveis.
 
 ### 1. Nomenclatura de Branches
 
-Sempre crie uma nova branch a partir da `main` para cada nova tarefa. Use os seguintes prefixos:
+Sempre crie uma nova branch a partir da `dev` para cada nova tarefa. Use os seguintes prefixos:
 
 - `feature/`: Para novas funcionalidades (ex: `feature/login-com-2fa`).
 - `bugfix/`: Para correção de bugs (ex: `bugfix/ajuste-tabela-cpes`).
