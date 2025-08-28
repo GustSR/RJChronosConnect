@@ -3,6 +3,7 @@
 *.env.local
 
 # Ignorar diretórios de dependências
+.venv/
 node_modules/
 backend/__pycache__/
 
@@ -23,5 +24,7 @@ Thumbs.db
 # Ignorar diretórios específicos do projeto
 .local/
 
-# Ignorar arquivos do Gemini
+# Ignorar arquivos do Gemini/Claude
 GEMINI.md
+CLAUDE.md
+.claude

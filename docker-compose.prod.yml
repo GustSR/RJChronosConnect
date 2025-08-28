@@ -1,0 +1,61 @@
+version: '3.8'
+
+# Arquivo de override para o ambiente de produção.
+
+services:
+  reverse-proxy:
+    container_name: rjchronos_proxy_prod
+    restart: always
+
+  frontend:
+    container_name: rjchronos_frontend_prod
+    build:
+      dockerfile: Dockerfile
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  backend:
+    container_name: rjchronos_backend_prod
+    build:
+      dockerfile: Dockerfile
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  genieacs:
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  db-app:
+    container_name: rjchronos_db_app_prod
+    volumes:
+      - postgres_app_data_prod:/var/lib/postgresql/data
+    restart: always
+
+  db-acs:
+    container_name: rjchronos_db_acs_prod
+    volumes:
+      - mongo_acs_data_prod:/data/db
+    restart: always
+
+  redis:
+    container_name: rjchronos_redis_prod
+    restart: always
+
+volumes:
+  postgres_app_data_prod:
+  mongo_acs_data_prod:

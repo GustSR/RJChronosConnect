@@ -1,0 +1,49 @@
+version: '3.8'
+
+# Este arquivo sobrescreve o docker-compose.yml principal para o ambiente de desenvolvimento.
+
+services:
+  frontend:
+    ports:
+      - "3000:80"
+    build:
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./services/frontend:/app
+      - /app/node_modules # Impede que o node_modules local sobrescreva o do contêiner
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  backend:
+    build:
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./services/backend-api:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      - db-app
+
+  # --- Nomes e Volumes Específicos para DEV ---
+  reverse-proxy:
+    container_name: rjchronos_proxy_dev
+  
+  db-app:
+    container_name: rjchronos_db_app_dev
+    volumes:
+      - postgres_app_data_dev:/var/lib/postgresql/data
+
+  db-acs:
+    container_name: rjchronos_db_acs_dev
+    volumes:
+      - mongo_acs_data_dev:/data/db
+
+  redis:
+    container_name: rjchronos_redis_dev
+
+volumes:
+  postgres_app_data_dev:
+  mongo_acs_data_dev:
