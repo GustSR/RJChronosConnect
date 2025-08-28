@@ -12,7 +12,7 @@ Este é o projeto do frontend para a plataforma **RJChronosConnect**. O objetivo
 
 **Desenvolvimento Ativo**
 
-O projeto já possui sua fundação de UI implementada a partir do template **Berry (Material-UI)**. A estrutura de pastas está populada com dezenas de componentes, hooks e páginas, e as principais dependências de UI, gráficos e gerenciamento de estado estão instaladas e salvas no `package.json`.
+O projeto possui uma base de UI customizada, construída com **Material-UI (MUI)**. A estrutura de pastas está populada com dezenas de componentes, hooks e páginas, e as principais dependências de UI, gráficos e gerenciamento de estado estão instaladas e salvas no `package.json`.
 
 O foco atual é conectar os componentes existentes à API real do backend e refinar as funcionalidades.
 
@@ -27,7 +27,7 @@ src/
 ├── components/         # Componentes React reutilizáveis.
 │   ├── common/         # Componentes genéricos (botões, modais, etc.).
 │   ├── layout/         # Componentes de estrutura (Sidebar, Header, Footer).
-│   └── ui/             # Componentes de UI base (ex: Berry/MUI).
+│   └── ui/             # Componentes de UI base.
 ├── hooks/              # Hooks customizados para lógica compartilhada (ex: useApi, useAuth).
 ├── lib/                # Utilitários, instâncias de clientes (axios, queryClient) e configs.
 ├── pages/              # Componentes que representam as páginas completas da aplicação.
@@ -46,10 +46,13 @@ src/
 
 -   **Framework:** React 18 + TypeScript
 -   **Build Tool:** Vite
--   **UI Framework:** Material-UI (MUI)
--   **Template Base:** [Berry - React Material Admin (Free)](https://mui.com/store/items/berry-react-material-admin-free/)
+-   **UI Framework:** Material-UI (MUI) v5
 -   **Gerenciamento de Estado/Cache:** React Query (TanStack Query)
 -   **Roteamento:** React Router
+
+### Nota sobre o Futuro
+
+No futuro, planejamos migrar a base de UI para um template de mercado, como o **Berry - React Material Admin**, para acelerar o desenvolvimento e padronizar o design system.
 
 ---
 
