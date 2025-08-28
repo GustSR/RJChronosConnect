@@ -72,7 +72,7 @@ jobs:
           echo "Aguardando 30 segundos para os serviços estabilizarem..."
           sleep 30
           echo "Verificando healthchecks..."
-          docker-compose -f docker-compose.yml -f docker-compose.prod.yml ps
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
           # O comando abaixo vai falhar se algum contêiner não estiver saudável
           if [ "$(docker compose -f docker-compose.yml -f docker-compose.prod.yml ps | grep -c unhealthy)" -gt 0 ]; then
             echo "!! Um ou mais contêineres não estão saudáveis !!"
