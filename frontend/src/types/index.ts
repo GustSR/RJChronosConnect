@@ -367,3 +367,62 @@ export interface SystemStatus {
     diskUsage: number;
   };
 }
+
+// Activity Log Types
+export interface ActivityLog {
+  id: string;
+  deviceId?: string;
+  deviceName?: string;
+  serialNumber?: string; // Serial Number do dispositivo
+  action: ActivityAction;
+  description: string;
+  executedBy: string | null; // null for automated actions
+  timestamp: Date;
+  status: 'success' | 'failure' | 'pending' | 'cancelled';
+  duration?: string;
+  result?: string;
+  metadata?: {
+    previousValue?: any;
+    newValue?: any;
+    parameters?: Record<string, any>;
+    errorMessage?: string;
+    ipAddress?: string;
+    reason?: string;
+    accessType?: string;
+    username?: string;
+    accessLevel?: string;
+    errorCode?: string;
+    signalStrength?: string;
+  };
+}
+
+export type ActivityAction = 
+  | 'reboot_automatic'
+  | 'reboot_manual'
+  | 'firmware_update'
+  | 'configuration_change'
+  | 'wifi_config_update'
+  | 'wifi_channel_change'
+  | 'provisioning'
+  | 'factory_reset'
+  | 'diagnostic_test'
+  | 'backup_config'
+  | 'restore_config'
+  | 'alert_acknowledged'
+  | 'maintenance_mode'
+  | 'custom_script'
+  | 'device_name_change'      // Alteração de nome do dispositivo
+  | 'password_change'         // Alteração de senha
+  | 'user_credentials_change' // Alteração de credenciais de usuário
+  | 'device_reboot';          // Reinicialização de dispositivo
+
+export interface ActivityHistoryFilter {
+  deviceId?: string;
+  action?: ActivityAction;
+  status?: 'success' | 'failure' | 'pending' | 'cancelled';
+  executedBy?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
+  limit?: number;
+  offset?: number;
+}

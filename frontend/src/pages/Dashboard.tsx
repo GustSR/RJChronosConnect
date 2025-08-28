@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Grid,
@@ -17,7 +18,8 @@ import {
   Refresh,
 } from '@mui/icons-material';
 import { BerryCard, MetricCard, PageHeader } from '../components/common';
-import { useDashboardMetrics, useCPEs, useONUs, useOLTs, useAlerts } from '../hooks/useApi';
+import { ActivityHistory } from '../components/dashboard';
+import { useDashboardMetrics, useCPEs, useONUs, useOLTs } from '../hooks/useApi';
 import {
   LineChart,
   Line,
@@ -43,7 +45,7 @@ const Dashboard: React.FC = () => {
   const { data: cpes, isLoading: cpesLoading } = useCPEs();
   const { data: onus, isLoading: onusLoading } = useONUs();
   const { data: olts, isLoading: oltsLoading } = useOLTs();
-  const { data: alerts, isLoading: alertsLoading } = useAlerts();
+  // const { data: alerts } = useAlerts(); // Commented out until used
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -243,9 +245,9 @@ const Dashboard: React.FC = () => {
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }: { name: string, percent: number }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     >
-                      {deviceTypes.map((entry, index) => (
+                      {deviceTypes.map((entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -392,6 +394,11 @@ const Dashboard: React.FC = () => {
               </Box>
             </CardContent>
           </BerryCard>
+        </Grid>
+
+        {/* Histórico de Atividades */}
+        <Grid item xs={12} lg={6}>
+          <ActivityHistory showRecent maxItems={5} />
         </Grid>
       </Grid>
     </Box>

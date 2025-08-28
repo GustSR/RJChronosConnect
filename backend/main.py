@@ -1,12 +1,20 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from contextlib import asynccontextmanager
 import uvicorn
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from pydantic import BaseModel
 import logging
+import pytz
+
+# Brazil timezone
+BRAZIL_TZ = pytz.timezone('America/Sao_Paulo')
+
+def get_brazil_now():
+    """Get current datetime in Brazil timezone"""
+    return datetime.now(BRAZIL_TZ)
 
 # GenieACS integration imports
 from genieacs_client import get_genieacs_client
@@ -90,6 +98,19 @@ class WiFiConfigUpdate(BaseModel):
     hidden: Optional[bool] = None
     enabled: Optional[bool] = None
 
+class ActivityLog(BaseModel):
+    id: str
+    device_id: Optional[str] = None
+    device_name: Optional[str] = None
+    action: str
+    description: str
+    executed_by: Optional[str] = None
+    timestamp: datetime
+    status: str
+    duration: Optional[str] = None
+    result: Optional[str] = None
+    metadata: Optional[dict] = None
+
 # Mock data
 mock_cpes = [
     CPE(
@@ -158,9 +179,71 @@ mock_user = User(
     created_at=datetime.now()
 )
 
+# Activity history data - now sourced from GenieACS
+# TODO: Implement GenieACS integration for activity tracking
+
+# Activity logging in-memory storage (temporary until GenieACS integration)
+activity_history: List[ActivityLog] = []
+
+async def log_activity(
+    device_id: Optional[str],
+    device_name: Optional[str], 
+    action: str,
+    description: str,
+    executed_by: Optional[str] = "admin",
+    status: str = "success",
+    result: Optional[str] = None,
+    metadata: Optional[dict] = None,
+    serial_number: Optional[str] = None
+):
+    """
+    Helper function to create activity log entries
+    """
+    try:
+        brazil_now = get_brazil_now()
+        activity = ActivityLog(
+            id=f"activity-{int(brazil_now.timestamp())}-{len(activity_history)}",
+            device_id=device_id,
+            device_name=device_name or f"Device {device_id}" if device_id else "Sistema",
+            action=action,
+            description=description,
+            executed_by=executed_by,
+            timestamp=brazil_now,
+            status=status,
+            result=result,
+            metadata=metadata,
+            serialNumber=serial_number
+        )
+        
+        # Add to in-memory storage (insert at beginning for newest first)
+        activity_history.insert(0, activity)
+        
+        # Keep only last 100 activities to prevent memory issues
+        if len(activity_history) > 100:
+            activity_history[:] = activity_history[:100]
+        
+        logger.info(f"📝 Activity logged: {action} for {device_name or device_id}")
+        return activity
+        
+    except Exception as e:
+        logger.error(f"Error logging activity: {e}")
+        return None
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("🚀 RJChronos Backend starting up...")
+    
+    # Add a test activity entry to show the system is working
+    await log_activity(
+        device_id="system",
+        device_name="Sistema RJChronos", 
+        action="system_startup",
+        description="Sistema RJChronos iniciado com sucesso",
+        executed_by=None,
+        status="success",
+        result="Sistema pronto para operação"
+    )
+    
     yield
     logger.info("🛑 RJChronos Backend shutting down...")
 
@@ -453,6 +536,24 @@ async def update_device_wifi_config(device_id: str, updates: WiFiConfigUpdate, b
         # Retornar configuração atualizada
         logger.info(f"Aplicadas {success_count}/{len(tasks)} configurações WiFi no dispositivo {device_id}")
         
+        # Log activity
+        await log_activity(
+            device_id=device_id,
+            device_name=device_data.get("deviceId", {}).get("_value", device_id),
+            action="wifi_config_update",
+            description=f"Configurações WiFi atualizadas: {', '.join(update_dict.keys())}",
+            executed_by="admin",
+            status="success" if success_count > 0 else "failure",
+            result=f"Aplicadas {success_count}/{len(tasks)} configurações com sucesso",
+            metadata={
+                "applied_updates": update_dict,
+                "band": band,
+                "tasks_executed": success_count,
+                "total_tasks": len(tasks)
+            },
+            serial_number=device_data.get("device_id", {}).get("_value")
+        )
+        
         return {
             "success": True,
             "message": f"Configurações WiFi atualizadas ({success_count}/{len(tasks)} sucessos)",
@@ -486,6 +587,18 @@ async def refresh_device_wifi_config(device_id: str):
         if not success:
             raise HTTPException(status_code=500, detail="Falha ao executar refresh")
         
+        # Log activity
+        await log_activity(
+            device_id=device_id,
+            device_name=device_data.get("deviceId", {}).get("_value", device_id),
+            action="device_refresh",
+            description="Refresh das configurações WiFi solicitado",
+            executed_by="admin",
+            status="success",
+            result="Refresh executado com sucesso",
+            serial_number=device_data.get("device_id", {}).get("_value")
+        )
+
         return {
             "success": True,
             "message": "Refresh de configurações WiFi solicitado",
@@ -517,6 +630,18 @@ async def refresh_device_ip_parameters(device_id: str):
         if not success:
             raise HTTPException(status_code=500, detail="Falha ao executar refresh de IP")
         
+        # Log activity
+        await log_activity(
+            device_id=device_id,
+            device_name=device_data.get("deviceId", {}).get("_value", device_id),
+            action="ip_refresh",
+            description="Refresh dos parâmetros IP solicitado",
+            executed_by="admin",
+            status="success",
+            result="Refresh de parâmetros IP executado com sucesso",
+            serial_number=device_data.get("device_id", {}).get("_value")
+        )
+
         return {
             "success": True,
             "message": "Refresh de parâmetros IP solicitado",
@@ -528,5 +653,164 @@ async def refresh_device_ip_parameters(device_id: str):
     except Exception as e:
         logger.error(f"Erro ao fazer refresh IP do dispositivo {device_id}: {e}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+# Activity History endpoints
+@app.get("/api/activity-history", response_model=List[ActivityLog])
+async def get_activity_history(
+    device_id: Optional[str] = Query(None, description="Filter by device ID"),
+    action: Optional[str] = Query(None, description="Filter by action type"),
+    status: Optional[str] = Query(None, description="Filter by status"),
+    executed_by: Optional[str] = Query(None, description="Filter by executor"),
+    date_from: Optional[datetime] = Query(None, description="Filter from date"),
+    date_to: Optional[datetime] = Query(None, description="Filter to date"),
+    limit: Optional[int] = Query(50, description="Limit results"),
+    offset: Optional[int] = Query(0, description="Offset for pagination")
+):
+    """
+    Get activity history with optional filters
+    
+    TODO: Integrate with GenieACS to fetch real device activity history
+    - Connect to GenieACS database/events
+    - Track device parameter changes
+    - Monitor device reboots and configuration updates
+    - Extract serial numbers and device information
+    """
+    try:
+        # Use in-memory activity history (temporary until GenieACS integration)
+        logger.info(f"📋 Activity history request: {len(activity_history)} activities available")
+        
+        # Apply filters
+        filtered_activities = activity_history.copy()
+        
+        if device_id:
+            filtered_activities = [a for a in filtered_activities if a.device_id == device_id]
+        if action:
+            filtered_activities = [a for a in filtered_activities if a.action == action]
+        if status:
+            filtered_activities = [a for a in filtered_activities if a.status == status]
+        if executed_by:
+            filtered_activities = [a for a in filtered_activities if a.executed_by == executed_by]
+        if date_from:
+            filtered_activities = [a for a in filtered_activities if a.timestamp >= date_from]
+        if date_to:
+            filtered_activities = [a for a in filtered_activities if a.timestamp <= date_to]
+        
+        # Apply pagination
+        total = len(filtered_activities)
+        if offset:
+            filtered_activities = filtered_activities[offset:]
+        if limit:
+            filtered_activities = filtered_activities[:limit]
+        
+        logger.info(f"📋 Returning {len(filtered_activities)} activities (total: {total})")
+        return filtered_activities
+        
+    except Exception as e:
+        logger.error(f"Error fetching activity history: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+@app.get("/api/activity-history/{activity_id}", response_model=ActivityLog)
+async def get_activity_by_id(activity_id: str):
+    """
+    Get specific activity by ID
+    """
+    try:
+        # Search in in-memory activity history
+        activity = next((a for a in activity_history if a.id == activity_id), None)
+        if not activity:
+            raise HTTPException(status_code=404, detail="Activity not found")
+        
+        return activity
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching activity {activity_id}: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+@app.get("/api/activity-history/device/{device_id}", response_model=List[ActivityLog])
+async def get_device_activity_history(
+    device_id: str,
+    limit: Optional[int] = Query(20, description="Limit results")
+):
+    """
+    Get activity history for a specific device
+    TODO: Implement GenieACS integration to fetch device activity history
+    """
+    try:
+        # Filter activities for specific device
+        device_activities = [a for a in activity_history if a.device_id == device_id]
+        device_activities.sort(key=lambda x: x.timestamp, reverse=True)
+        
+        if limit:
+            device_activities = device_activities[:limit]
+        
+        logger.info(f"📱 Device {device_id} activity history: {len(device_activities)} results")
+        return device_activities
+        
+    except Exception as e:
+        logger.error(f"Error fetching device {device_id} activity history: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+@app.post("/api/activity-history", response_model=ActivityLog)
+async def create_activity_log(activity: ActivityLog):
+    """
+    Create a new activity log entry
+    TODO: Implement GenieACS integration to save activity logs
+    """
+    try:
+        # TODO: Save activity to GenieACS or database
+        brazil_now = get_brazil_now()
+        activity.timestamp = brazil_now
+        if not activity.id:
+            activity.id = f"activity-temp-{int(brazil_now.timestamp())}"
+        
+        logger.info(f"📝 Activity log creation request: {activity.action} for device {activity.device_id} - GenieACS integration pending")
+        return activity
+        
+    except Exception as e:
+        logger.error(f"Error creating activity log: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+@app.get("/api/activity-history/stats")
+async def get_activity_stats():
+    """
+    Get activity statistics
+    TODO: Implement GenieACS integration to fetch activity statistics
+    """
+    try:
+        # Calculate statistics from in-memory activity history
+        brazil_now = get_brazil_now()
+        last_24h = brazil_now - timedelta(hours=24)
+        last_7d = brazil_now - timedelta(days=7)
+        
+        stats = {
+            "total_activities": len(activity_history),
+            "last_24h": len([a for a in activity_history if a.timestamp >= last_24h]),
+            "last_7d": len([a for a in activity_history if a.timestamp >= last_7d]),
+            "by_status": {
+                "success": len([a for a in activity_history if a.status == "success"]),
+                "failure": len([a for a in activity_history if a.status == "failure"]),
+                "pending": len([a for a in activity_history if a.status == "pending"]),
+                "cancelled": len([a for a in activity_history if a.status == "cancelled"])
+            },
+            "by_action": {},
+            "automated_vs_manual": {
+                "automated": len([a for a in activity_history if a.executed_by is None]),
+                "manual": len([a for a in activity_history if a.executed_by is not None])
+            }
+        }
+        
+        # Count by action type
+        actions = set(a.action for a in activity_history)
+        for action in actions:
+            stats["by_action"][action] = len([a for a in activity_history if a.action == action])
+        
+        logger.info(f"📊 Activity stats: {stats['total_activities']} total activities")
+        return stats
+        
+    except Exception as e:
+        logger.error(f"Error fetching activity stats: {e}")
+        raise HTTPException(status_code=500, detail="Erro internal do servidor")
 
 

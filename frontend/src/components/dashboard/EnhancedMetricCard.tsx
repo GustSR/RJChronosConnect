@@ -1,265 +1,242 @@
-import React from 'react';
+import * as React from 'react';
 import {
   Card,
   CardContent,
   Typography,
   Box,
-  IconButton,
-  Chip,
   LinearProgress,
-  Tooltip
+  Chip,
 } from '@mui/material';
-import {
-  TrendingUp,
-  TrendingDown,
-  TrendingFlat,
-  MoreVert,
-  InfoOutlined
-} from '@mui/icons-material';
-import { formatPercentage, getStatusColor } from '@/utils';
+import { TrendingUp, TrendingDown, Minus, Activity, Zap, Wifi, Users } from 'lucide-react';
+
+interface Trend {
+  direction: 'up' | 'down' | 'stable';
+  value: string;
+}
 
 interface EnhancedMetricCardProps {
   title: string;
-  value: number | string;
-  previousValue?: number;
-  unit?: string;
+  value: string | number;
   icon?: React.ReactNode;
-  color?: string;
-  trend?: 'up' | 'down' | 'flat';
-  trendValue?: number;
-  status?: 'healthy' | 'warning' | 'critical';
-  target?: number;
-  description?: string;
-  showProgress?: boolean;
+  trend?: Trend;
+  subtitle?: string;
+  progress?: number;
+  status?: 'healthy' | 'warning' | 'error' | 'info';
   onClick?: () => void;
-  onMenuClick?: () => void;
-  gradient?: boolean;
-  size?: 'small' | 'medium' | 'large';
+  className?: string;
 }
 
 const EnhancedMetricCard: React.FC<EnhancedMetricCardProps> = ({
   title,
   value,
-  previousValue,
-  unit = '',
   icon,
-  color = '#2196f3',
   trend,
-  trendValue,
-  status,
-  target,
-  description,
-  showProgress = false,
+  subtitle,
+  progress,
+  status = 'healthy',
   onClick,
-  onMenuClick,
-  gradient = true,
-  size = 'medium'
+  className = '',
 }) => {
-  const getTrendIcon = () => {
-    switch (trend) {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'healthy':
+        return '#22c55e';
+      case 'warning':
+        return '#f59e0b';
+      case 'error':
+        return '#ef4444';
+      case 'info':
+        return '#3b82f6';
+      default:
+        return '#64748b';
+    }
+  };
+
+  const getTrendIcon = (direction: string) => {
+    switch (direction) {
       case 'up':
-        return <TrendingUp sx={{ color: '#4caf50', fontSize: 20 }} />;
+        return <TrendingUp size={14} color="#22c55e" />;
       case 'down':
-        return <TrendingDown sx={{ color: '#f44336', fontSize: 20 }} />;
-      case 'flat':
-        return <TrendingFlat sx={{ color: '#ff9800', fontSize: 20 }} />;
+        return <TrendingDown size={14} color="#ef4444" />;
+      case 'stable':
+        return <Minus size={14} color="#64748b" />;
       default:
         return null;
     }
   };
 
-  const getTrendColor = () => {
-    switch (trend) {
+  const getTrendColor = (direction: string) => {
+    switch (direction) {
       case 'up':
-        return '#4caf50';
+        return '#22c55e';
       case 'down':
-        return '#f44336';
-      case 'flat':
-        return '#ff9800';
+        return '#ef4444';
+      case 'stable':
+        return '#64748b';
       default:
-        return '#666';
+        return '#64748b';
     }
-  };
-
-  const getStatusChip = () => {
-    if (!status) return null;
-
-    const statusConfig = {
-      healthy: { label: 'Saudável', color: '#4caf50' },
-      warning: { label: 'Atenção', color: '#ff9800' },
-      critical: { label: 'Crítico', color: '#f44336' }
-    };
-
-    const config = statusConfig[status];
-    return (
-      <Chip
-        size="small"
-        label={config.label}
-        sx={{
-          backgroundColor: config.color,
-          color: 'white',
-          fontSize: '0.75rem',
-          height: 20
-        }}
-      />
-    );
-  };
-
-  const getProgressValue = () => {
-    if (!target || typeof value !== 'number') return 0;
-    return Math.min((value / target) * 100, 100);
-  };
-
-  const cardHeight = {
-    small: 120,
-    medium: 160,
-    large: 200
-  };
-
-  const valueSize = {
-    small: 'h5',
-    medium: 'h4',
-    large: 'h3'
   };
 
   return (
     <Card
-      sx={{
-        height: cardHeight[size],
-        background: gradient
-          ? `linear-gradient(135deg, ${color}15 0%, ${color}25 100%)`
-          : 'background.paper',
-        border: `1px solid ${color}30`,
-        cursor: onClick ? 'pointer' : 'default',
-        transition: 'all 0.3s ease',
-        '&:hover': onClick ? {
-          transform: 'translateY(-2px)',
-          boxShadow: `0 8px 25px ${color}40`
-        } : {},
-        position: 'relative',
-        overflow: 'hidden'
-      }}
+      className={`bg-dark-card border-gray-700 hover:border-gray-600 transition-colors cursor-pointer ${className}`}
       onClick={onClick}
+      sx={{
+        background: 'rgba(30, 41, 59, 0.8)',
+        backdropFilter: 'blur(10px)',
+        border: '1px solid rgba(71, 85, 105, 0.4)',
+        '&:hover': {
+          border: '1px solid rgba(71, 85, 105, 0.6)',
+        },
+      }}
     >
-      {/* Background decoration */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: -20,
-          right: -20,
-          width: 80,
-          height: 80,
-          borderRadius: '50%',
-          background: `${color}20`,
-          opacity: 0.3
-        }}
-      />
-
-      <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 2 }}>
-        {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+      <CardContent sx={{ p: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {icon && (
-              <Box sx={{ color: color, display: 'flex', alignItems: 'center' }}>
+              <Box sx={{ color: getStatusColor(status), display: 'flex', alignItems: 'center' }}>
                 {icon}
               </Box>
             )}
-            <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 500 }}>
+            <Typography variant="body2" sx={{ color: '#94a3b8', fontWeight: 500 }}>
               {title}
             </Typography>
-            {description && (
-              <Tooltip title={description} arrow>
-                <InfoOutlined sx={{ fontSize: 16, color: 'text.disabled', cursor: 'help' }} />
-              </Tooltip>
-            )}
           </Box>
           
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {getStatusChip()}
-            {onMenuClick && (
-              <IconButton size="small" onClick={(e) => { e.stopPropagation(); onMenuClick(); }}>
-                <MoreVert fontSize="small" />
-              </IconButton>
-            )}
-          </Box>
-        </Box>
-
-        {/* Value */}
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <Typography
-            variant={valueSize[size] as any}
-            component="div"
-            sx={{
-              fontWeight: 'bold',
-              color: color,
-              mb: 0.5,
-              display: 'flex',
-              alignItems: 'baseline',
-              gap: 0.5
-            }}
-          >
-            {value}
-            {unit && (
-              <Typography variant="body2" component="span" color="text.secondary">
-                {unit}
-              </Typography>
-            )}
-          </Box>
-
-          {/* Trend */}
           {trend && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-              {getTrendIcon()}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              {getTrendIcon(trend.direction)}
               <Typography
-                variant="body2"
-                sx={{ color: getTrendColor(), fontWeight: 500 }}
+                variant="caption"
+                sx={{
+                  color: getTrendColor(trend.direction),
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                }}
               >
-                {trendValue !== undefined && (
-                  <>
-                    {trend === 'up' ? '+' : trend === 'down' ? '-' : ''}
-                    {Math.abs(trendValue)}
-                    {typeof trendValue === 'number' && trendValue < 1 ? '%' : ''}
-                  </>
-                )}
-                {previousValue && typeof value === 'number' && (
-                  <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                    vs {previousValue}
-                  </Typography>
-                )}
+                {trend.value}
               </Typography>
             </Box>
           )}
+        </Box>
 
-          {/* Progress */}
-          {showProgress && target && typeof value === 'number' && (
-            <Box sx={{ mt: 'auto' }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                <Typography variant="caption" color="text.secondary">
-                  Progresso
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {formatPercentage(value, target)}
-                </Typography>
-              </Box>
-              <LinearProgress
-                variant="determinate"
-                value={getProgressValue()}
-                sx={{
-                  height: 4,
-                  borderRadius: 2,
-                  backgroundColor: `${color}20`,
-                  '& .MuiLinearProgress-bar': {
-                    backgroundColor: color,
-                    borderRadius: 2
-                  }
-                }}
-              />
+        <Typography
+          variant="h4"
+          sx={{
+            color: 'white',
+            fontWeight: 700,
+            mb: subtitle ? 1 : 2,
+            fontSize: '2rem',
+          }}
+        >
+          {value}
+        </Typography>
+
+        {subtitle && (
+          <Typography variant="body2" sx={{ color: '#64748b', mb: 2 }}>
+            {subtitle}
+          </Typography>
+        )}
+
+        {progress !== undefined && (
+          <Box sx={{ mb: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+              <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                Utilização
+              </Typography>
+              <Typography variant="caption" sx={{ color: getStatusColor(status) }}>
+                {progress}%
+              </Typography>
             </Box>
+            <LinearProgress
+              variant="determinate"
+              value={progress}
+              sx={{
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: 'rgba(71, 85, 105, 0.3)',
+                '& .MuiLinearProgress-bar': {
+                  backgroundColor: getStatusColor(status),
+                  borderRadius: 3,
+                },
+              }}
+            />
+          </Box>
+        )}
+
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Chip
+            label={status.toUpperCase()}
+            size="small"
+            sx={{
+              backgroundColor: `${getStatusColor(status)}20`,
+              color: getStatusColor(status),
+              fontSize: '0.7rem',
+              fontWeight: 600,
+              height: 20,
+              border: `1px solid ${getStatusColor(status)}40`,
+            }}
+          />
+          
+          {onClick && (
+            <Typography variant="caption" sx={{ color: '#64748b' }}>
+              Clique para detalhes
+            </Typography>
           )}
         </Box>
       </CardContent>
     </Card>
   );
 };
+
+// Componentes pré-configurados para métricas comuns
+export const DevicesMetricCard: React.FC = () => (
+  <EnhancedMetricCard
+    title="Dispositivos Ativos"
+    value="1,247"
+    icon={<Activity size={20} />}
+    trend={{ direction: 'up', value: '+5.2%' }}
+    subtitle="Últimas 24h"
+    progress={85}
+    status="healthy"
+  />
+);
+
+export const BandwidthMetricCard: React.FC = () => (
+  <EnhancedMetricCard
+    title="Largura de Banda"
+    value="892 Mbps"
+    icon={<Zap size={20} />}
+    trend={{ direction: 'down', value: '-2.1%' }}
+    subtitle="Pico atual"
+    progress={67}
+    status="warning"
+  />
+);
+
+export const ConnectionsMetricCard: React.FC = () => (
+  <EnhancedMetricCard
+    title="Conexões WiFi"
+    value="3,456"
+    icon={<Wifi size={20} />}
+    trend={{ direction: 'up', value: '+12.3%' }}
+    subtitle="Conexões ativas"
+    progress={92}
+    status="healthy"
+  />
+);
+
+export const UsersMetricCard: React.FC = () => (
+  <EnhancedMetricCard
+    title="Usuários Online"
+    value="2,891"
+    icon={<Users size={20} />}
+    trend={{ direction: 'stable', value: '0.0%' }}
+    subtitle="Últimos 5 min"
+    progress={73}
+    status="info"
+  />
+);
 
 export default EnhancedMetricCard;

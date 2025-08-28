@@ -81,12 +81,54 @@ services:
       start_period: 30s
 
   # --- SERVIÇOS ADICIONAIS GENIEACS ---
+  
+  # Simulador Huawei HG8245H
+  genieacs-sim-huawei:
+    depends_on:
+      genieacs:
+        condition: service_healthy
+    image: drumsergio/genieacs-sim:latest
+    container_name: "rjchronos_genieacs-sim-huawei_dev"
+    volumes:
+      - ./genieacs-sim-configs:/opt/genieacs-sim/configs:ro
+    command: ["node", "/opt/genieacs-sim/genieacs-sim", "-u", "http://genieacs:7547/", "-m", "/opt/genieacs-sim/configs/huawei_hg8245h.json", "-s", "1", "-p", "3"]
+    networks:
+      - rjchronos-net
+
+  # Simulador Fiberhome AN5506
+  genieacs-sim-fiberhome:
+    depends_on:
+      genieacs:
+        condition: service_healthy
+    image: drumsergio/genieacs-sim:latest
+    container_name: "rjchronos_genieacs-sim-fiberhome_dev"
+    volumes:
+      - ./genieacs-sim-configs:/opt/genieacs-sim/configs:ro
+    command: ["node", "/opt/genieacs-sim/genieacs-sim", "-u", "http://genieacs:7547/", "-m", "/opt/genieacs-sim/configs/fiberhome_an5506.json", "-s", "100", "-p", "3"]
+    networks:
+      - rjchronos-net
+
+  # Simulador ZTE F670L
+  genieacs-sim-zte:
+    depends_on:
+      genieacs:
+        condition: service_healthy
+    image: drumsergio/genieacs-sim:latest
+    container_name: "rjchronos_genieacs-sim-zte_dev"
+    volumes:
+      - ./genieacs-sim-configs:/opt/genieacs-sim/configs:ro
+    command: ["node", "/opt/genieacs-sim/genieacs-sim", "-u", "http://genieacs:7547/", "-m", "/opt/genieacs-sim/configs/zte_f670l.json", "-s", "200", "-p", "3"]
+    networks:
+      - rjchronos-net
+
+  # Simulador Original (BM632w)
   genieacs-sim:
     depends_on:
       genieacs:
         condition: service_healthy
     image: drumsergio/genieacs-sim:latest
     container_name: "rjchronos_genieacs-sim_dev"
+    command: ["node", "/opt/genieacs-sim/genieacs-sim", "-u", "http://genieacs:7547/", "-s", "300", "-p", "2"]
     networks:
       - rjchronos-net
 
