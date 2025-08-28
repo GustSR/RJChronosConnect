@@ -1,9 +1,12 @@
+version: '3.8'
 
+# Arquivo base do Docker Compose.
+# Contém a definição de todos os serviços, redes e volumes que são comuns
+# a todos os ambientes (desenvolvimento, produção, etc.).
 
 services:
   reverse-proxy:
     image: nginx:stable-alpine
-    container_name: rjchronos_proxy_prod
     ports:
       - "8081:80"
     volumes:
@@ -16,20 +19,14 @@ services:
       - genieacs
 
   frontend:
-    container_name: rjchronos_frontend_prod
     build:
       context: ./services/frontend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000" # Adicionado para expor a porta do frontend
     networks:
       - rjchronos-net
 
   backend:
-    container_name: rjchronos_backend_prod
     build:
       context: ./services/backend-api
-      dockerfile: Dockerfile
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
       - GENIACS_API_URL=http://genieacs:7557/
@@ -39,15 +36,13 @@ services:
       - db-app
 
   genieacs:
-    container_name: rjchronos_genieacs
     build:
       context: ./services/genieacs
-      dockerfile: Dockerfile
     ports:
       - "7547:7547"
       - "7557:7557"
       - "7567:7567"
-      - "3001:3000" # Alterado para evitar conflito com o frontend
+      - "3001:3000"
     environment:
       - GENIEACS_MONGODB_CONNECTION_URL=mongodb://db-acs:27017/genieacs
       - GENIEACS_REDIS_HOST=redis
@@ -60,27 +55,20 @@ services:
 
   db-app:
     image: postgres:15-alpine
-    container_name: rjchronos_db_app_prod
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
-    volumes:
-      - postgres_app_data:/var/lib/postgresql/data
     networks:
       - rjchronos-net
 
   db-acs:
     image: mongo:8.0
-    container_name: rjchronos_db_acs_prod
-    volumes:
-      - mongo_acs_data:/data/db
     networks:
       - rjchronos-net
 
   redis:
     image: redis:alpine
-    container_name: rjchronos_redis_prod
     networks:
       - rjchronos-net
 

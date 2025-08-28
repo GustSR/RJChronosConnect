@@ -1,55 +1,82 @@
 # Nome do Workflow
-name: CI - Build e Teste
+name: CI - Build e Teste por Ambiente
 
 # Gatilhos: Quando o workflow deve rodar
 on:
-  # Roda em pushes para a branch principal
   push:
-    branches: [ "main" ]
-  # Roda em pull requests que têm a branch main como alvo
+    branches: [ "main", "dev" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
 
 # Tarefas a serem executadas
 jobs:
-  # Nome da tarefa
-  build-and-test:
+  # --- Tarefa para o ambiente de Desenvolvimento ---
+  test-dev-environment:
+    # Nome da tarefa
+    name: Teste do Ambiente de Desenvolvimento
+    # Roda apenas em eventos na branch 'dev'
+    if: github.ref == 'refs/heads/dev' || github.base_ref == 'dev'
     # Máquina virtual onde a tarefa vai rodar
     runs-on: ubuntu-latest
 
     steps:
-      # Passo 1: Baixar o código do repositório para a máquina virtual
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      # Passo 2: Configurar o QEMU para builds multi-plataforma (boa prática)
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
-      # Passo 3: Configurar o Docker Buildx (builder moderno do Docker)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Passo 4: Fazer login no Docker Hub (opcional, necessário para imagens privadas)
-      # - name: Login to Docker Hub
-      #   uses: docker/login-action@v3
-      #   with:
-      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
-      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Construir e Iniciar os Serviços (Dev)
+        run: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
 
-      # Passo 5: Construir todas as imagens definidas no docker-compose
-      # Este é o nosso principal teste de integração por enquanto.
-      # Se este passo falhar, significa que um Dockerfile está quebrado.
-      - name: Construir imagens Docker
-        run: docker compose build
+      - name: Verificar contêineres em execução
+        run: docker-compose -f docker-compose.yml -f docker-compose.dev.yml ps
 
-      # --- Passos Futuros (descomentar quando os testes e linters estiverem prontos) ---
-      # - name: Rodar Linters
+      # Futuramente, adicionar testes e linters para o ambiente de dev aqui
+      # Exemplo:
+      # - name: Rodar Testes (Dev)
       #   run: |
-      #     docker-compose run --rm backend ruff check .
-      #     docker-compose run --rm frontend npm run lint
+      #     docker-compose -f docker-compose.yml -f docker-compose.dev.yml run --rm backend pytest
+      #     docker-compose -f docker-compose.yml -f docker-compose.dev.yml run --rm frontend npm test
 
-      # - name: Rodar Testes
-      #   run: |
-      #     docker-compose run --rm backend pytest
-      #     docker-compose run --rm frontend npm test
+  # --- Tarefa para o ambiente de Produção ---
+  test-prod-environment:
+    # Nome da tarefa
+    name: Teste do Ambiente de Produção
+    # Roda apenas em eventos na branch 'main'
+    if: github.ref == 'refs/heads/main' || github.base_ref == 'main'
+    # Máquina virtual onde a tarefa vai rodar
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Construir e Iniciar os Serviços (Prod)
+        run: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+
+      - name: Verificar contêineres em execução
+        run: docker-compose -f docker-compose.yml -f docker-compose.prod.yml ps
+
+      - name: Verificar Healthchecks (Prod)
+        run: |
+          echo "Aguardando 30 segundos para os serviços estabilizarem..."
+          sleep 30
+          echo "Verificando healthchecks..."
+          docker-compose -f docker-compose.yml -f docker-compose.prod.yml ps
+          # O comando abaixo vai falhar se algum contêiner não estiver saudável
+          if [ "$(docker-compose -f docker-compose.yml -f docker-compose.prod.yml ps | grep -c unhealthy)" -gt 0 ]; then
+            echo "!! Um ou mais contêineres não estão saudáveis !!"
+            exit 1
+          else
+            echo "** Todos os contêineres estão saudáveis **"
+          fi
