@@ -33,7 +33,7 @@ jobs:
         run: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
 
       - name: Verificar contêineres em execução
-        run: docker-compose -f docker-compose.yml -f docker-compose.dev.yml ps
+        run: docker compose -f docker-compose.yml -f docker-compose.dev.yml ps
 
       # Futuramente, adicionar testes e linters para o ambiente de dev aqui
       # Exemplo:
@@ -61,16 +61,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Install Docker Compose
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y docker-compose
-
       - name: Construir e Iniciar os Serviços (Prod)
-        run: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+        run: docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 
       - name: Verificar contêineres em execução
-        run: docker-compose -f docker-compose.yml -f docker-compose.prod.yml ps
+        run: docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
 
       - name: Verificar Healthchecks (Prod)
         run: |
@@ -79,7 +74,7 @@ jobs:
           echo "Verificando healthchecks..."
           docker-compose -f docker-compose.yml -f docker-compose.prod.yml ps
           # O comando abaixo vai falhar se algum contêiner não estiver saudável
-          if [ "$(docker-compose -f docker-compose.yml -f docker-compose.prod.yml ps | grep -c unhealthy)" -gt 0 ]; then
+          if [ "$(docker compose -f docker-compose.yml -f docker-compose.prod.yml ps | grep -c unhealthy)" -gt 0 ]; then
             echo "!! Um ou mais contêineres não estão saudáveis !!"
             exit 1
           else
