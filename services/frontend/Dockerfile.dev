@@ -5,7 +5,7 @@
 # Estágio 1: Usar uma imagem base do Node.js leve e específica
 # Usamos a versão 20, conforme indicado pelas dependências de desenvolvimento.
 # 'alpine' é uma versão mínima, ideal para desenvolvimento e produção.
-FROM node:18-alpine AS development
+FROM node:20-alpine AS development
 
 # Definir o diretório de trabalho dentro do contêiner
 WORKDIR /app
