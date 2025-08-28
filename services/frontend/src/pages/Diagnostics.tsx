@@ -82,7 +82,7 @@ const diagnosticTests = [
     name: 'Teste de Velocidade',
     type: 'speedtest',
     description: 'Mede velocidade de download e upload',
-    duration: '2min',
+        duration: '2min',
     lastRun: '2024-01-15T10:25:00Z',
     status: 'completed',
     result: 'success',
@@ -437,7 +437,7 @@ export default function Diagnostics() {
                           {runningTest === test.id ? 'Executando...' : 'Executar'}
                         </Button>
                         <IconButton size="small" color="primary">
-                          <Visibility />
+                          <Visibility fontSize="small" />
                         </IconButton>
                       </Box>
                     </CardContent>

@@ -6,14 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Search, 
-  Filter, 
-  Plus, 
-  MoreHorizontal, 
-  Router, 
-  Wifi, 
-  Settings, 
+import {
+  Search,
+  Filter,
+  Plus,
+  MoreHorizontal,
+  Router,
+  Wifi,
+  Settings,
   RefreshCw,
   Download,
   Upload,

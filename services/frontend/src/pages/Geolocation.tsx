@@ -75,7 +75,7 @@ const customerLocations = [
     signal: -45.2,
     plan: 'Fibra 200MB'
   },
-  { 
+  {
     id: 'cust-003', 
     name: 'Cliente 003', 
     address: 'Rua Ipanema, 789 - Ipanema', 

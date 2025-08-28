@@ -230,7 +230,7 @@ const Dashboard: React.FC = () => {
         <Grid item xs={12} lg={4}>
           <BerryCard>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+              <Typography variant="h6" fontWeight={600} gutterBottom>
                 📱 Tipos de Dispositivos
               </Typography>
               <Box sx={{ height: 300 }}>
@@ -261,7 +261,7 @@ const Dashboard: React.FC = () => {
         <Grid item xs={12} md={6}>
           <BerryCard>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+              <Typography variant="h6" fontWeight={600} gutterBottom>
                 🚨 Alertas por Hora
               </Typography>
               

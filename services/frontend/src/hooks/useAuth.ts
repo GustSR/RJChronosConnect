@@ -1,4 +1,4 @@
- import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
  import type { User as UserType } from "@shared/schema";
 
  // Narrow unknown data coming from React Query into our UserType shape

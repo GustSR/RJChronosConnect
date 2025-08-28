@@ -1,80 +1,174 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box, Chip } from '@mui/material';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
+  Box,
+  Typography,
+  IconButton,
+  Tooltip,
+} from '@mui/material';
+import {
+  Visibility,
+  Edit,
+  Delete,
+} from '@mui/icons-material';
+import BerryCard from './BerryCard';
 
-interface DataTableProps {
-  title: string;
-  columns: Array<{
-    key: string;
-    label: string;
-    render?: (value: any, row: any) => React.ReactNode;
-  }>;
-  data: any[];
-  actions?: React.ReactNode;
+interface Column {
+  id: string;
+  label: string;
+  minWidth?: number;
+  align?: 'right' | 'left' | 'center';
+  format?: (value: any) => string | React.ReactNode;
 }
 
-const DataTable: React.FC<DataTableProps> = ({ title, columns, data, actions }) => {
+interface DataTableProps {
+  title?: string;
+  columns: Column[];
+  data: any[];
+  page?: number;
+  rowsPerPage?: number;
+  totalCount?: number;
+  onPageChange?: (event: unknown, newPage: number) => void;
+  onRowsPerPageChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onView?: (row: any) => void;
+  onEdit?: (row: any) => void;
+  onDelete?: (row: any) => void;
+  loading?: boolean;
+  emptyMessage?: string;
+}
+
+const DataTable: React.FC<DataTableProps> = ({
+  title,
+  columns,
+  data,
+  page = 0,
+  rowsPerPage = 10,
+  totalCount,
+  onPageChange,
+  onRowsPerPageChange,
+  onView,
+  onEdit,
+  onDelete,
+  loading = false,
+  emptyMessage = 'Nenhum dado encontrado'
+}) => {
+  const hasActions = onView || onEdit || onDelete;
+
   return (
-    <Card sx={{ boxShadow: '0 2px 8px 0 rgba(0, 0, 0, 0.08)', borderRadius: 2 }}>
-      <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+    <BerryCard gradient={false}>
+      {title && (
+        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+          <Typography variant="h6" fontWeight={600}>
             {title}
           </Typography>
-          {actions && <Box>{actions}</Box>}
         </Box>
-        
-        <Box sx={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                {columns.map((column) => (
-                  <th 
-                    key={column.key} 
-                    style={{ 
-                      textAlign: 'left', 
-                      padding: '12px 16px', 
-                      borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-                      color: '#64748b',
-                      fontWeight: 600,
-                      fontSize: '0.875rem'
-                    }}
-                  >
-                    {column.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((row, rowIndex) => (
-                <tr 
-                  key={rowIndex} 
-                  style={{ 
-                    backgroundColor: rowIndex % 2 === 0 ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
-                    '&:hover': {
-                      backgroundColor: 'rgba(0, 0, 0, 0.04)'
-                    }
-                  }}
+      )}
+      
+      <TableContainer>
+        <Table stickyHeader>
+          <TableHead>
+            <TableRow>
+              {columns.map((column) => (
+                <TableCell
+                  key={column.id}
+                  align={column.align}
+                  style={{ minWidth: column.minWidth }}
+                  sx={{ fontWeight: 600 }}
                 >
-                  {columns.map((column) => (
-                    <td 
-                      key={column.key} 
-                      style={{ 
-                        padding: '12px 16px', 
-                        borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-                        color: '#1e293b',
-                        fontSize: '0.875rem'
-                      }}
-                    >
-                      {column.render ? column.render(row[column.key], row) : row[column.key]}
-                    </td>
-                  ))}
-                </tr>
+                  {column.label}
+                </TableCell>
               ))}
-            </tbody>
-          </table>
-        </Box>
-      </CardContent>
-    </Card>
+              {hasActions && (
+                <TableCell align="center" sx={{ fontWeight: 600 }}>
+                  Ações
+                </TableCell>
+              )}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={columns.length + (hasActions ? 1 : 0)} align="center">
+                  <Typography variant="body2" color="text.secondary">
+                    Carregando...
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : data.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={columns.length + (hasActions ? 1 : 0)} align="center">
+                  <Typography variant="body2" color="text.secondary">
+                    {emptyMessage}
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              data.map((row, index) => (
+                <TableRow hover key={index}>
+                  {columns.map((column) => {
+                    const value = row[column.id];
+                    return (
+                      <TableCell key={column.id} align={column.align}>
+                        {column.format ? column.format(value) : value}
+                      </TableCell>
+                    );
+                  })}
+                  {hasActions && (
+                    <TableCell align="center">
+                      <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                        {onView && (
+                          <Tooltip title="Visualizar">
+                            <IconButton size="small" color="primary" onClick={() => onView(row)}>
+                              <Visibility fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        {onEdit && (
+                          <Tooltip title="Editar">
+                            <IconButton size="small" color="secondary" onClick={() => onEdit(row)}>
+                              <Edit fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        {onDelete && (
+                          <Tooltip title="Excluir">
+                            <IconButton size="small" color="error" onClick={() => onDelete(row)}>
+                              <Delete fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Box>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {(onPageChange || onRowsPerPageChange) && (
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25, 50]}
+          component="div"
+          count={totalCount || data.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={onPageChange || (() => {})}
+          onRowsPerPageChange={onRowsPerPageChange || (() => {})}
+          labelRowsPerPage="Linhas por página:"
+          labelDisplayedRows={({ from, to, count }) => 
+            `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
+          }
+        />
+      )}
+    </BerryCard>
   );
 };
 

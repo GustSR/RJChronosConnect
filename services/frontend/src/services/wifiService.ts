@@ -5,83 +5,26 @@
 
 import apiClient from './api';
 
-export interface WiFiConfig {
-  device_id: string;
-  device_name: string;
-  device_model: string;
-  ssid: string;
-  password?: string;
-  security: string;
-  band?: string;
-  channel?: string;
-  power?: number;
-  hidden: boolean;
-  enabled: boolean;
-  beacon_type?: string;
-  auto_channel?: boolean;
-}
+import type {
+  WiFiConfig,
+  WiFiConfigUpdate,
+  WiFiProfile,
+  WiFiDevice,
+  WiFiStats,
+  WiFiData,
+  WiFiUpdateResponse,
+} from '@/types';
 
-export interface WiFiConfigUpdate {
-  ssid?: string;
-  security?: string;
-  password?: string;
-  band?: string;
-  channel?: string;
-  power?: number;
-  hidden?: boolean;
-  enabled?: boolean;
-}
-
-export interface WiFiProfile {
-  id: string;
-  name: string;
-  ssid: string;
-  security: string;
-  band: string;
-  channel: string;
-  power: number;
-  hidden: boolean;
-  enabled: boolean;
-  status: string;
-  applied_devices: number;
-  devices: WiFiConfig[];
-}
-
-export interface WiFiDevice {
-  id: string;
-  name: string;
-  model: string;
-  ssid: string;
-  security: string;
-  signal_strength: number;
-  status: string;
-  connected_devices: number;
-  last_update: string;
-  wifi_config: WiFiConfig;
-}
-
-export interface WiFiStats {
-  total_profiles: number;
-  active_profiles: number;
-  total_devices: number;
-  online_devices: number;
-  avg_signal: number;
-  total_connections: number;
-}
-
-export interface WiFiData {
-  profiles: WiFiProfile[];
-  devices: WiFiDevice[];
-  stats: WiFiStats;
-}
-
-export interface WiFiUpdateResponse {
-  success: boolean;
-  message: string;
-  applied_updates: Record<string, any>;
-  tasks_executed: number;
-  total_tasks: number;
-}
+// Re-export the types so other files that import from here still work
+export type {
+  WiFiConfig,
+  WiFiConfigUpdate,
+  WiFiProfile,
+  WiFiDevice,
+  WiFiStats,
+  WiFiData,
+  WiFiUpdateResponse,
+};
 
 /**
  * Get all WiFi configurations from all devices

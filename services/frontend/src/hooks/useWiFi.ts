@@ -18,7 +18,7 @@ import {
 const WIFI_QUERY_KEYS = {
   all: ['wifi'] as const,
   configs: () => [...WIFI_QUERY_KEYS.all, 'configs'] as const,
-  deviceConfig: (deviceId: string, band?: string) => [...WIFI_QUERY_KEYS.all, 'device', deviceId, band] as const,
+  deviceConfig: (deviceId: string) => [...WIFI_QUERY_KEYS.all, 'device', deviceId] as const,
 };
 
 /**
@@ -36,10 +36,10 @@ export const useWiFiConfigs = () => {
 /**
  * Hook to get WiFi configuration for a specific device
  */
-export const useDeviceWiFiConfig = (deviceId: string, band: string = "2.4GHz") => {
+export const useDeviceWiFiConfig = (deviceId: string) => {
   return useQuery<WiFiConfig>({
-    queryKey: WIFI_QUERY_KEYS.deviceConfig(deviceId, band),
-    queryFn: () => getDeviceWiFiConfig(deviceId, band),
+    queryKey: WIFI_QUERY_KEYS.deviceConfig(deviceId),
+    queryFn: () => getDeviceWiFiConfig(deviceId),
     enabled: !!deviceId,
     staleTime: 30000, // 30 seconds
   });
@@ -51,12 +51,12 @@ export const useDeviceWiFiConfig = (deviceId: string, band: string = "2.4GHz") =
 export const useUpdateDeviceWiFiConfig = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<WiFiUpdateResponse, Error, { deviceId: string; updates: WiFiConfigUpdate; band?: string }>({
-    mutationFn: ({ deviceId, updates, band = "2.4GHz" }) => updateDeviceWiFiConfig(deviceId, updates, band),
-    onSuccess: (data, { deviceId, band = "2.4GHz" }) => {
+  return useMutation<WiFiUpdateResponse, Error, { deviceId: string; updates: WiFiConfigUpdate }>({
+    mutationFn: ({ deviceId, updates }) => updateDeviceWiFiConfig(deviceId, updates),
+    onSuccess: (data, { deviceId }) => {
       // Invalidate and refetch WiFi configs
       queryClient.invalidateQueries({ queryKey: WIFI_QUERY_KEYS.configs() });
-      queryClient.invalidateQueries({ queryKey: WIFI_QUERY_KEYS.deviceConfig(deviceId, band) });
+      queryClient.invalidateQueries({ queryKey: WIFI_QUERY_KEYS.deviceConfig(deviceId) });
       
       // Also invalidate device lists that might show WiFi info
       queryClient.invalidateQueries({ queryKey: ['devices', 'cpes'] });

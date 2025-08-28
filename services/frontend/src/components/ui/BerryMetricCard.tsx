@@ -31,7 +31,7 @@ export default function BerryMetricCard({
       case 'secondary':
         return `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.primary.main} 100%)`;
       case 'success':
-        return `linear-gradient(135deg, ${theme.palette.success.main} 0%, #4caf50 100%)`;
+        return `linear-gradient(135deg, ${theme.palette.success.main} 0%, #4ade80 100%)`;
       case 'warning':
         return `linear-gradient(135deg, ${theme.palette.warning.main} 0%, #ff9800 100%)`;
       case 'info':

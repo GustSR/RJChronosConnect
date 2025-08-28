@@ -134,7 +134,6 @@ export const useAdvancedFilters = <T>(
     activeFiltersCount,
     addFilter,
     removeFilter,
-    clearFilters,
     setSearchTerm: debouncedSetSearchTerm,
     handleSort,
     filterConfigs

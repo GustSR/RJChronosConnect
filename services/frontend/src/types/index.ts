@@ -62,6 +62,7 @@ export interface Alert {
   title: string;
   description: string;
   timestamp: Date;
+  createdAt: Date;
   status: 'active' | 'acknowledged' | 'resolved';
   severity: 1 | 2 | 3 | 4 | 5;
   assignedTo?: string;
@@ -366,4 +367,98 @@ export interface SystemStatus {
     memoryUsage: number;
     diskUsage: number;
   };
+}
+
+// WiFi Specific Types
+export interface WiFiStats {
+  totalProfiles: number;
+  activeProfiles: number;
+  totalDevices: number;
+  onlineDevices: number;
+  avgSignal: number;
+  totalConnections: number;
+}
+
+export interface WiFiProfile {
+  id: string;
+  name: string;
+  ssid: string;
+  security: string;
+  band: string;
+  channel: string | number;
+  power: number;
+  hidden: boolean;
+  guestNetwork: boolean;
+  status: string;
+  appliedDevices: number;
+}
+
+export interface WiFiDevice {
+  id: string;
+  name: string;
+  customer: string;
+  currentProfile: string;
+  ssid: string;
+  connectedDevices: number;
+  signalStrength: number;
+  status: string;
+  lastUpdate: string;
+  model: string;
+  wifiConfig: {
+    security: string;
+    channel: number;
+    power: number;
+    hidden: boolean;
+    enabled: boolean;
+  };
+}
+
+// Dashboard & Schema Types
+export interface AIInsight {
+  id: string;
+  type: 'recommendation' | 'prediction' | 'anomaly';
+  title: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high';
+  timestamp: Date;
+  confidence: number;
+  relatedEntities?: { id: string; type: string; }[];
+}
+
+export interface ActionLog {
+  id: string;
+  user: string;
+  action: string;
+  timestamp: Date;
+  details: Record<string, any>;
+  description: string;
+  executedBy: string | null;
+  createdAt: Date;
+  status: 'success' | 'failure';
+}
+
+export interface WiFiConfig {
+  ssid: string;
+  security: string;
+  channel: string | number;
+  power: number;
+  hidden: boolean;
+  enabled: boolean;
+  band?: string;
+  password?: string;
+}
+
+export type WiFiConfigUpdate = Partial<WiFiConfig>;
+
+export interface WiFiData {
+  profiles: WiFiProfile[];
+  devices: WiFiDevice[];
+  stats: WiFiStats;
+}
+
+export interface WiFiUpdateResponse {
+  success: boolean;
+  message: string;
+  tasksExecuted: number;
+  totalTasks: number;
 }

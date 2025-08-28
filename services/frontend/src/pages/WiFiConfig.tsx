@@ -40,7 +40,6 @@ import {
   CircularProgress,
   Alert,
   Snackbar,
-  InputAdornment,
 } from '@mui/material';
 import {
   Wifi,
@@ -49,7 +48,6 @@ import {
   Speed,
   Settings,
   Visibility,
-  VisibilityOff,
   Edit,
   Delete,
   Add,
@@ -68,7 +66,7 @@ import {
   Error,
 } from '@mui/icons-material';
 import { useWiFiConfigs, useUpdateDeviceWiFiConfig, useRefreshDeviceWiFiConfig } from '@/hooks/useWiFi';
-import { WiFiConfigUpdate, getDeviceWiFiConfig } from '@/services/wifiService';
+import { WiFiConfigUpdate } from '@/services/wifiService';
 
 // Mock WiFi profiles data (kept for fallback)
 const wifiProfiles = [
@@ -258,9 +256,6 @@ export default function WiFiConfig() {
   });
   const [deviceUpdate, setDeviceUpdate] = useState<WiFiConfigUpdate>({});
   const [originalDeviceData, setOriginalDeviceData] = useState<WiFiConfigUpdate>({});
-  const [selectedBand, setSelectedBand] = useState<string>("2.4GHz");
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoadingBandData, setIsLoadingBandData] = useState(false);
   const theme = useTheme();
 
   // React Query hooks
@@ -298,70 +293,23 @@ export default function WiFiConfig() {
     }
   };
 
-  const loadBandConfiguration = async (deviceId: string, band: string) => {
-    setIsLoadingBandData(true);
-    try {
-      const config = await getDeviceWiFiConfig(deviceId, band);
-      
-      const configData = {
-        ssid: config.ssid,
-        password: '', // Sempre em branco pois não conseguimos ler
-        security: config.security,
-        band: config.band,
-        channel: config.channel?.toString() || 'Auto', // Garantir que seja string
-        power: config.power,
-        hidden: config.hidden,
-        enabled: config.enabled,
+  const handleEditDevice = (deviceId: string) => {
+    const device = wifiData?.devices.find(d => d.id === deviceId);
+    if (device) {
+      const originalData = {
+        ssid: device.wifi_config.ssid,
+        security: device.wifi_config.security,
+        band: device.wifi_config.band,
+        channel: device.wifi_config.channel,
+        power: device.wifi_config.power,
+        hidden: device.wifi_config.hidden,
+        enabled: device.wifi_config.enabled,
       };
       
-      // Atualizar com dados reais da API
-      setOriginalDeviceData(configData);
-      setDeviceUpdate(configData);
-    } catch (error) {
-      setSnackbar({ 
-        open: true, 
-        message: `Erro ao carregar configuração da banda ${band}`, 
-        severity: 'error' 
-      });
-    } finally {
-      setIsLoadingBandData(false);
-    }
-  };
-
-  const handleEditDevice = (deviceId: string) => {
-    setSelectedDevice(deviceId);
-    setShowEditDevice(true);
-    
-    // Carregar dados iniciais do cache se disponível (para não começar vazio)
-    if (wifiData?.devices) {
-      const deviceConfig = wifiData.devices.find(d => d.id === deviceId);
-      if (deviceConfig) {
-        const initialData = {
-          ssid: deviceConfig.ssid || '',
-          password: '', // Sempre em branco
-          security: deviceConfig.wifi_config?.security || 'WPA2',
-          band: selectedBand,
-          channel: deviceConfig.wifi_config?.channel?.toString() || 'Auto',
-          power: deviceConfig.wifi_config?.power || 100,
-          hidden: deviceConfig.wifi_config?.hidden || false,
-          enabled: deviceConfig.wifi_config?.enabled !== false,
-        };
-        
-        setOriginalDeviceData(initialData);
-        setDeviceUpdate(initialData);
-      }
-    }
-    
-    // Carregar dados específicos da API
-    loadBandConfiguration(deviceId, selectedBand);
-  };
-
-  const handleBandChange = (newBand: string) => {
-    setSelectedBand(newBand);
-    
-    if (selectedDevice) {
-      // Carregar dados reais da nova banda
-      loadBandConfiguration(selectedDevice, newBand);
+      setSelectedDevice(deviceId);
+      setOriginalDeviceData(originalData);
+      setDeviceUpdate(originalData);
+      setShowEditDevice(true);
     }
   };
 
@@ -372,23 +320,16 @@ export default function WiFiConfig() {
     const changedFields: WiFiConfigUpdate = {};
     Object.keys(deviceUpdate).forEach((key) => {
       const typedKey = key as keyof WiFiConfigUpdate;
-      
-      // Para password, incluir se foi alterado ou se é diferente do original
-      if (typedKey === 'password') {
-        const currentPassword = deviceUpdate[typedKey] || '';
-        const originalPassword = originalDeviceData[typedKey] || '';
-        if (currentPassword !== originalPassword && currentPassword.trim() !== '') {
-          changedFields[typedKey] = currentPassword;
-        }
-        return;
-      }
-      
-      // Para outros campos, verificar se realmente mudou
       if (deviceUpdate[typedKey] !== originalDeviceData[typedKey]) {
         changedFields[typedKey] = deviceUpdate[typedKey];
       }
     });
 
+    console.log('🚀 ENVIANDO UPDATE DEVICE:');
+    console.log('  Device ID:', selectedDevice);
+    console.log('  Dados originais:', originalDeviceData);
+    console.log('  Dados atuais:', deviceUpdate);
+    console.log('  Campos alterados:', changedFields);
 
     if (Object.keys(changedFields).length === 0) {
       setSnackbar({ open: true, message: 'Nenhuma alteração detectada', severity: 'info' });
@@ -398,10 +339,10 @@ export default function WiFiConfig() {
     try {
       const result = await updateDeviceConfig.mutateAsync({
         deviceId: selectedDevice,
-        updates: changedFields,
-        band: selectedBand
+        updates: changedFields
       });
       
+      console.log('✅ RESULTADO DO UPDATE:', result);
       
       setSnackbar({ 
         open: true, 
@@ -412,7 +353,6 @@ export default function WiFiConfig() {
       setSelectedDevice(null);
       setDeviceUpdate({});
       setOriginalDeviceData({});
-      setSelectedBand("2.4GHz");
     } catch (error) {
       setSnackbar({ open: true, message: 'Erro ao atualizar configuração do dispositivo', severity: 'error' });
     }
@@ -644,14 +584,10 @@ export default function WiFiConfig() {
                       <TableCell>
                         <Typography 
                           variant="body2" 
-                          color={
-                            device.signal_strength >= -50 ? 'success.main' : 
-                            device.signal_strength >= -70 ? 'warning.main' : 
-                            'error.main'
-                          }
+                          color={device.signal_strength > -50 ? 'success.main' : 'warning.main'}
                           fontWeight={600}
                         >
-                          {device.signal_strength ? `${device.signal_strength}dBm` : 'N/A'}
+                          {device.signal_strength}dBm
                         </Typography>
                       </TableCell>
                       <TableCell>{getStatusChip(device.status)}</TableCell>
@@ -732,11 +668,21 @@ export default function WiFiConfig() {
             
             <Stack spacing={3}>
               <FormControlLabel
-                control={<Switch defaultChecked />}
+                control={
+                  <Switch
+                    checked={newProfile.hidden}
+                    onChange={(e) => setNewProfile({ ...newProfile, hidden: e.target.checked })}
+                  />
+                }
                 label="Aplicar configurações automaticamente"
               />
               <FormControlLabel
-                control={<Switch defaultChecked />}
+                control={
+                  <Switch
+                    checked={newProfile.guestNetwork}
+                    onChange={(e) => setNewProfile({ ...newProfile, guestNetwork: e.target.checked })}
+                  />
+                }
                 label="Backup automático de configurações"
               />
               <FormControlLabel
@@ -891,7 +837,6 @@ export default function WiFiConfig() {
         setSelectedDevice(null);
         setDeviceUpdate({});
         setOriginalDeviceData({});
-        setSelectedBand("2.4GHz");
       }} maxWidth="md" fullWidth>
         <DialogTitle>Editar Configuração WiFi</DialogTitle>
         <DialogContent>
@@ -902,11 +847,6 @@ export default function WiFiConfig() {
                 label="SSID"
                 value={deviceUpdate.ssid || ''}
                 onChange={(e) => setDeviceUpdate({ ...deviceUpdate, ssid: e.target.value })}
-                disabled={isLoadingBandData}
-                placeholder={isLoadingBandData ? 'Carregando...' : ''}
-                InputLabelProps={{
-                  shrink: true, // Sempre manter label fora do campo
-                }}
               />
             </Grid>
             
@@ -917,8 +857,7 @@ export default function WiFiConfig() {
                   value={deviceUpdate.security || 'WPA2'}
                   label="Segurança"
                   onChange={(e) => setDeviceUpdate({ ...deviceUpdate, security: e.target.value })}
-                  disabled={isLoadingBandData}
-                  >
+                >
                   <MenuItem value="WPA3">WPA3</MenuItem>
                   <MenuItem value="WPA2">WPA2</MenuItem>
                   <MenuItem value="WEP">WEP</MenuItem>
@@ -927,32 +866,14 @@ export default function WiFiConfig() {
               </FormControl>
             </Grid>
             
-            {((deviceUpdate.security && deviceUpdate.security !== 'Open') || isLoadingBandData) && (
+            {deviceUpdate.security && deviceUpdate.security !== 'Open' && (
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Senha"
-                  type={showPassword ? 'text' : 'password'}
+                  label="Nova Senha (deixe em branco para não alterar)"
+                  type="password"
                   value={deviceUpdate.password || ''}
                   onChange={(e) => setDeviceUpdate({ ...deviceUpdate, password: e.target.value })}
-                  disabled={isLoadingBandData}
-                  placeholder="Digite a nova senha"
-                  InputLabelProps={{
-                    shrink: true, // Sempre manter label fora do campo
-                  }}
-                    InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowPassword(!showPassword)}
-                          edge="end"
-                          size="small"
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
                 />
               </Grid>
             )}
@@ -961,11 +882,10 @@ export default function WiFiConfig() {
               <FormControl fullWidth>
                 <InputLabel>Banda</InputLabel>
                 <Select
-                  value={selectedBand}
+                  value={deviceUpdate.band || '2.4GHz'}
                   label="Banda"
-                  onChange={(e) => handleBandChange(e.target.value)}
-                  disabled={isLoadingBandData}
-                  >
+                  onChange={(e) => setDeviceUpdate({ ...deviceUpdate, band: e.target.value })}
+                >
                   <MenuItem value="2.4GHz">2.4GHz</MenuItem>
                   <MenuItem value="5GHz">5GHz</MenuItem>
                   <MenuItem value="Dual">Dual Band</MenuItem>
@@ -974,40 +894,12 @@ export default function WiFiConfig() {
             </Grid>
             
             <Grid item xs={12} md={4}>
-              <FormControl fullWidth>
-                <InputLabel>Canal</InputLabel>
-                <Select
-                  value={deviceUpdate.channel || 'Auto'}
-                  label="Canal"
-                  onChange={(e) => setDeviceUpdate({ ...deviceUpdate, channel: e.target.value })}
-                  disabled={isLoadingBandData}
-                >
-                  <MenuItem value="Auto">Auto</MenuItem>
-                  {selectedBand === '2.4GHz' ? (
-                    // Canais 2.4GHz (1-13)
-                    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(channel => (
-                      <MenuItem key={channel} value={channel.toString()}>{channel}</MenuItem>
-                    ))
-                  ) : selectedBand === '5GHz' ? (
-                    // Canais 5GHz mais comuns
-                    [36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165].map(channel => (
-                      <MenuItem key={channel} value={channel.toString()}>{channel}</MenuItem>
-                    ))
-                  ) : (
-                    // Dual Band - mostrar todos
-                    <>
-                      <MenuItem disabled>2.4GHz</MenuItem>
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(channel => (
-                        <MenuItem key={`2.4-${channel}`} value={channel.toString()}>{channel}</MenuItem>
-                      ))}
-                      <MenuItem disabled>5GHz</MenuItem>
-                      {[36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165].map(channel => (
-                        <MenuItem key={`5-${channel}`} value={channel.toString()}>{channel}</MenuItem>
-                      ))}
-                    </>
-                  )}
-                </Select>
-              </FormControl>
+              <TextField
+                fullWidth
+                label="Canal"
+                value={deviceUpdate.channel || 'Auto'}
+                onChange={(e) => setDeviceUpdate({ ...deviceUpdate, channel: e.target.value })}
+              />
             </Grid>
             
             <Grid item xs={12} md={4}>
@@ -1017,11 +909,7 @@ export default function WiFiConfig() {
                 type="number"
                 value={deviceUpdate.power || 100}
                 onChange={(e) => setDeviceUpdate({ ...deviceUpdate, power: parseInt(e.target.value) })}
-                disabled={isLoadingBandData}
                 inputProps={{ min: 1, max: 100 }}
-                InputLabelProps={{
-                  shrink: true, // Sempre manter label fora do campo
-                }}
               />
             </Grid>
             
@@ -1056,17 +944,13 @@ export default function WiFiConfig() {
             setSelectedDevice(null);
             setDeviceUpdate({});
             setOriginalDeviceData({});
-            setSelectedBand("2.4GHz");
           }}>Cancelar</Button>
           <Button 
             variant="contained" 
             onClick={handleUpdateDevice}
-            disabled={updateDeviceConfig.isPending || isLoadingBandData}
+            disabled={updateDeviceConfig.isPending}
           >
-            {updateDeviceConfig.isPending ? 'Atualizando...' : 
-             isLoadingBandData ? (
-               <span style={{ color: '#ffffff' }}>Carregando...</span>
-             ) : 'Atualizar'}
+            {updateDeviceConfig.isPending ? 'Atualizando...' : 'Atualizar'}
           </Button>
         </DialogActions>
       </Dialog>

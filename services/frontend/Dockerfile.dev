@@ -19,7 +19,7 @@ COPY package*.json ./
 RUN npm install
 
 # Copiar todo o resto do código-fonte do frontend
-COPY . .
+# COPY . . # Removido para usar bind mounts no docker-compose.dev.yml
 
 # Expor a porta padrão do Vite para o ambiente Docker
 # O mapeamento final será feito no docker-compose.yml

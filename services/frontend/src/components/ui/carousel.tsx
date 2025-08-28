@@ -53,7 +53,7 @@ const Carousel = React.forwardRef<
       className,
       children,
       ...props
-    },
+    },\ No newline at end of file
     ref
   ) => {
     const [carouselRef, api] = useEmblaCarousel(
