@@ -26,6 +26,42 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
       - db-app
+      - redis
+      - rabbitmq
+
+  # --- Novos Serviços ---
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rjchronos_rabbitmq_dev
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - rjchronos-net
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+    volumes:
+      - rabbitmq_data_dev:/var/lib/rabbitmq # Persistência de dados em dev
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running", "-q"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  works:
+    build:
+      context: ./services/works
+      dockerfile: Dockerfile.dev
+    container_name: rjchronos_works_dev
+    volumes:
+      - ./services/works:/app
+    networks:
+      - rjchronos-net
+    depends_on:
+      - rabbitmq
+      - redis
+    command: python -u main.py
 
   # --- Nomes e Volumes Específicos para DEV ---
   reverse-proxy:
@@ -43,7 +79,25 @@ services:
 
   redis:
     container_name: rjchronos_redis_dev
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data_dev:/data # Persistência de dados em dev
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_app_data_dev:
   mongo_acs_data_dev:
+  rabbitmq_data_dev:
+  redis_data_dev:
+
+networks:
+  rjchronos-net:
+    driver: bridge

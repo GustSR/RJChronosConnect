@@ -13,7 +13,7 @@ services:
       dockerfile: Dockerfile
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,12 +24,42 @@ services:
     build:
       dockerfile: Dockerfile
     restart: always
+    depends_on:
+      - db-app
+      - redis
+      - rabbitmq
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
+
+  works:
+    container_name: rjchronos_works_prod
+    build:
+      context: ./services/works
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      - rabbitmq
+      - redis
+
+  rabbitmq:
+    container_name: rjchronos_rabbitmq_prod
+    image: rabbitmq:3-management-alpine
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+    volumes:
+      - ./infrastructure/config/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - rabbitmq_data_prod:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running", "-q"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   genieacs:
     restart: always
@@ -55,7 +85,18 @@ services:
   redis:
     container_name: rjchronos_redis_prod
     restart: always
+    command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - ./infrastructure/config/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - redis_data_prod:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_app_data_prod:
   mongo_acs_data_prod:
+  rabbitmq_data_prod:
+  redis_data_prod:

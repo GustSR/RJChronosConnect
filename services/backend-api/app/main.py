@@ -7,6 +7,11 @@ from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel
 import logging
+import pika
+import redis
+import json
+import uuid
+import asyncio
 
 # GenieACS integration imports
 from app.services.genieacs_client import get_genieacs_client
@@ -530,3 +535,86 @@ async def refresh_device_ip_parameters(device_id: str):
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
+# --- Task Queue Endpoints ---
+
+# Pydantic model for the task request
+class TaskRequest(BaseModel):
+    device_id: str
+    action: str
+    parameters: Optional[dict] = None
+
+# RabbitMQ connection parameters
+RABBITMQ_HOST = 'rabbitmq'
+TASK_QUEUE = 'task_queue'
+
+# Redis connection parameters
+REDIS_HOST = 'redis'
+REDIS_PORT = 6379
+RESULTS_LIST = 'task_results'
+
+def get_redis_client():
+    """Creates a Redis client."""
+    return redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
+
+def publish_task_to_rabbitmq(message: dict):
+    """
+    Connects to RabbitMQ and publishes a task message.
+    This is a blocking function.
+    """
+    try:
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
+        channel = connection.channel()
+        channel.queue_declare(queue=TASK_QUEUE, durable=True)
+        channel.basic_publish(
+            exchange='',
+            routing_key=TASK_QUEUE,
+            body=json.dumps(message),
+            properties=pika.BasicProperties(
+                delivery_mode=2,  # make message persistent
+            ))
+        connection.close()
+        logger.info(f"Task {message.get('task_id')} for device {message.get('device_id')} sent to queue.")
+    except pika.exceptions.AMQPConnectionError as e:
+        logger.error(f"Failed to connect to RabbitMQ: {e}")
+        # Re-raise the exception to be caught by the endpoint
+        raise
+
+@app.post("/api/v1/tasks", status_code=202)
+async def create_task(task_request: TaskRequest):
+    """
+    Creates a new task and sends it to the processing queue.
+    """
+    task_id = str(uuid.uuid4())
+    message = {
+        "task_id": task_id,
+        "device_id": task_request.device_id,
+        "action": task_request.action,
+        "parameters": task_request.parameters
+    }
+    
+    try:
+        # Run the blocking publisher function in a separate thread
+        await asyncio.to_thread(publish_task_to_rabbitmq, message)
+        return {"message": "Task accepted for processing", "task_id": task_id}
+    except Exception as e:
+        # Catch exceptions from the thread
+        logger.error(f"An unexpected error occurred while creating a task: {e}")
+        raise HTTPException(status_code=503, detail="Message broker is unavailable")
+
+
+@app.get("/api/v1/tasks/results", response_model=List[dict])
+async def get_task_results(limit: int = 100):
+    """
+    Retrieves the latest task results from the results store.
+    """
+    try:
+        r = get_redis_client()
+        results_json = r.lrange(RESULTS_LIST, 0, limit - 1)
+        results = [json.loads(item) for item in results_json]
+        return results
+    except redis.exceptions.ConnectionError as e:
+        logger.error(f"Failed to connect to Redis: {e}")
+        raise HTTPException(status_code=503, detail="Result store is unavailable")
+    except Exception as e:
+        logger.error(f"An unexpected error occurred while fetching results: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
