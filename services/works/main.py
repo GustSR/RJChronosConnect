@@ -3,21 +3,35 @@ import pika, json, time, os, redis
 def connect_to_rabbitmq():
     """Tenta se conectar ao RabbitMQ com retentativas."""
     rabbitmq_host = os.getenv('RABBITMQ_HOST', 'rabbitmq')
+    rabbitmq_user = os.getenv('RABBITMQ_DEFAULT_USER', 'user')
+    rabbitmq_pass = os.getenv('RABBITMQ_DEFAULT_PASS', 'password')
+    credentials = pika.PlainCredentials(rabbitmq_user, rabbitmq_pass)
+    
     while True:
         try:
-            connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbitmq_host))
+            connection = pika.BlockingConnection(
+                pika.ConnectionParameters(host=rabbitmq_host, credentials=credentials)
+            )
             print("Conectado ao RabbitMQ com sucesso!")
             return connection
-        except pika.exceptions.AMQPConnectionError as e:
-            print(f"Erro ao conectar ao RabbitMQ: {e}. Tentando novamente em 5 segundos...")
+        except Exception as e:
+            print(f"Erro inesperado ao conectar ao RabbitMQ: {e}. Tentando novamente em 5 segundos...")
             time.sleep(5)
 
 def connect_to_redis():
     """Tenta se conectar ao Redis com retentativas."""
     redis_host = os.getenv('REDIS_HOST', 'redis')
+    redis_password = os.getenv('REDIS_PASSWORD', 'password')
+    
     while True:
         try:
-            r = redis.Redis(host=redis_host, port=6379, db=0, decode_responses=True)
+            r = redis.Redis(
+                host=redis_host,
+                port=6379,
+                db=0,
+                password=redis_password,
+                decode_responses=True
+            )
             r.ping()
             print("Conectado ao Redis com sucesso!")
             return r

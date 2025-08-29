@@ -28,6 +28,10 @@ services:
       - db-app
       - redis
       - rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
 
   # --- Novos Serviços ---
   rabbitmq:
@@ -62,6 +66,10 @@ services:
       - rabbitmq
       - redis
     command: python -u main.py
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
 
   # --- Nomes e Volumes Específicos para DEV ---
   reverse-proxy:

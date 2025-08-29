@@ -535,6 +535,10 @@ async def refresh_device_ip_parameters(device_id: str):
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
+import os
+
+# ... (other imports)
+
 # --- Task Queue Endpoints ---
 
 # Pydantic model for the task request
@@ -544,25 +548,38 @@ class TaskRequest(BaseModel):
     parameters: Optional[dict] = None
 
 # RabbitMQ connection parameters
-RABBITMQ_HOST = 'rabbitmq'
+RABBITMQ_HOST = os.getenv('RABBITMQ_HOST', 'rabbitmq')
 TASK_QUEUE = 'task_queue'
 
 # Redis connection parameters
-REDIS_HOST = 'redis'
+REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
 REDIS_PORT = 6379
 RESULTS_LIST = 'task_results'
 
 def get_redis_client():
     """Creates a Redis client."""
-    return redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
+    redis_password = os.getenv('REDIS_PASSWORD', 'password')
+    return redis.Redis(
+        host=REDIS_HOST,
+        port=REDIS_PORT,
+        db=0,
+        password=redis_password,
+        decode_responses=True
+    )
 
 def publish_task_to_rabbitmq(message: dict):
     """
     Connects to RabbitMQ and publishes a task message.
     This is a blocking function.
     """
+    rabbitmq_user = os.getenv('RABBITMQ_DEFAULT_USER', 'user')
+    rabbitmq_pass = os.getenv('RABBITMQ_DEFAULT_PASS', 'password')
+    credentials = pika.PlainCredentials(rabbitmq_user, rabbitmq_pass)
+
     try:
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host=RABBITMQ_HOST, credentials=credentials)
+        )
         channel = connection.channel()
         channel.queue_declare(queue=TASK_QUEUE, durable=True)
         channel.basic_publish(
