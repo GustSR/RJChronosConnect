@@ -28,3 +28,16 @@ Thumbs.db
 GEMINI.md
 CLAUDE.md
 .claude
+
+# Ignorar arquivos temporários de documentação
+*.md.tmp
+*_UPDATE.md
+*_FEATURE.md
+*_SUMMARY.md
+
+# Ignorar diretório dist do frontend (build)
+frontend/dist/
+
+# Ignorar prints e capturas de tela
+prints/
+screenshots/

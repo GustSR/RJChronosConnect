@@ -1,23 +1,28 @@
-# Etapa 1: Usar uma imagem oficial e leve do Node.js
 FROM node:20-alpine
 
-# Instalar curl para o healthcheck
+# Instalar curl para health check
 RUN apk add --no-cache curl
 
-# Etapa 2: Definir o diretório de trabalho dentro do contêiner
 WORKDIR /app
 
-# Etapa 3: Copiar os arquivos de definição de dependências para cache
-COPY package*.json ./
+# Copy package files
+COPY package.json package-lock.json* ./
 
-# Etapa 4: Instalar as dependências do projeto
-RUN npm install --legacy-peer-deps
+# Install dependencies first
+RUN npm ci --include=dev 2>/dev/null || npm install --include=dev --legacy-peer-deps
 
-# Etapa 5: Copiar todo o resto do código-fonte do frontend
+# Copy source code AFTER installing deps
 COPY . .
 
-# Etapa 6: Expor a porta 3000, conforme definido em vite.config.ts
+# Force install polyfills
+RUN npm install buffer process --save-dev || true
+
+# Expose port
 EXPOSE 3000
 
-# Etapa 7: Definir o comando padrão para iniciar o servidor de desenvolvimento
+# Health check
+HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:3000 || exit 1
+
+# Start development server
 CMD ["npm", "run", "dev"]

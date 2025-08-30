@@ -1,160 +1,175 @@
-# RJChronos Frontend MVP
+<h1><a href="https://ui-lib.com/downloads/uko-lite-react-dashboard/">Uko React Admin Dashboard Template</a></h1>
 
-Sistema completo de gestão e monitoramento de equipamentos CPE e OLT - Frontend MVP
+<a href="https://uko-react-free.netlify.app/"><img alt="Uko React Admin" src="https://ui-lib.com/wp-content/uploads/2022/06/uko-react-free.png" /></a>
 
-## 🚀 Funcionalidades Implementadas
+<p>Professional React dashboard template with robust MUI components.
+Its clean codebase and design significantly reduce development costs, time, and effort.</p>
 
-### Dashboard Principal
-- ✅ Visão geral com métricas em tempo real
-- ✅ Total de dispositivos online/offline
-- ✅ Alertas críticos em aberto
-- ✅ Taxa de falhas nas últimas 24h
-- ✅ SNR médio, latência e SLA
-- ✅ Matriz de sinais ópticos
-- ✅ IA Insights com previsões e anomalias
+<h2>Features and Pages</h2>
+<ul>
+  <li>JWT authentication</li>
+  <li>React Router</li>
+  <li>React Hooks</li>
+  <li>Lazy loading components</li>
+  <li>Code splitting</li>
+  <li><a href="https://uko-react-free.netlify.app/dashboard">Dashboard</a></li>
+  <li>Users
+    <ul>
+      <li><a href="https://uko-react-free.netlify.app/dashboard/user-profile">User Profile</a></li>
+      <li><a href="https://uko-react-free.netlify.app/dashboard/user-list">User List</a></li>
+      <li><a href="https://uko-react-free.netlify.app/dashboard/user-grid">User Grid</a></li>
+      <li><a href="https://uko-react-free.netlify.app/dashboard/add-user">Add User</a></li>
+    </ul>
+  </li>
+  <li>UI kits
+    <ul>
+      <li><a href="https://mui.com/components/">MUI components</a></li>
+    </ul>
+  </li>
+  <li>Session pages
+    <ul>
+      <li><a href="https://uko-react-free.netlify.app/login">Sign in</a></li>
+      <li><a href="https://uko-react-free.netlify.app/register">Sign up</a></li>
+    </ul>
+  </li>
+</ul>
 
-### Inventário Completo
-- ✅ **CPEs**: Customer Premise Equipment
-- ✅ **ONUs**: Optical Network Units  
-- ✅ **OLTs**: Optical Line Terminals
-- ✅ Filtros avançados e busca
-- ✅ Status em tempo real
-- ✅ Detalhes técnicos de cada dispositivo
 
-### Monitoramento
-- ✅ Tempo real com gráficos interativos
-- ✅ Histórico de métricas
-- ✅ Performance de rede por região
-- ✅ Saúde dos CPEs e ONUs
+<h2>Free vs Pro</h2>
+<table>
+<tr>
+<th>Uko Lite</th>
+<th>Uko</th>
+</tr>
+<tr>
+<td>
+<a href="https://uko-react-free.netlify.app/">Live Preview</a> <br>
+<a href="https://ui-lib.com/downloads/uko-lite-react-dashboard/">Download Uko Lite</a>
+</td>
+<td>
+<a href="https://uko-react.vercel.app/dashboard/sales">Live Preview</a> <br>
+<a href="https://mui.com/store/items/uko-client-admin-dashboard/">Get Uko</a>
+</td>
+</tr>
+<tr>
+<td valign="top">
+<ul>
+  <li>JWT authentication</li>
+  <li>Lazy loading components</li>
+  <li>Code splitting</li>
+  <li>Dashboard</li>
+  <li>Users
+    <ul>
+      <li>User Profile</li>
+      <li>User List</li>
+      <li>User Grid</li>
+      <li>Add User</li>
+    </ul>
+  </li>
+  <li>UI kits
+    <ul>
+      <li>All MUI components</li>
+    </ul>
+  </li>
+  <li>Session pages
+    <ul>
+      <li>Sign in</li>
+      <li>Sign up</li>
+    </ul>
+  </li>
+  </ul>
+</td>
+<td valign="top">
+<ul>
+  <li>All features of Uko Lite +</li>
+  <li>Firebase authentication</li>
+  <li>Auth0 authentication</li>
+  <li>Dashboards
+    <ul>
+      <li>SaaS</li>
+      <li>Sales</li>
+      <li>Project Management v1</li>
+      <li>Project Management v2</li>
+    </ul>
+  </li>
+  <li>User Account settings</li>
+  <li> Datatables
+    <ul>
+      <li>React table style 1</li>
+      <li>React table style 2</li>
+    </ul>
+  </li>
+  <li>Ecommerce management
+    <ul>
+      <li>Product List/add/edit</li>
+      <li>Order List/add/edit</li>
+      <li>Customer List/add/edit</li>
+    </ul>
+  </li>
+  <li>Online store
+    <ul>
+      <li>Shop</li>
+      <li>Cart</li>
+      <li>Checkout</li>
+      <li>Purchase confirmation</li>
+    </ul>
+  </li>
+  <li>
+  <ul> Invoice
+    <li>Invoice list</li>
+    <li>Invoice details</li>
+    <li>Add Invoice</li>
+  </ul>
+  </li>
+  <li>Project management
+    <ul>
+      <li>Project list 1</li>
+      <li>Project list 2</li>
+      <li>Project list 3</li>
+      <li>Project details</li>
+      <li>Project team members</li>
+    </ul>
+  </li>
+  
+  <li>Working Apps
+    <ul>
+      <li>Canban card</li>
+      <li>Shop/eCommerce</li>
+      <li>Scrum board</li>
+      <li>Invoice builder</li>
+      <li>Event calendar</li>
+      <li>Chat</li>
+      <li>Inbox</li>
+    </ul>
+  </li>
+  <li>Pages
+    <ul>
+      <li>About</li>
+      <li>Contact</li>
+      <li>Pricing</li>
+      <li>Privacy</li>
+    </ul>
+  </li>
+  <li>Charts
+    <ul>
+      <li>eChart</li>
+      <li>Rechart</li>
+      <li>Victory chart</li>
+      <li>React vis</li>
+    </ul>
+  </li>
+  <li>User profile</li>
+  <li>6 months support</li>
 
-### Sistema de Alertas
-- ✅ Gerenciamento completo de alertas
-- ✅ Classificação por severidade
-- ✅ Reconhecimento e resolução
-- ✅ Histórico de eventos
-- ✅ Regras configuráveis
+</ul>
+</td>
+</tr>
+</table>
 
-### Provisionamento Zero-Touch
-- ✅ Configuração automática de dispositivos
-- ✅ Perfis de configuração
-- ✅ Firmware Manager com agendamento
-- ✅ Templates de provisionamento
-- ✅ Rollback automático
 
-### Diagnósticos Remotos
-- ✅ Ping, traceroute, testes de velocidade
-- ✅ Análise de sinal óptico
-- ✅ Testes de conectividade
-- ✅ Relatórios automáticos
+<h3>Download</h3>
+Download From <a href="https://ui-lib.com/downloads/uko-lite-react-client-admin-dashboard/">official website</a>
+<br/>
+Browse <a href="https://uko-react-doc.vercel.app/">Documentation</a>
 
-### IA & Automação
-- ✅ Regras de automação configuráveis
-- ✅ Detecção de anomalias
-- ✅ Previsão de falhas
-- ✅ Ações automáticas (reboot, configuração)
-- ✅ Insights preditivos
-
-### Relatórios e SLA
-- ✅ KPIs de rede
-- ✅ Qualidade de serviço
-- ✅ SLA por cliente
-- ✅ Relatórios PDF/Excel
-- ✅ Dashboards customizáveis
-
-### Funcionalidades Avançadas
-- ✅ **Topologia Visual**: Visualização interativa da rede (OLT → PON → ONU → CPE)
-- ✅ **Georreferenciamento**: Mapa com status por localização
-- ✅ **Configuração Wi-Fi Remota**: SSID, senha, canal, segurança
-- ✅ **Sistema de Usuários**: Permissões e controle de acesso
-- ✅ **Integrações**: API/Webhook, configurações de sistema
-
-## 🛠️ Tecnologias
-
-- **Frontend**: React 18 + TypeScript
-- **UI Framework**: Radix UI + Tailwind CSS
-- **Build Tool**: Vite
-- **State Management**: React Query (TanStack Query)
-- **Routing**: Wouter
-- **Charts**: Recharts
-- **Icons**: Lucide React
-- **Styling**: Tailwind CSS + CSS Variables
-
-## 📦 Instalação e Execução
-
-### Pré-requisitos
-- Node.js 18+ 
-- npm ou yarn
-
-### Instalação
-```bash
-# Instalar dependências
-npm install
-
-# Executar em modo desenvolvimento
-npm run dev
-
-# Build para produção
-npm run build
-
-# Preview da build
-npm run preview
-
-# Verificar tipos TypeScript
-npm run check
-```
-
-### Estrutura do Projeto
-```
-frontend/
-├── src/
-│   ├── components/          # Componentes reutilizáveis
-│   │   ├── ui/             # Componentes base (Radix UI)
-│   │   ├── layout/         # Layout (Header, Sidebar)
-│   │   └── dashboard/      # Componentes específicos do dashboard
-│   ├── pages/              # Páginas da aplicação
-│   │   ├── inventory/      # Inventário (CPEs, ONUs, OLTs)
-│   │   └── ...            # Outras páginas
-│   ├── hooks/              # Custom hooks
-│   ├── lib/                # Utilitários e configurações
-│   └── styles/             # Estilos globais
-├── public/                 # Assets estáticos
-└── index.html             # HTML principal
-```
-
-## 🎨 Design System
-
-### Cores Principais
-- **Primary**: Azul (#3B82F6)
-- **Success**: Verde (#10B981) 
-- **Warning**: Amarelo (#F59E0B)
-- **Error**: Vermelho (#EF4444)
-- **Info**: Ciano (#06B6D4)
-
-### Tema Dark
-Interface otimizada para operação 24/7 com tema escuro por padrão.
-
-## 📊 Dados Mock
-
-Todos os dados são mockados para demonstração:
-- 50+ CPEs simulados
-- 20+ ONUs simulados  
-- 5+ OLTs simulados
-- Alertas em tempo real
-- Métricas de performance
-- Histórico de eventos
-- Insights de IA
-
-## 🔮 Próximos Passos (Backend Integration)
-
-1. **Backend Python**: FastAPI + PostgreSQL + TimescaleDB
-2. **ACS Server**: GenieACS para comunicação TR-069
-3. **SmartOLT**: Integração com OLTs GPON/EPON
-4. **Engine IA**: Modelos de ML para análise preditiva
-5. **APIs REST**: Substituir dados mock por APIs reais
-6. **WebSocket**: Atualizações em tempo real
-7. **Autenticação**: JWT + OAuth2
-8. **Monitoramento**: Prometheus + Grafana
-
-## 📝 Licença
-
-Proprietário - RJChronos System
+<h3>For questions and support mail us at <a href="mailto:support@ui-lib.com">support@ui-lib.com</a></h3>

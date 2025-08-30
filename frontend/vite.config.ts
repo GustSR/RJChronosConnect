@@ -1,10 +1,18 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tsconfigPaths from 'vite-tsconfig-paths'
 import { resolve } from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react({ jsxRuntime: 'automatic' })],
+  plugins: [
+    react({ jsxRuntime: 'automatic' }),
+    tsconfigPaths()
+  ],
+  define: {
+    global: 'globalThis',
+    'process.env': {},
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
@@ -12,10 +20,16 @@ export default defineConfig({
       '@pages': resolve(__dirname, './src/pages'),
       '@hooks': resolve(__dirname, './src/hooks'),
       '@services': resolve(__dirname, './src/services'),
-      '@store': resolve(__dirname, './src/store'),
       '@utils': resolve(__dirname, './src/utils'),
       '@types': resolve(__dirname, './src/types'),
-      '@assets': resolve(__dirname, './src/assets')
+      '@assets': resolve(__dirname, './src/assets'),
+      // Polyfills COMPLETOS para jsonwebtoken
+      buffer: 'buffer',
+      process: 'process/browser',
+      crypto: 'crypto-browserify',
+      stream: 'stream-browserify',
+      util: 'util',
+      events: 'events'
     }
   },
   server: {
@@ -33,14 +47,16 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
     rollupOptions: {
+      external: [],
       output: {
+        globals: {
+          buffer: 'Buffer'
+        },
         manualChunks: {
           vendor: ['react', 'react-dom'],
           mui: ['@mui/material', '@mui/icons-material'],
-          charts: ['recharts', 'd3'],
-          query: ['@tanstack/react-query'],
-          router: ['react-router-dom'],
-          forms: ['react-hook-form', '@hookform/resolvers', 'zod']
+          charts: ['apexcharts', 'react-apexcharts'],
+          forms: ['formik', 'yup']
         }
       }
     }
@@ -52,8 +68,10 @@ export default defineConfig({
       '@mui/material', 
       '@emotion/react', 
       '@emotion/styled',
-      'recharts',
-      'd3'
+      'apexcharts',
+      'react-apexcharts',
+      'buffer',
+      'process'
     ]
   }
 })
