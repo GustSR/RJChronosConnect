@@ -1,49 +1,124 @@
-import { Box, Typography } from "@mui/material";
-import { H5 } from "components/Typography";
-import { FC } from "react";
-import Chart from "react-apexcharts";
-import { ApexOptions } from "apexcharts";
-import AnimatedCard from "components/common/AnimatedCard";
+import { Box, Typography, Skeleton, Alert } from '@mui/material';
+import { H5 } from 'components/Typography';
+import { FC, useEffect, useState } from 'react';
+import Chart from 'react-apexcharts';
+import { ApexOptions } from 'apexcharts';
+import AnimatedCard from 'components/common/AnimatedCard';
+import { genieacsApi } from '../../services/genieacsApi';
+import { OLTPerformanceStats } from '../../services/types';
 
 const OLTPerformanceChart: FC = () => {
+  const [performanceStats, setPerformanceStats] =
+    useState<OLTPerformanceStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchPerformanceData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const stats = await genieacsApi.getOLTPerformanceStats();
+      setPerformanceStats(stats);
+    } catch (error) {
+      console.error('Erro ao carregar dados de performance:', error);
+      setError('Erro ao carregar dados');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPerformanceData();
+  }, []);
+
+  // Loading state
+  if (loading) {
+    return (
+      <AnimatedCard sx={{ padding: '2rem' }} delay={500}>
+        <Box sx={{ mb: 3 }}>
+          <Skeleton width="40%" height={32} />
+          <Skeleton width="60%" height={20} sx={{ mt: 1 }} />
+        </Box>
+
+        <Skeleton width="100%" height={350} />
+      </AnimatedCard>
+    );
+  }
+
+  // Error state
+  if (error || !performanceStats) {
+    return (
+      <AnimatedCard sx={{ padding: '2rem' }} delay={500}>
+        <H5>Performance dos OLTs</H5>
+        <Alert severity="error" sx={{ mt: 2 }}>
+          {error} - Dados em cache não disponíveis
+        </Alert>
+      </AnimatedCard>
+    );
+  }
+
+  // Preparar dados para o gráfico
+  const oltNames = performanceStats.performance_data.map((olt) => olt.olt_name);
+  const cpuData = performanceStats.performance_data.map((olt) => olt.cpu_usage);
+  const memoryData = performanceStats.performance_data.map(
+    (olt) => olt.memory_usage
+  );
+  const temperatureData = performanceStats.performance_data.map(
+    (olt) => olt.temperature
+  );
+
   const chartOptions: ApexOptions = {
     chart: {
-      type: "bar" as const,
+      type: 'bar',
       toolbar: {
         show: false,
       },
-      background: "transparent",
+      background: 'transparent',
+      animations: {
+        enabled: true,
+        speed: 1000,
+        animateGradually: {
+          enabled: true,
+          delay: 150,
+        },
+      },
     },
-    colors: ["#3b82f6", "#10b981", "#f59e0b"],
+    colors: ['#3b82f6', '#10b981', '#f59e0b'],
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "45%",
+        columnWidth: '65%',
         borderRadius: 4,
+        dataLabels: {
+          position: 'top',
+        },
       },
     },
     dataLabels: {
-      enabled: false,
+      enabled: true,
+      offsetY: -20,
+      style: {
+        fontSize: '10px',
+        fontWeight: 600,
+        colors: ['#64748b'],
+      },
+      formatter: (val: number) => `${val}%`,
     },
     stroke: {
       show: true,
       width: 0,
-      colors: ["transparent"],
+      colors: ['transparent'],
     },
     xaxis: {
-      categories: [
-        "OLT-Central-01",
-        "OLT-Norte-03",
-        "OLT-Sul-02",
-        "OLT-Oeste-01",
-        "OLT-Leste-04",
-      ],
+      categories: oltNames,
       labels: {
         style: {
-          colors: "#64748b",
-          fontSize: "12px",
+          colors: '#64748b',
+          fontSize: '12px',
         },
         rotate: -45,
+        rotateAlways: true,
       },
       axisBorder: {
         show: false,
@@ -55,106 +130,116 @@ const OLTPerformanceChart: FC = () => {
     yaxis: {
       labels: {
         style: {
-          colors: "#64748b",
-          fontSize: "12px",
+          colors: '#64748b',
+          fontSize: '12px',
         },
-        formatter: (value: number) => `${value}%`,
+        formatter: (val: number) => `${val}%`,
       },
-    },
-    fill: {
-      opacity: 1,
-    },
-    tooltip: {
-      y: {
-        formatter: (val: number, opts: any) => {
-          const series = ["CPU", "Memória", "Temperatura"];
-          const unit = opts.seriesIndex === 2 ? "°C" : "%";
-          return `${series[opts.seriesIndex]}: ${val}${unit}`;
-        },
-      },
-    },
-    legend: {
-      show: true,
-      position: "top" as const,
-      horizontalAlign: "right" as const,
-      fontSize: "12px",
-      fontWeight: 500,
+      max: 100,
     },
     grid: {
       show: true,
-      borderColor: "#e2e8f0",
+      borderColor: '#e2e8f0',
       strokeDashArray: 0,
-      position: "back" as const,
+      position: 'back',
+    },
+    legend: {
+      show: true,
+      position: 'top',
+      horizontalAlign: 'center',
+      fontFamily: 'inherit',
+      fontWeight: 500,
+      fontSize: '13px',
+      markers: {
+        size: 8,
+        strokeWidth: 0,
+      },
+      itemMargin: {
+        horizontal: 16,
+        vertical: 0,
+      },
+    },
+    tooltip: {
+      theme: 'light',
+      style: {
+        fontSize: '12px',
+        fontFamily: 'inherit',
+      },
+      y: {
+        formatter: (val: number, opts) => {
+          const seriesName =
+            opts.seriesIndex === 2 ? 'Temperatura' : 'CPU/Memória';
+          const unit = opts.seriesIndex === 2 ? '°C' : '%';
+          return `${seriesName}: ${val}${unit}`;
+        },
+      },
     },
   };
 
   const series = [
     {
-      name: "CPU (%)",
-      data: [45, 52, 38, 41, 33],
+      name: 'CPU (%)',
+      data: cpuData,
     },
     {
-      name: "Memória (%)",
-      data: [67, 71, 58, 63, 55],
+      name: 'Memória (%)',
+      data: memoryData,
     },
     {
-      name: "Temperatura (°C)",
-      data: [42, 47, 39, 44, 38],
+      name: 'Temperatura (°C)',
+      data: temperatureData,
     },
   ];
 
   return (
-    <AnimatedCard sx={{ padding: "2rem" }} delay={400}>
+    <AnimatedCard sx={{ padding: '2rem' }} delay={500}>
       <Box sx={{ mb: 3 }}>
-        <H5>Performance das OLTs</H5>
+        <H5>Performance dos OLTs</H5>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          Monitoramento de recursos e temperatura em tempo real
+          Monitoramento de CPU, memória e temperatura em tempo real
         </Typography>
       </Box>
 
-      {/* Resumo das métricas */}
-      <Box sx={{ display: "flex", gap: 3, mb: 3 }}>
-        <Box sx={{ textAlign: "center" }}>
-          <Typography variant="h4" fontWeight={700} color="primary.main">
-            41.8%
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
+      {/* Estatísticas resumidas */}
+      <Box sx={{ display: 'flex', gap: 3, mb: 3 }}>
+        <Box>
+          <Typography variant="body2" color="text.secondary" fontWeight={500}>
             CPU Média
           </Typography>
-        </Box>
-        <Box sx={{ textAlign: "center" }}>
-          <Typography variant="h4" fontWeight={700} color="success.main">
-            62.8%
+          <Typography variant="h6" fontWeight={700} color="primary.main">
+            {(
+              cpuData.reduce((sum, val) => sum + val, 0) / cpuData.length
+            ).toFixed(1)}
+            %
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+        </Box>
+        <Box>
+          <Typography variant="body2" color="text.secondary" fontWeight={500}>
             Memória Média
           </Typography>
-        </Box>
-        <Box sx={{ textAlign: "center" }}>
-          <Typography variant="h4" fontWeight={700} color="warning.main">
-            42°C
+          <Typography variant="h6" fontWeight={700} color="success.main">
+            {(
+              memoryData.reduce((sum, val) => sum + val, 0) / memoryData.length
+            ).toFixed(1)}
+            %
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+        </Box>
+        <Box>
+          <Typography variant="body2" color="text.secondary" fontWeight={500}>
             Temp. Média
           </Typography>
-        </Box>
-        <Box sx={{ textAlign: "center" }}>
-          <Typography variant="h4" fontWeight={700} color="success.main">
-            98.5%
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Uptime Médio
+          <Typography variant="h6" fontWeight={700} color="warning.main">
+            {(
+              temperatureData.reduce((sum, val) => sum + val, 0) /
+              temperatureData.length
+            ).toFixed(1)}
+            °C
           </Typography>
         </Box>
       </Box>
 
       {/* Gráfico */}
-      <Chart
-        options={chartOptions}
-        series={series}
-        type="bar"
-        height={350}
-      />
+      <Chart options={chartOptions} series={series} type="bar" height={350} />
     </AnimatedCard>
   );
 };

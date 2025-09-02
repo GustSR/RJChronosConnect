@@ -1,22 +1,22 @@
-import { Badge, Box, ButtonBase, Divider, styled } from "@mui/material";
-import FlexBox from "components/FlexBox";
-import { H6, Small, Tiny } from "components/Typography";
-import UkoAvatar from "components/UkoAvatar";
-import useAuth from "hooks/useAuth";
-import { FC, Fragment, useRef, useState } from "react";
-import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
-import PopoverLayout from "./PopoverLayout";
+import { Badge, Box, ButtonBase, Divider, styled } from '@mui/material';
+import FlexBox from 'components/FlexBox';
+import { H6, Small, Tiny } from 'components/Typography';
+import UkoAvatar from 'components/UkoAvatar';
+import useAuth from 'hooks/useAuth';
+import { FC, Fragment, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import PopoverLayout from './PopoverLayout';
 
 // styled components
 const StyledSmall = styled(Small)(({ theme }) => ({
-  display: "block",
-  padding: "5px 1rem",
-  cursor: "pointer",
-  "&:hover": {
+  display: 'block',
+  padding: '5px 1rem',
+  cursor: 'pointer',
+  '&:hover': {
     color: theme.palette.primary.main,
     backgroundColor:
-      theme.palette.mode === "light"
+      theme.palette.mode === 'light'
         ? theme.palette.secondary.light
         : theme.palette.divider,
   },
@@ -39,20 +39,20 @@ const ProfilePopover: FC = () => {
         <Badge
           overlap="circular"
           variant="dot"
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
           sx={{
-            "& .MuiBadge-badge": {
+            '& .MuiBadge-badge': {
               width: 11,
               height: 11,
-              right: "7%",
-              borderRadius: "50%",
-              border: "2px solid #fff",
-              backgroundColor: "success.main",
+              right: '7%',
+              borderRadius: '50%',
+              border: '2px solid #fff',
+              backgroundColor: 'success.main',
             },
           }}
         >
           <UkoAvatar
-            src={user?.avatar || "/static/avatar/001-man.svg"}
+            src={user?.avatar || '/static/avatar/001-man.svg'}
             sx={{ width: 30, height: 30, ml: 1 }}
           />
         </Badge>
@@ -68,7 +68,7 @@ const ProfilePopover: FC = () => {
         title={
           <FlexBox alignItems="center">
             <UkoAvatar
-              src={user?.avatar || "/static/avatar/001-man.svg"}
+              src={user?.avatar || '/static/avatar/001-man.svg'}
               sx={{ width: 35, height: 35 }}
             />
 
@@ -83,13 +83,13 @@ const ProfilePopover: FC = () => {
       >
         <Box pt={1}>
           <StyledSmall
-            onClick={() => handleMenuItem("/dashboard/user-profile")}
+            onClick={() => handleMenuItem('/dashboard/user-profile')}
           >
             Set Status
           </StyledSmall>
 
           <StyledSmall
-            onClick={() => handleMenuItem("/dashboard/user-profile")}
+            onClick={() => handleMenuItem('/dashboard/user-profile')}
           >
             Profile & Account
           </StyledSmall>
@@ -99,7 +99,7 @@ const ProfilePopover: FC = () => {
           <StyledSmall
             onClick={() => {
               logout();
-              toast.error("You Logout Successfully");
+              toast.error('You Logout Successfully');
             }}
           >
             Sign Out

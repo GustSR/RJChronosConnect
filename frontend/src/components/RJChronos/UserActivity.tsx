@@ -7,11 +7,13 @@ import {
   TableCell,
   TableHead,
   TableRow,
-} from "@mui/material";
-import { H5, Small } from "components/Typography";
-import { FC } from "react";
-import ScrollBar from "simplebar-react";
-import AnimatedCard from "components/common/AnimatedCard";
+  Skeleton,
+  Alert,
+} from '@mui/material';
+import { H5, Small } from 'components/Typography';
+import { FC, useEffect, useState } from 'react';
+import ScrollBar from 'simplebar-react';
+import AnimatedCard from 'components/common/AnimatedCard';
 import {
   Router,
   Settings,
@@ -19,106 +21,175 @@ import {
   DeviceHub,
   Assignment,
   Person,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
+import { genieacsApi } from '../../services/genieacsApi';
+import { ActivityLog } from '../../services/types';
 
 const commonCSS = {
   minWidth: 120,
-  "&:nth-of-type(2)": { minWidth: 200 },
-  "&:nth-of-type(3)": { minWidth: 150 },
+  '&:nth-of-type(2)': { minWidth: 200 },
+  '&:nth-of-type(3)': { minWidth: 150 },
 };
 
 // Styled components
 const HeadTableCell = styled(TableCell)(() => ({
   fontSize: 12,
   fontWeight: 600,
-  "&:first-of-type": { paddingLeft: 0 },
-  "&:last-of-type": { paddingRight: 0 },
+  '&:first-of-type': { paddingLeft: 0 },
+  '&:last-of-type': { paddingRight: 0 },
 }));
 
 const BodyTableCell = styled(TableCell)(({ theme }) => ({
   fontSize: 12,
   fontWeight: 500,
   padding: 0,
-  paddingLeft: "1rem",
-  paddingTop: "0.7rem",
-  "&:first-of-type": { paddingLeft: 0 },
-  "&:last-of-type": { paddingRight: 0 },
-  [theme.breakpoints.down("sm")]: { ...commonCSS },
+  paddingLeft: '1rem',
+  paddingTop: '0.7rem',
+  '&:first-of-type': { paddingLeft: 0 },
+  '&:last-of-type': { paddingRight: 0 },
+  [theme.breakpoints.down('sm')]: { ...commonCSS },
   [theme.breakpoints.between(960, 1270)]: { ...commonCSS },
 }));
 
 // Dados mockados para atividades dos usuários
-const userActivities = [
-  {
-    id: 1,
-    user: "João Silva",
-    action: "Provisionou ONT",
-    target: "Cliente: Maria Santos - ONT: ZTE-F670L",
-    timestamp: "há 15 minutos",
-    type: "provision"
-  },
-  {
-    id: 2,
-    user: "Ana Costa",
-    action: "Alterou configuração",
-    target: "OLT-CENTRO-01 - Perfil de velocidade",
-    timestamp: "há 32 minutos", 
-    type: "config"
-  },
-  {
-    id: 3,
-    user: "Carlos Mendes",
-    action: "Visualizou relatório",
-    target: "Relatório mensal de performance",
-    timestamp: "há 1 hora",
-    type: "view"
-  },
-  {
-    id: 4,
-    user: "Lucia Pereira",
-    action: "Resetou ONT",
-    target: "Cliente: Pedro Oliveira - ONT: Huawei HG8245H",
-    timestamp: "há 2 horas",
-    type: "reset"
-  },
-  {
-    id: 5,
-    user: "Roberto Lima",
-    action: "Criou novo cliente",
-    target: "Cliente: Empresa TechCorp LTDA",
-    timestamp: "há 3 horas",
-    type: "create"
-  }
-];
+const getActionIcon = (actionType: string) => {
+  const iconProps = {
+    fontSize: 'small' as const,
+    sx: { color: 'text.secondary' },
+  };
 
-const getActionIcon = (type: string) => {
-  const iconProps = { fontSize: "small" as const, sx: { color: "text.secondary" } };
-  
-  switch (type) {
-    case "provision":
-      return <Router {...iconProps} />;
-    case "config":
-      return <Settings {...iconProps} />;
-    case "view":
-      return <Visibility {...iconProps} />;
-    case "reset":
-      return <DeviceHub {...iconProps} />;
-    case "create":
-      return <Assignment {...iconProps} />;
-    default:
-      return <Person {...iconProps} />;
+  if (actionType.includes('provision') || actionType.includes('Provisionou')) {
+    return <Router {...iconProps} />;
   }
+  if (actionType.includes('config') || actionType.includes('Alterou')) {
+    return <Settings {...iconProps} />;
+  }
+  if (actionType.includes('view') || actionType.includes('Visualizou')) {
+    return <Visibility {...iconProps} />;
+  }
+  if (actionType.includes('reset') || actionType.includes('Resetou')) {
+    return <DeviceHub {...iconProps} />;
+  }
+  if (actionType.includes('create') || actionType.includes('Criou')) {
+    return <Assignment {...iconProps} />;
+  }
+  return <Person {...iconProps} />;
+};
+
+const formatTimeAgo = (dateString: string): string => {
+  const now = new Date();
+  const activityDate = new Date(dateString);
+  const diffInMinutes = Math.floor(
+    (now.getTime() - activityDate.getTime()) / (1000 * 60)
+  );
+
+  if (diffInMinutes < 60) {
+    return `há ${diffInMinutes} minutos`;
+  }
+
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) {
+    return `há ${diffInHours} hora${diffInHours > 1 ? 's' : ''}`;
+  }
+
+  const diffInDays = Math.floor(diffInHours / 24);
+  return `há ${diffInDays} dia${diffInDays > 1 ? 's' : ''}`;
 };
 
 const UserActivity: FC = () => {
+  const [activities, setActivities] = useState<ActivityLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchActivities = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Buscar logs de atividade do GenieACS
+      const logs = await genieacsApi.getActivityLogs({ limit: 5 });
+      setActivities(logs);
+    } catch (error) {
+      console.error('Erro ao carregar atividades:', error);
+      setError('Erro ao carregar dados');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchActivities();
+  }, []);
+
+  // Loading state
+  if (loading) {
+    return (
+      <AnimatedCard sx={{ padding: '2rem' }} delay={700}>
+        <H5>Atividades Recentes dos Usuários</H5>
+        <ScrollBar>
+          <Table>
+            <TableHead
+              sx={{ borderBottom: '1.5px solid', borderColor: 'divider' }}
+            >
+              <TableRow>
+                <HeadTableCell>Usuário</HeadTableCell>
+                <HeadTableCell>Ação</HeadTableCell>
+                <HeadTableCell>Detalhes</HeadTableCell>
+                <HeadTableCell>Tempo</HeadTableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {[1, 2, 3, 4, 5].map((index) => (
+                <TableRow key={index}>
+                  <BodyTableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Skeleton
+                        variant="circular"
+                        width={32}
+                        height={32}
+                        sx={{ mr: 1 }}
+                      />
+                      <Skeleton width={80} height={20} />
+                    </Box>
+                  </BodyTableCell>
+                  <BodyTableCell>
+                    <Skeleton width={100} height={20} />
+                  </BodyTableCell>
+                  <BodyTableCell>
+                    <Skeleton width={150} height={20} />
+                  </BodyTableCell>
+                  <BodyTableCell>
+                    <Skeleton width={60} height={20} />
+                  </BodyTableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </ScrollBar>
+      </AnimatedCard>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <AnimatedCard sx={{ padding: '2rem' }} delay={700}>
+        <H5>Atividades Recentes dos Usuários</H5>
+        <Alert severity="error" sx={{ mt: 2 }}>
+          {error} - Dados em cache não disponíveis
+        </Alert>
+      </AnimatedCard>
+    );
+  }
+
   return (
-    <AnimatedCard sx={{ padding: "2rem" }} delay={700}>
+    <AnimatedCard sx={{ padding: '2rem' }} delay={700}>
       <H5>Atividades Recentes dos Usuários</H5>
 
       <ScrollBar>
         <Table>
           <TableHead
-            sx={{ borderBottom: "1.5px solid", borderColor: "divider" }}
+            sx={{ borderBottom: '1.5px solid', borderColor: 'divider' }}
           >
             <TableRow>
               <HeadTableCell>Usuário</HeadTableCell>
@@ -129,30 +200,36 @@ const UserActivity: FC = () => {
           </TableHead>
 
           <TableBody>
-            {userActivities.map((activity) => (
+            {activities.map((activity) => (
               <TableRow key={activity.id}>
                 <BodyTableCell>
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <Avatar sx={{ 
-                      bgcolor: "action.hover", 
-                      color: "text.secondary",
-                      width: 32,
-                      height: 32,
-                      mr: 1
-                    }}>
-                      {getActionIcon(activity.type)}
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Avatar
+                      sx={{
+                        bgcolor: 'action.hover',
+                        color: 'text.secondary',
+                        width: 32,
+                        height: 32,
+                        mr: 1,
+                      }}
+                    >
+                      {getActionIcon(activity.action)}
                     </Avatar>
-                    <Small fontWeight={600}>{activity.user}</Small>
+                    <Small fontWeight={600}>
+                      {activity.user_name || 'Sistema'}
+                    </Small>
                   </Box>
                 </BodyTableCell>
                 <BodyTableCell>
                   <Small>{activity.action}</Small>
                 </BodyTableCell>
                 <BodyTableCell>
-                  <Small color="text.secondary">{activity.target}</Small>
+                  <Small color="text.secondary">{activity.description}</Small>
                 </BodyTableCell>
                 <BodyTableCell>
-                  <Small color="text.disabled">{activity.timestamp}</Small>
+                  <Small color="text.disabled">
+                    {formatTimeAgo(activity.created_at)}
+                  </Small>
                 </BodyTableCell>
               </TableRow>
             ))}

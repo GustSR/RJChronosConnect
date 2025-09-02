@@ -8,7 +8,11 @@ interface ToastMessage {
 }
 
 interface ToastContextType {
-  showToast: (message: string, severity?: AlertColor, duration?: number) => void;
+  showToast: (
+    message: string,
+    severity?: AlertColor,
+    duration?: number
+  ) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -29,12 +33,19 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [open, setOpen] = useState(false);
 
-  const showToast = (message: string, severity: AlertColor = 'info', duration: number = 6000) => {
+  const showToast = (
+    message: string,
+    severity: AlertColor = 'info',
+    duration: number = 6000
+  ) => {
     setToast({ message, severity, duration });
     setOpen(true);
   };
 
-  const handleClose = (_event?: React.SyntheticEvent | Event, reason?: string) => {
+  const handleClose = (
+    _event?: React.SyntheticEvent | Event,
+    reason?: string
+  ) => {
     if (reason === 'clickaway') {
       return;
     }
@@ -51,9 +62,9 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
           onClose={handleClose}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         >
-          <Alert 
-            onClose={handleClose} 
-            severity={toast.severity} 
+          <Alert
+            onClose={handleClose}
+            severity={toast.severity}
             sx={{ width: '100%' }}
             variant="filled"
           >

@@ -4,14 +4,13 @@ import {
   PersonAdd as AddUserIcon,
   Inventory as ProductIcon,
   ShoppingCart as AdminEcommerceIcon,
-} from "@mui/icons-material";
-import DashboardIcon from "./Dashboard";
-import SessionsIcon from "./Sessions";
-import UserManagementIcon from "./UserManagement";
-import UserProfileIcon from "./UserProfile";
+} from '@mui/icons-material';
+import DashboardIcon from './Dashboard';
+import SessionsIcon from './Sessions';
+import UserManagementIcon from './UserManagement';
+import UserProfileIcon from './UserProfile';
 
-// eslint-disable-next-line import/no-anonymous-default-export
-export default {
+const IconsMap = {
   LoginIcon,
   AddUserIcon,
   SessionsIcon,
@@ -22,3 +21,5 @@ export default {
   ProductIcon,
   AdminEcommerceIcon,
 };
+
+export default IconsMap;

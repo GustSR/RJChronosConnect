@@ -1,9 +1,11 @@
-import Mock from "__fakeApi__/mock";
+import Mock from '__fakeApi__/mock';
 
 // Simulação simples de JWT sem biblioteca Node.js
 const createFakeToken = (userId: number) => {
-  const header = btoa(JSON.stringify({ typ: "JWT", alg: "HS256" }));
-  const payload = btoa(JSON.stringify({ userId, exp: Date.now() + 7 * 24 * 60 * 60 * 1000 }));
+  const header = btoa(JSON.stringify({ typ: 'JWT', alg: 'HS256' }));
+  const payload = btoa(
+    JSON.stringify({ userId, exp: Date.now() + 7 * 24 * 60 * 60 * 1000 })
+  );
   return `${header}.${payload}.fake-signature`;
 };
 
@@ -21,24 +23,24 @@ const decodeFakeToken = (token: string) => {
 const userList = [
   {
     id: 1,
-    role: "SA",
-    name: "Jason Alexander",
-    username: "jason_alexander",
-    email: "demo@example.com",
-    avatar: "/static/avatar/001-man.svg",
+    role: 'SA',
+    name: 'Jason Alexander',
+    username: 'jason_alexander',
+    email: 'demo@example.com',
+    avatar: '/static/avatar/001-man.svg',
     age: 25,
     // password: 'v&)3?2]:'
   },
 ];
 
-Mock.onPost("/api/auth/login").reply(async (config) => {
+Mock.onPost('/api/auth/login').reply(async (config) => {
   try {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     const { email } = JSON.parse(config.data);
     const user = userList.find((user) => user.email === email);
     if (!user) {
-      return [400, { message: "Invalid email or password" }];
+      return [400, { message: 'Invalid email or password' }];
     }
     const accessToken = createFakeToken(user.id);
     return [
@@ -56,27 +58,27 @@ Mock.onPost("/api/auth/login").reply(async (config) => {
     ];
   } catch (error) {
     console.error(error);
-    return [500, { message: "Internal server error" }];
+    return [500, { message: 'Internal server error' }];
   }
 });
 
-Mock.onPost("/api/auth/register").reply(async (config) => {
+Mock.onPost('/api/auth/register').reply(async (config) => {
   try {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     const { email, username } = JSON.parse(config.data);
     const user = userList.find((user) => user.email === email);
     if (user) {
-      return [400, { message: "User already exists!" }];
+      return [400, { message: 'User already exists!' }];
     }
 
     const newUser = {
       id: 2,
-      role: "GUEST",
-      name: "",
+      role: 'GUEST',
+      name: '',
       username: username,
       email: email,
-      avatar: "/static/avatar/001-man.svg",
+      avatar: '/static/avatar/001-man.svg',
       age: 25,
     };
     userList.push(newUser);
@@ -99,23 +101,23 @@ Mock.onPost("/api/auth/register").reply(async (config) => {
     ];
   } catch (error) {
     console.error(error);
-    return [500, { message: "Internal server error" }];
+    return [500, { message: 'Internal server error' }];
   }
 });
 
-Mock.onGet("/api/auth/profile").reply((config) => {
+Mock.onGet('/api/auth/profile').reply((config) => {
   try {
-    //@ts-ignore
+    //@ts-expect-error - config headers type issue
     const { Authorization } = config.headers;
     if (!Authorization) {
-      return [401, { message: "Invalid Authorization token" }];
+      return [401, { message: 'Invalid Authorization token' }];
     }
-    const accessToken = Authorization.split(" ")[1];
-    const { userId }: any = decodeFakeToken(accessToken);
+    const accessToken = Authorization.split(' ')[1];
+    const { userId }: { userId: number } = decodeFakeToken(accessToken);
     const user = userList.find((u) => u.id === userId);
 
     if (!user) {
-      return [401, { message: "Invalid authorization token" }];
+      return [401, { message: 'Invalid authorization token' }];
     }
 
     return [
@@ -132,6 +134,6 @@ Mock.onGet("/api/auth/profile").reply((config) => {
     ];
   } catch (err) {
     console.error(err);
-    return [500, { message: "Internal server error" }];
+    return [500, { message: 'Internal server error' }];
   }
 });

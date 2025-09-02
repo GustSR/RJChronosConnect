@@ -1,17 +1,17 @@
-import useLocalStorage from "hooks/useLocalStorage";
-import { createContext, ReactNode } from "react";
-import { THEMES } from "../constants";
-import { themeSettingsProps } from "../theme";
+import useLocalStorage from 'hooks/useLocalStorage';
+import { createContext, ReactNode } from 'react';
+import { THEMES } from '../constants';
+import { themeSettingsProps } from '../theme';
 
 const initialSettings: themeSettingsProps = {
-  direction: "ltr",
+  direction: 'ltr',
   theme: THEMES.LIGHT,
   responsiveFontSizes: true,
 };
 
 export const SettingsContext = createContext({
   settings: initialSettings,
-  saveSettings: (arg: themeSettingsProps) => {},
+  saveSettings: (_arg: themeSettingsProps) => {},
 });
 
 // component props type
@@ -21,7 +21,7 @@ type settingsProviderProps = {
 
 const SettingsProvider = ({ children }: settingsProviderProps) => {
   const { data: settings, storeData: setSettings } = useLocalStorage(
-    "settings",
+    'settings',
     initialSettings
   );
 

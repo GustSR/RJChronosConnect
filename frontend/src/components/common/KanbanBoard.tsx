@@ -24,26 +24,30 @@ const KanbanBoard: React.FC = () => {
     }
 
     // Encontra as colunas de origem e destino
-    const sourceColumn = columns.find(col => col.id === source.droppableId);
-    const destColumn = columns.find(col => col.id === destination.droppableId);
+    const sourceColumn = columns.find((col) => col.id === source.droppableId);
+    const destColumn = columns.find(
+      (col) => col.id === destination.droppableId
+    );
 
     if (!sourceColumn || !destColumn) {
       return;
     }
 
     // Encontra o card que está sendo movido
-    const movedCard = sourceColumn.cards.find(card => card.id === draggableId);
+    const movedCard = sourceColumn.cards.find(
+      (card) => card.id === draggableId
+    );
     if (!movedCard) {
       return;
     }
 
     // Cria novas colunas atualizadas
-    const newColumns = columns.map(column => {
+    const newColumns = columns.map((column) => {
       if (column.id === source.droppableId) {
         // Remove o card da coluna de origem
         return {
           ...column,
-          cards: column.cards.filter(card => card.id !== draggableId),
+          cards: column.cards.filter((card) => card.id !== draggableId),
         };
       } else if (column.id === destination.droppableId) {
         // Adiciona o card na coluna de destino na posição correta
@@ -63,8 +67,8 @@ const KanbanBoard: React.FC = () => {
 
   const handleAddCard = (columnId: string) => {
     const newCard = generateNewCard('New Task', 'Task');
-    
-    const newColumns = columns.map(column => {
+
+    const newColumns = columns.map((column) => {
       if (column.id === columnId) {
         return {
           ...column,

@@ -1,7 +1,7 @@
-import { Box, Card, Divider, Grid, IconButton, styled } from "@mui/material";
-import { H3, H6, Small, Tiny } from "components/Typography";
-import UkoAvatar from "components/UkoAvatar";
-import React, { FC } from "react";
+import { Box, Card, Divider, Grid, IconButton, styled } from '@mui/material';
+import { H3, H6, Small, Tiny } from 'components/Typography';
+import UkoAvatar from 'components/UkoAvatar';
+import React, { FC } from 'react';
 
 // component props interface
 interface UserCardProps {
@@ -19,14 +19,14 @@ interface UserCardProps {
 // styled components
 const ImageWrapper = styled(Box)(({ theme }) => ({
   height: 100,
-  position: "relative",
-  "&::before": {
+  position: 'relative',
+  '&::before': {
     content: '""',
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
     left: 0,
     top: 0,
-    position: "absolute",
+    position: 'absolute',
     opacity: 0.6,
     backgroundColor: theme.palette.primary[100],
   },
@@ -37,11 +37,11 @@ const StyledAvatar = styled(UkoAvatar)(({ theme }) => ({
   width: 50,
   height: 50,
   bottom: -25,
-  position: "absolute",
-  left: "50%",
-  right: "50%",
-  transform: "translateX(-50%)",
-  border: "2px solid",
+  position: 'absolute',
+  left: '50%',
+  right: '50%',
+  transform: 'translateX(-50%)',
+  border: '2px solid',
   borderColor: theme.palette.background.paper,
 }));
 
@@ -56,9 +56,9 @@ const UserCard: FC<UserCardProps> = ({ user }) => {
 
       <Box
         sx={{
-          display: "flex",
-          alignItems: "center",
-          flexDirection: "column",
+          display: 'flex',
+          alignItems: 'center',
+          flexDirection: 'column',
           marginTop: 5,
         }}
       >

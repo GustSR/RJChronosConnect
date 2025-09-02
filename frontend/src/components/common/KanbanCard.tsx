@@ -43,7 +43,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ card, index }) => {
           sx={{
             mb: 2,
             borderRadius: 3,
-            boxShadow: snapshot.isDragging 
+            boxShadow: snapshot.isDragging
               ? '0 8px 32px rgba(0, 0, 0, 0.15)'
               : '0 2px 12px rgba(0, 0, 0, 0.08)',
             border: '1px solid #f0f0f0',
@@ -60,7 +60,14 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ card, index }) => {
         >
           <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
             {/* Header com data e menu */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 2,
+              }}
+            >
               <Typography variant="caption" color="text.secondary">
                 {card.dueDate}
               </Typography>
@@ -70,9 +77,9 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ card, index }) => {
             </Box>
 
             {/* Título */}
-            <Typography 
-              variant="h6" 
-              sx={{ 
+            <Typography
+              variant="h6"
+              sx={{
                 fontWeight: 600,
                 fontSize: '16px',
                 lineHeight: 1.3,
@@ -96,14 +103,25 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ card, index }) => {
                 '& .MuiChip-label': {
                   px: 1.5,
                   py: 0.5,
-                }
+                },
               }}
             />
 
             {/* Progress */}
             <Box sx={{ mb: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                <Typography variant="body2" color="text.secondary" fontSize="13px">
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 1,
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  fontSize="13px"
+                >
                   Project Progress
                 </Typography>
                 <Typography variant="body2" fontWeight="600" fontSize="13px">
@@ -126,9 +144,15 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ card, index }) => {
             </Box>
 
             {/* Footer com avatars e time left */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <AvatarGroup 
-                max={3} 
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <AvatarGroup
+                max={3}
                 sx={{
                   '& .MuiAvatar-root': {
                     width: 32,
@@ -151,8 +175,17 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ card, index }) => {
                 ))}
               </AvatarGroup>
 
-              <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary' }}>
-                <AccessTime fontSize="small" sx={{ mr: 0.5, fontSize: '16px' }} />
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  color: 'text.secondary',
+                }}
+              >
+                <AccessTime
+                  fontSize="small"
+                  sx={{ mr: 0.5, fontSize: '16px' }}
+                />
                 <Typography variant="caption" fontSize="12px">
                   {card.timeLeft}
                 </Typography>

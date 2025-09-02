@@ -1,17 +1,17 @@
-import { Box, Button, Card, styled } from "@mui/material";
-import { H1, Paragraph } from "components/Typography";
-import { FC } from "react";
+import { Box, Button, Card, styled } from '@mui/material';
+import { H1, Paragraph } from 'components/Typography';
+import { FC } from 'react';
 
 // styled components
 const StyledCard = styled(Card)(({ theme }) => ({
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  padding: "1rem 3rem",
-  [theme.breakpoints.down("sm")]: {
-    flexDirection: "column-reverse",
-    padding: "2rem",
-    "& img": { marginBottom: "1.5rem" },
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  padding: '1rem 3rem',
+  [theme.breakpoints.down('sm')]: {
+    flexDirection: 'column-reverse',
+    padding: '2rem',
+    '& img': { marginBottom: '1.5rem' },
   },
 }));
 
@@ -28,7 +28,7 @@ const Footer: FC<FooterProps> = ({ imageLink }) => {
         <Paragraph fontSize={13} color="secondary.400" fontWeight="500">
           Clean design & code for your next project.
         </Paragraph>
-        <Button variant="contained" size="small" sx={{ mt: "2rem" }}>
+        <Button variant="contained" size="small" sx={{ mt: '2rem' }}>
           Buy Now
         </Button>
       </Box>

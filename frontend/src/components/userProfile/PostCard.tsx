@@ -1,4 +1,4 @@
-import { Favorite, MoreVert, Send } from "@mui/icons-material";
+import { Favorite, MoreVert, Send } from '@mui/icons-material';
 import {
   Avatar,
   Box,
@@ -8,13 +8,13 @@ import {
   InputBase,
   styled,
   useTheme,
-} from "@mui/material";
-import FlexBox from "components/FlexBox";
-import { H5, H6, Small, Tiny } from "components/Typography";
-import CommentIcon from "icons/CommentIcon";
-import ShareIcon from "icons/ShareIcon";
-import UploadIcon from "icons/UploadIcon";
-import React, { FC, MouseEvent } from "react";
+} from '@mui/material';
+import FlexBox from 'components/FlexBox';
+import { H5, H6, Small, Tiny } from 'components/Typography';
+import CommentIcon from 'icons/CommentIcon';
+import ShareIcon from 'icons/ShareIcon';
+import UploadIcon from 'icons/UploadIcon';
+import React, { FC, MouseEvent } from 'react';
 
 // component props interface
 interface PostCardProps {
@@ -29,15 +29,15 @@ interface PostCardProps {
 const ImageWrapper = styled(Box)(() => ({
   width: 48,
   height: 48,
-  overflow: "hidden",
-  borderRadius: "50%",
+  overflow: 'hidden',
+  borderRadius: '50%',
 }));
 
 const PostImageWrapper = styled(Box)(() => ({
-  width: "100%",
+  width: '100%',
   marginTop: 16,
-  overflow: "hidden",
-  borderRadius: "8px",
+  overflow: 'hidden',
+  borderRadius: '8px',
 }));
 
 const PostCard: FC<PostCardProps> = ({ post, handleMore }) => {
@@ -103,13 +103,13 @@ const PostCard: FC<PostCardProps> = ({ post, handleMore }) => {
               height: 36,
               paddingX: 2,
               fontSize: 13,
-              width: "100%",
+              width: '100%',
               marginLeft: 1,
               fontWeight: 600,
-              borderRadius: "8px",
-              color: "text.primary",
+              borderRadius: '8px',
+              color: 'text.primary',
               backgroundColor:
-                theme.palette.mode === "light" ? "secondary.200" : "divider",
+                theme.palette.mode === 'light' ? 'secondary.200' : 'divider',
             }}
           />
 

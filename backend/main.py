@@ -3,8 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from contextlib import asynccontextmanager
 import uvicorn
-from typing import List, Optional
-from datetime import datetime, timedelta
+from typing import List, Optional, Dict
+from datetime import datetime, timezone, timedelta
 from pydantic import BaseModel
 import logging
 import pytz
@@ -231,7 +231,7 @@ async def log_activity(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("🚀 RJChronos Backend starting up...")
+    logger.info("RJChronos Backend starting up...")
     
     # Add a test activity entry to show the system is working
     await log_activity(
@@ -313,11 +313,88 @@ async def get_cpes():
 
 @app.get("/api/devices/onus", response_model=List[ONU])
 async def get_onus():
-    return mock_onus
+    """
+    Retorna lista de ONUs APENAS provisionadas/autorizadas pelo sistema
+    """
+    try:
+        # Se não há dispositivos provisionados, retornar lista vazia
+        if not provisioned_devices_db:
+            logger.info("Nenhuma ONU provisionada encontrada")
+            return []
+        
+        client = await get_genieacs_client()
+        raw_devices = await client.get_devices()
+        
+        onus = []
+        for device_data in raw_devices:
+            device_id = device_data.get("_id", "")
+            
+            # Verificar se este dispositivo foi provisionado pelo nosso sistema
+            if device_id in provisioned_devices_db:
+                onu_data = transform_genieacs_to_onu(device_data)
+                if onu_data:
+                    # Enriquecer com dados de provisionamento
+                    provisioned_info = provisioned_devices_db[device_id]
+                    onu_data.update({
+                        "customer_name": provisioned_info.client_name,
+                        "customer_address": provisioned_info.client_address,
+                        "service_profile": provisioned_info.service_profile,
+                        "vlan_id": provisioned_info.vlan_id,
+                        "wan_mode": provisioned_info.wan_mode,
+                        "comment": provisioned_info.comment,
+                        "provisioned_at": provisioned_info.provisioned_at.isoformat(),
+                        "provisioned_by": provisioned_info.provisioned_by
+                    })
+                    onus.append(ONU(**onu_data))
+        
+        logger.info(f"Retornando {len(onus)} ONUs provisionadas pelo sistema")
+        return onus
+            
+    except Exception as e:
+        logger.error(f"Erro ao buscar ONUs provisionadas: {e}")
+        # Retornar lista vazia em caso de erro
+        return []
 
 @app.get("/api/devices/olts", response_model=List[OLT])
 async def get_olts():
     return mock_olts
+
+@app.get("/api/devices/olts/{olt_id}/stats")
+async def get_olt_stats(olt_id: str):
+    """
+    Retorna estatísticas de uma OLT específica
+    """
+    try:
+        # Verificar se a OLT existe
+        olt_exists = any(olt.id == olt_id for olt in mock_olts)
+        if not olt_exists:
+            raise HTTPException(status_code=404, detail="OLT não encontrada")
+        
+        # Contar ONUs conectadas a essa OLT
+        # Primeiro, buscar ONUs provisionadas que estão conectadas a essa OLT
+        provisioned_onus = [onu for onu in provisioned_devices_db.values()]
+        
+        # Para ONUs mock, filtrar por olt_id
+        mock_onus_for_olt = [onu for onu in mock_onus if onu.olt_id == olt_id]
+        
+        # Combinar dados reais e mock para estatísticas
+        total_onus = len(provisioned_onus) + len(mock_onus_for_olt)
+        
+        # Assumir que ONUs provisionadas estão online, mock_onus usar o status
+        online_onus = len(provisioned_onus) + len([onu for onu in mock_onus_for_olt if onu.status == "online"])
+        offline_onus = total_onus - online_onus
+        
+        return {
+            "total": total_onus,
+            "online": online_onus,
+            "offline": offline_onus
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao buscar estatísticas da OLT {olt_id}: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 @app.get("/api/alerts", response_model=List[Alert])
 async def get_alerts():
@@ -405,6 +482,538 @@ async def get_dashboard_metrics():
             "sla_compliance": 99.8
         }
 
+# ONU Provisioning Endpoints
+class PendingONUModel(BaseModel):
+    id: str
+    serial_number: str
+    olt_name: str
+    board: int
+    port: int
+    discovered_at: datetime
+    distance: Optional[float] = None
+    onu_type: str
+    status: str = "pending"
+    rx_power: Optional[float] = None
+    temperature: Optional[float] = None
+
+# Modelo para rastrear dispositivos provisionados
+class ProvisionedDevice(BaseModel):
+    device_id: str
+    serial_number: str
+    client_name: str
+    client_address: str
+    service_profile: str
+    vlan_id: int
+    wan_mode: str
+    pppoe_username: Optional[str] = None
+    pppoe_password: Optional[str] = None
+    provisioned_at: datetime
+    provisioned_by: str = "admin"
+    status: str = "active"
+    comment: Optional[str] = None
+
+class ONUProvisionRequest(BaseModel):
+    client_name: str
+    client_address: str
+    service_profile: str = "default"
+    vlan_id: Optional[int] = 100
+    wan_mode: str = "dhcp"  # dhcp, pppoe, static
+    pppoe_username: Optional[str] = None
+    pppoe_password: Optional[str] = None
+    comment: Optional[str] = None
+
+# Base de dados em memória para dispositivos provisionados (em produção seria banco de dados)
+provisioned_devices_db: Dict[str, ProvisionedDevice] = {}
+
+@app.get("/api/provisioning/pending", response_model=List[PendingONUModel])
+async def get_pending_onus():
+    """
+    Retorna ONUs descobertas mas não autorizadas (pendentes de provisionamento)
+    """
+    try:
+        client = await get_genieacs_client()
+        raw_devices = await client.get_devices()
+        
+        # Filtrar apenas dispositivos que parecem ser ONUs não autorizadas
+        pending_onus = []
+        
+        for device_data in raw_devices:
+            device_id_info = device_data.get("_deviceId", {})
+            serial_number = device_id_info.get("_SerialNumber", "Unknown")
+            product_class = device_id_info.get("_ProductClass", "")
+            device_id = device_data.get("_id", f"pending-{serial_number}")
+            
+            # Identificar ONUs baseado no ProductClass ou outros indicadores
+            onu_indicators = ["HG8310", "F601", "F670", "AN5506", "G-140W"]
+            is_onu = any(indicator in product_class for indicator in onu_indicators)
+            
+            if is_onu:
+                # Verificar se já foi provisionada
+                if device_id in provisioned_devices_db:
+                    logger.debug(f"ONU {serial_number} já provisionada, pulando")
+                    continue
+                
+                # Apenas ONUs NÃO provisionadas são consideradas pendentes
+                last_inform = device_data.get("_lastInform")
+                
+                # Critérios mais específicos para ONUs "descobertas" mas não autorizadas:
+                # 1. Tem last_inform (está comunicando com GenieACS)
+                # 2. Não está na nossa base de provisionados
+                # 3. Pode ter sido descoberta recentemente
+                
+                pending_onu = PendingONUModel(
+                    id=device_id,
+                    serial_number=serial_number,
+                    olt_name="OLT-Auto-Detected",  # Seria detectado pela rede
+                    board=1,  # Seria detectado automaticamente
+                    port=1,   # Seria detectado automaticamente
+                    discovered_at=datetime.now(),
+                    distance=1.5,  # Simulado
+                    onu_type=product_class,
+                    status="pending",
+                    rx_power=-18.5,
+                    temperature=42.1
+                )
+                pending_onus.append(pending_onu)
+        
+        logger.info(f"Encontradas {len(pending_onus)} ONUs pendentes")
+        
+        # Se não há ONUs pendentes reais, retornar algumas simuladas para demonstração
+        if not pending_onus:
+            logger.info("Nenhuma ONU pendente encontrada, gerando dados de demonstração")
+            mock_pending = [
+                PendingONUModel(
+                    id=f"pending-demo-{i}",
+                    serial_number=f"DEMO{str(i).zfill(8)}",
+                    olt_name=f"OLT-Central-{(i % 2) + 1:02d}",
+                    board=1,
+                    port=i + 1,
+                    discovered_at=datetime.now() - timedelta(minutes=i * 15),
+                    distance=round(1.2 + (i * 0.3), 1),
+                    onu_type="Huawei HG8310M" if i % 2 == 0 else "ZTE F601",
+                    status="pending",
+                    rx_power=round(-18.5 - (i * 0.5), 1),
+                    temperature=round(40.0 + (i * 1.2), 1)
+                ) for i in range(3)
+            ]
+            return mock_pending
+        
+        return pending_onus
+        
+    except Exception as e:
+        logger.error(f"Erro ao buscar ONUs pendentes: {e}")
+        # Retornar dados de demonstração em caso de erro
+        return [
+            PendingONUModel(
+                id="pending-error-demo",
+                serial_number="ERROR12345678",
+                olt_name="OLT-Error-Demo",
+                board=1,
+                port=1,
+                discovered_at=datetime.now(),
+                distance=1.5,
+                onu_type="Demo Error",
+                status="pending",
+                rx_power=-20.0,
+                temperature=45.0
+            )
+        ]
+
+@app.post("/api/provisioning/{onu_id}/authorize")
+async def authorize_onu(onu_id: str, provision_data: ONUProvisionRequest):
+    """
+    Autoriza uma ONU pendente e provisiona na rede
+    """
+    try:
+        client = await get_genieacs_client()
+        
+        # Buscar dados da ONU pendente
+        device_data = await client.get_device_by_id(onu_id)
+        if not device_data:
+            raise HTTPException(status_code=404, detail="ONU não encontrada")
+        
+        logger.info(f"Autorizando ONU {onu_id} para cliente {provision_data.client_name}")
+        
+        # Definir parâmetros básicos de autorização via TR-069
+        # Estes parâmetros dependem do modelo da ONU e da sua infraestrutura
+        authorization_params = {
+            # Habilitar ONU na OLT
+            "InternetGatewayDevice.DeviceInfo.X_BROADCOM_COM_EnableStatus": True,
+            
+            # Configurar VLAN se especificada
+            "InternetGatewayDevice.LANDevice.1.LANEthernetInterfaceConfig.1.X_BROADCOM_COM_VLANID": provision_data.vlan_id,
+            
+            # Configurar modo WAN baseado no solicitado
+            "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ConnectionType": provision_data.wan_mode.upper(),
+        }
+        
+        # Se for PPPoE, configurar credenciais (se fornecidas)
+        if provision_data.wan_mode == "pppoe":
+            authorization_params.update({
+                "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Enable": True,
+            })
+            
+            # Adicionar credenciais PPPoE se fornecidas
+            if provision_data.pppoe_username:
+                authorization_params["InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Username"] = provision_data.pppoe_username
+            
+            if provision_data.pppoe_password:
+                authorization_params["InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Password"] = provision_data.pppoe_password
+        
+        # Aplicar configurações via TR-069
+        success_count = 0
+        for param_name, param_value in authorization_params.items():
+            try:
+                success = await client.set_parameter(onu_id, param_name, param_value)
+                if success:
+                    success_count += 1
+            except Exception as param_error:
+                logger.warning(f"Falha ao configurar {param_name}: {param_error}")
+        
+        # Registrar dispositivo como provisionado
+        serial_number = device_data.get('_deviceId', {}).get('_SerialNumber', f'SN_{onu_id}')
+        provisioned_device = ProvisionedDevice(
+            device_id=onu_id,
+            serial_number=serial_number,
+            client_name=provision_data.client_name,
+            client_address=provision_data.client_address,
+            service_profile=provision_data.service_profile,
+            vlan_id=provision_data.vlan_id or 100,
+            wan_mode=provision_data.wan_mode,
+            pppoe_username=provision_data.pppoe_username,
+            pppoe_password=provision_data.pppoe_password,
+            provisioned_at=datetime.now(),
+            provisioned_by="admin",
+            status="active",
+            comment=provision_data.comment
+        )
+        
+        # Salvar na "base de dados" (em memória)
+        provisioned_devices_db[onu_id] = provisioned_device
+        
+        # Log da atividade
+        await log_activity(
+            device_id=onu_id,
+            device_name=f"ONU {serial_number}",
+            action="onu_authorization",
+            description=f"ONU autorizada para cliente {provision_data.client_name}",
+            executed_by="admin",
+            status="success" if success_count > 0 else "partial",
+            result=f"Aplicadas {success_count}/{len(authorization_params)} configurações",
+            metadata={
+                "client_name": provision_data.client_name,
+                "client_address": provision_data.client_address,
+                "service_profile": provision_data.service_profile,
+                "vlan_id": provision_data.vlan_id,
+                "wan_mode": provision_data.wan_mode
+            }
+        )
+        
+        return {
+            "success": True,
+            "message": f"ONU {onu_id} autorizada com sucesso para {provision_data.client_name}",
+            "provisioned_client": {
+                "onu_id": onu_id,
+                "client_name": provision_data.client_name,
+                "client_address": provision_data.client_address,
+                "service_profile": provision_data.service_profile,
+                "configurations_applied": success_count,
+                "authorized_at": datetime.now().isoformat()
+            },
+            # ID para redirecionamento imediato para configuração
+            "redirect_to_config": f"/dashboard/clientes/{onu_id}/configurar"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao autorizar ONU {onu_id}: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+@app.delete("/api/provisioning/{onu_id}/reject")
+async def reject_onu(onu_id: str, reason: str = "Rejected by administrator"):
+    """
+    Rejeita uma ONU pendente
+    """
+    try:
+        # Log da atividade de rejeição
+        await log_activity(
+            device_id=onu_id,
+            device_name=f"ONU {onu_id}",
+            action="onu_rejection",
+            description=f"ONU rejeitada: {reason}",
+            executed_by="admin",
+            status="success",
+            result="ONU removida da lista de pendentes",
+            metadata={"rejection_reason": reason}
+        )
+        
+        # Em um cenário real, você pode querer:
+        # 1. Bloquear o dispositivo no GenieACS
+        # 2. Adicionar à lista negra
+        # 3. Enviar comandos para desconectar
+        
+        logger.info(f"ONU {onu_id} rejeitada: {reason}")
+        
+        return {
+            "success": True,
+            "message": f"ONU {onu_id} rejeitada com sucesso",
+            "reason": reason,
+            "rejected_at": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao rejeitar ONU {onu_id}: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+@app.get("/api/provisioning/clients")
+async def get_provisioned_clients():
+    """
+    Retorna lista de todos os clientes provisionados preservando dados salvos
+    """
+    try:
+        if not provisioned_devices_db:
+            logger.info("📋 Nenhum cliente provisionado encontrado")
+            return []
+        
+        client = await get_genieacs_client()
+        provisioned_clients = []
+        
+        for onu_id, provisioned_device in provisioned_devices_db.items():
+            logger.info(f"Processando cliente provisionado {onu_id}:")
+            logger.info(f"  📋 Nome: {provisioned_device.client_name}")
+            logger.info(f"  🏠 Endereço: {provisioned_device.client_address}")
+            logger.info(f"  💬 Comentário: {provisioned_device.comment}")
+            
+            # Buscar dados atuais do GenieACS para status/monitoramento
+            device_data = await client.get_device_by_id(onu_id)
+            
+            # Construir resposta preservando dados salvos
+            client_response = {
+                "id": onu_id,
+                "serial_number": provisioned_device.serial_number,
+                "model": device_data.get("_deviceId", {}).get("_ProductClass", "Unknown") if device_data else "Unknown",
+                "olt_id": "olt-001",  # Seria extraído dos dados reais
+                "pon_port": "1/1",    # Seria extraído dos dados reais
+                "status": "online" if (device_data and device_data.get("_lastInform")) else "offline",
+                "rx_power": -18.5,    # Seria extraído dos dados reais
+                "tx_power": 2.5,      # Seria extraído dos dados reais
+                "distance": 1.2,      # Seria extraído dos dados reais
+                "last_inform": device_data.get("_lastInform") if device_data else None,
+                "created_at": device_data.get("_registered") if device_data else provisioned_device.provisioned_at.isoformat(),
+                
+                # Dados salvos - preservar sempre
+                "customer_name": provisioned_device.client_name,
+                "customer_address": provisioned_device.client_address,
+                "service_profile": provisioned_device.service_profile,
+                "vlan_id": provisioned_device.vlan_id,
+                "wan_mode": provisioned_device.wan_mode,
+                "comment": provisioned_device.comment,
+                "provisioned_at": provisioned_device.provisioned_at.isoformat(),
+                "provisioned_by": provisioned_device.provisioned_by,
+            }
+            
+            provisioned_clients.append(client_response)
+        
+        logger.info(f"Retornando {len(provisioned_clients)} clientes provisionados com dados preservados")
+        return provisioned_clients
+        
+    except Exception as e:
+        logger.error(f"Erro ao buscar clientes provisionados: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+# Client Configuration Endpoints
+class ClientConfigurationUpdate(BaseModel):
+    client_name: Optional[str] = None
+    client_address: Optional[str] = None
+    service_profile: Optional[str] = None
+    vlan_id: Optional[int] = None
+    wan_mode: Optional[str] = None
+    pppoe_username: Optional[str] = None
+    pppoe_password: Optional[str] = None
+    comment: Optional[str] = None
+
+@app.get("/api/clients/{onu_id}")
+async def get_client_configuration(onu_id: str):
+    """
+    Retorna configuração de um cliente provisionado específico
+    """
+    try:
+        # Verificar se o dispositivo foi provisionado
+        if onu_id not in provisioned_devices_db:
+            raise HTTPException(status_code=404, detail="Cliente não encontrado")
+        
+        provisioned_device = provisioned_devices_db[onu_id]
+        
+        logger.info(f"Carregando cliente {onu_id}:")
+        logger.info(f"  📋 Nome: {provisioned_device.client_name}")
+        logger.info(f"  🏠 Endereço: {provisioned_device.client_address}")
+        logger.info(f"  💬 Comentário: {provisioned_device.comment}")
+        
+        # Buscar dados atuais do GenieACS
+        client = await get_genieacs_client()
+        device_data = await client.get_device_by_id(onu_id)
+        
+        if device_data:
+            # Construir resposta com dados salvos (não usar transform que sobrescreve)
+            device_id_info = device_data.get("_deviceId", {})
+            response_data = {
+                "id": onu_id,
+                "serial_number": device_id_info.get("_SerialNumber", provisioned_device.serial_number),
+                "model": device_id_info.get("_ProductClass", "Unknown"),
+                "olt_id": "olt-001",  # Seria extraído dos dados reais
+                "pon_port": "1/1",    # Seria extraído dos dados reais
+                "status": "online" if device_data.get("_lastInform") else "offline",
+                "rx_power": -18.5,    # Seria extraído dos dados reais
+                "tx_power": 2.5,      # Seria extraído dos dados reais
+                "distance": 1.2,      # Seria extraído dos dados reais
+                "last_seen": device_data.get("_lastInform"),
+                "created_at": device_data.get("_registered", provisioned_device.provisioned_at.isoformat()),
+                
+                # Dados salvos - não sobrescrever
+                "customer_name": provisioned_device.client_name,
+                "customer_address": provisioned_device.client_address,
+                "service_profile": provisioned_device.service_profile,
+                "vlan_id": provisioned_device.vlan_id,
+                "wan_mode": provisioned_device.wan_mode,
+                "pppoe_username": provisioned_device.pppoe_username,
+                "pppoe_password": provisioned_device.pppoe_password,
+                "comment": provisioned_device.comment,
+                "provisioned_at": provisioned_device.provisioned_at.isoformat(),
+                "provisioned_by": provisioned_device.provisioned_by,
+                
+                "_genieacs_metadata": {
+                    "manufacturer": device_id_info.get("_Manufacturer", "Unknown"),
+                    "oui": device_id_info.get("_OUI", ""),
+                    "product_class": device_id_info.get("_ProductClass", ""),
+                    "last_inform_raw": device_data.get("_lastInform")
+                }
+            }
+            return response_data
+        
+        # Fallback para dados provisionados apenas
+        return {
+            "id": onu_id,
+            "serial_number": provisioned_device.serial_number,
+            "customer_name": provisioned_device.client_name,
+            "customer_address": provisioned_device.client_address,
+            "service_profile": provisioned_device.service_profile,
+            "vlan_id": provisioned_device.vlan_id,
+            "wan_mode": provisioned_device.wan_mode,
+            "pppoe_username": provisioned_device.pppoe_username,
+            "pppoe_password": provisioned_device.pppoe_password,
+            "comment": provisioned_device.comment,
+            "provisioned_at": provisioned_device.provisioned_at.isoformat(),
+            "provisioned_by": provisioned_device.provisioned_by,
+            "status": "offline"  # Se não conseguiu dados do GenieACS
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao buscar configuração do cliente {onu_id}: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+@app.put("/api/clients/{onu_id}")
+async def update_client_configuration(onu_id: str, updates: ClientConfigurationUpdate):
+    """
+    Atualiza configuração de um cliente provisionado
+    """
+    logger.info(f"🏠🏠🏠 ENDPOINT CLIENT CHAMADO: PUT /api/clients/{onu_id}")
+    logger.info(f"🏠🏠🏠 DADOS RECEBIDOS: {updates}")
+    
+    try:
+        # Verificar se o dispositivo foi provisionado
+        if onu_id not in provisioned_devices_db:
+            raise HTTPException(status_code=404, detail="Cliente não encontrado")
+        
+        # Atualizar dados na base local
+        provisioned_device = provisioned_devices_db[onu_id]
+        
+        if updates.client_name is not None:
+            provisioned_device.client_name = updates.client_name
+        if updates.client_address is not None:
+            provisioned_device.client_address = updates.client_address
+        if updates.service_profile is not None:
+            provisioned_device.service_profile = updates.service_profile
+        if updates.vlan_id is not None:
+            provisioned_device.vlan_id = updates.vlan_id
+        if updates.wan_mode is not None:
+            provisioned_device.wan_mode = updates.wan_mode
+        if updates.pppoe_username is not None:
+            provisioned_device.pppoe_username = updates.pppoe_username
+        if updates.pppoe_password is not None:
+            provisioned_device.pppoe_password = updates.pppoe_password
+        if updates.comment is not None:
+            provisioned_device.comment = updates.comment
+        
+        # Salvar de volta na base
+        provisioned_devices_db[onu_id] = provisioned_device
+        
+        logger.info(f"💾 Cliente {onu_id} atualizado:")
+        logger.info(f"  📋 Nome: {provisioned_device.client_name}")
+        logger.info(f"  🏠 Endereço: {provisioned_device.client_address}")
+        logger.info(f"  🌐 WAN Mode: {provisioned_device.wan_mode}")
+        if provisioned_device.wan_mode == "pppoe":
+            logger.info(f"  👤 PPPoE User: {provisioned_device.pppoe_username}")
+            logger.info(f"  🔐 PPPoE Pass: {'***' if provisioned_device.pppoe_password else 'Not set'}")
+        logger.info(f"  💬 Comentário: {provisioned_device.comment}")
+        
+        # Aplicar mudanças via TR-069 se necessário
+        client = await get_genieacs_client()
+        config_updates = {}
+        
+        if updates.vlan_id is not None:
+            config_updates["InternetGatewayDevice.LANDevice.1.LANEthernetInterfaceConfig.1.X_BROADCOM_COM_VLANID"] = updates.vlan_id
+        
+        if updates.wan_mode is not None:
+            config_updates["InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ConnectionType"] = updates.wan_mode.upper()
+        
+        # Se for PPPoE e temos credenciais, configurar parâmetros específicos
+        if updates.wan_mode == "pppoe" or (provisioned_device.wan_mode == "pppoe" and (updates.pppoe_username is not None or updates.pppoe_password is not None)):
+            config_updates["InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Enable"] = True
+            
+            if updates.pppoe_username is not None:
+                config_updates["InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Username"] = updates.pppoe_username
+            
+            if updates.pppoe_password is not None:
+                config_updates["InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Password"] = updates.pppoe_password
+        
+        # Aplicar configurações TR-069
+        success_count = 0
+        for param_name, param_value in config_updates.items():
+            try:
+                success = await client.set_parameter(onu_id, param_name, param_value)
+                if success:
+                    success_count += 1
+            except Exception as param_error:
+                logger.warning(f"Falha ao aplicar {param_name}: {param_error}")
+        
+        # Log da atividade
+        await log_activity(
+            device_id=onu_id,
+            device_name=f"Cliente {provisioned_device.client_name}",
+            action="client_configuration_update",
+            description=f"Configuração atualizada",
+            executed_by="admin",
+            status="success",
+            result=f"Dados salvos, {success_count} configurações TR-069 aplicadas",
+            metadata=updates.dict(exclude_none=True)
+        )
+        
+        return {
+            "success": True,
+            "message": "Configuração atualizada com sucesso",
+            "tr069_updates_applied": success_count,
+            "updated_fields": list(updates.dict(exclude_none=True).keys())
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao atualizar configuração do cliente {onu_id}: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
 # WiFi Configuration Endpoints
 @app.get("/api/wifi/configs")
 async def get_wifi_configs():
@@ -455,7 +1064,7 @@ async def get_device_wifi_config(device_id: str, band: str = "2.4GHz"):
         client = await get_genieacs_client()
         
         # PRIMEIRO: Força refresh dos parâmetros de senha WiFi
-        logger.info(f"🔄 FORÇANDO REFRESH de senhas WiFi para {device_id} (banda {band})")
+        logger.info(f"FORÇANDO REFRESH de senhas WiFi para {device_id} (banda {band})")
         await client.refresh_wifi_passwords(device_id)
         
         # Aguarda um pouco para o dispositivo processar o refresh
@@ -481,8 +1090,87 @@ async def get_device_wifi_config(device_id: str, band: str = "2.4GHz"):
         logger.error(f"Erro ao buscar configuração WiFi do dispositivo {device_id}: {e}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
+@app.post("/api/device/refresh-wifi")
+async def refresh_device_wifi(device_id: str = Query(...)):
+    """
+    Forçar refresh das configurações WiFi de um dispositivo via TR-069
+    """
+    try:
+        logger.info(f"Iniciando refresh WiFi para dispositivo: {device_id}")
+        
+        # Obter cliente GenieACS
+        client = await get_genieacs_client()
+        
+        # Verificar se o dispositivo existe e está online
+        device_data = await client.get_device_by_id(device_id)
+        if not device_data:
+            raise HTTPException(status_code=404, detail=f"Dispositivo {device_id} não encontrado")
+        
+        # Verificar última comunicação do dispositivo
+        last_inform = device_data.get('_lastInform')
+        if last_inform:
+            last_inform_time = datetime.fromisoformat(last_inform.replace('Z', '+00:00'))
+            time_diff = datetime.now(timezone.utc) - last_inform_time
+            logger.info(f"📡 Última comunicação há {time_diff.total_seconds():.1f} segundos")
+            
+            if time_diff.total_seconds() > 300:  # 5 minutos
+                logger.warning(f"Dispositivo pode estar offline - última comunicação há {time_diff.total_seconds():.1f} segundos")
+        
+        # Criar tarefas de refresh para WiFi 2.4GHz e 5GHz
+        refresh_tasks = []
+        
+        # Parâmetros WiFi para refresh
+        wifi_params = [
+            # WiFi 2.4GHz
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID",
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.KeyPassphrase",
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase",
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Enable",
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.BeaconType",
+            # WiFi 5GHz
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID",
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.PreSharedKey.1.KeyPassphrase",
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.KeyPassphrase",
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Enable",
+            "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.BeaconType"
+        ]
+        
+        # Criar tarefa de getParameterValues para todos os parâmetros
+        task_data = {
+            "name": "getParameterValues",
+            "parameterNames": wifi_params
+        }
+        
+        task_result = await client.add_task(device_id, task_data)
+        if task_result:
+            refresh_tasks.append(task_result)
+            logger.info(f"📝 Tarefa de refresh criada com ID: {task_result.get('_id')}")
+        
+        # Tentar fazer connection request para forçar comunicação imediata
+        try:
+            connection_result = await client.connection_request(device_id)
+            logger.info(f"📞 Connection request enviado: {connection_result}")
+        except Exception as conn_error:
+            logger.warning(f"Erro ao enviar connection request: {conn_error}")
+        
+        logger.info(f"Refresh WiFi iniciado para dispositivo {device_id}")
+        
+        return {
+            "success": True,
+            "message": f"Refresh WiFi iniciado para dispositivo {device_id}",
+            "device_id": device_id,
+            "tasks_created": len(refresh_tasks),
+            "last_inform": last_inform
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao fazer refresh WiFi: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
+
 @app.put("/api/wifi/configs/{device_id}")
-async def update_device_wifi_config(device_id: str, updates: WiFiConfigUpdate, band: str = "2.4GHz"):
+async def update_device_wifi_config(device_id: str, updates: WiFiConfigUpdate, band: str = Query("2.4GHz")):
     """
     Atualiza configuração WiFi de um dispositivo
     
@@ -496,15 +1184,35 @@ async def update_device_wifi_config(device_id: str, updates: WiFiConfigUpdate, b
         
         # Verificar se dispositivo existe
         device_data = await client.get_device_by_id(device_id)
+        
         if not device_data:
             raise HTTPException(status_code=404, detail="Dispositivo não encontrado")
         
+        # Verificar status do dispositivo
+        import time
+        
+        # Verificar se device_data é um dicionário válido
+        if not isinstance(device_data, dict):
+            device_status = 0
+            time_since_last_inform = 0
+        else:
+            # Verificar _lastInform
+            last_inform_data = device_data.get("_lastInform", {})
+            
+            if isinstance(last_inform_data, dict):
+                device_status = last_inform_data.get("_timestamp", 0)
+            else:
+                device_status = 0
+            
+            current_time = time.time() * 1000  # timestamp em ms
+            time_since_last_inform = current_time - device_status
+            
+        # Se dispositivo não se comunicou nas últimas 24 horas, avisar
+        if time_since_last_inform > 24 * 60 * 60 * 1000:
+            logger.warning(f"Dispositivo {device_id} pode estar offline - último inform há {time_since_last_inform/1000/60:.1f} minutos")
+        
         # Converter updates para dict, removendo valores None
         update_dict = {k: v for k, v in updates.dict().items() if v is not None}
-        
-        logger.info(f"🎯 UPDATE WiFi REQUEST para dispositivo {device_id} (banda: {band}):")
-        logger.info(f"   Updates raw: {updates.dict()}")
-        logger.info(f"   Updates filtrados (sem None): {update_dict}")
         
         if not update_dict:
             raise HTTPException(status_code=400, detail="Nenhuma atualização fornecida")
@@ -533,7 +1241,6 @@ async def update_device_wifi_config(device_id: str, updates: WiFiConfigUpdate, b
         if success_count == 0:
             raise HTTPException(status_code=500, detail="Falha ao aplicar configurações")
         
-        # Retornar configuração atualizada
         logger.info(f"Aplicadas {success_count}/{len(tasks)} configurações WiFi no dispositivo {device_id}")
         
         # Log activity

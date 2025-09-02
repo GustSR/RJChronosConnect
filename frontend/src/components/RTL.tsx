@@ -1,7 +1,7 @@
-import createCache from "@emotion/cache";
-import { CacheProvider } from "@emotion/react";
-import { FC, ReactNode, useEffect } from "react";
-import rtlPlugin from "stylis-plugin-rtl";
+import createCache from '@emotion/cache';
+import { CacheProvider } from '@emotion/react';
+import { FC, ReactNode, useEffect } from 'react';
+import rtlPlugin from 'stylis-plugin-rtl';
 
 // component props types
 type RTLProps = {
@@ -11,7 +11,7 @@ type RTLProps = {
 
 const cacheRTL = () =>
   createCache({
-    key: "rtl",
+    key: 'rtl',
     prepend: true,
     stylisPlugins: [rtlPlugin],
   });
@@ -34,7 +34,7 @@ const RTL: FC<RTLProps> = ({ children, direction }) => {
 
   // return <CacheProvider value={cacheRTL()}>{children}</CacheProvider>;
 
-  if (direction === "rtl") {
+  if (direction === 'rtl') {
     return <CacheProvider value={cacheRTL()}>{children}</CacheProvider>;
   }
 

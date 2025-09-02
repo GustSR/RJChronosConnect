@@ -13,7 +13,7 @@ import {
   LinearProgress,
 } from '@mui/material';
 import {
-  Router,
+  // Router,
   SignalWifi4Bar,
   Schedule,
   CheckCircle,
@@ -30,28 +30,36 @@ interface PendingOnuCardProps {
   onReject?: (onuId: string) => void;
 }
 
-const PendingOnuCard: React.FC<PendingOnuCardProps> = ({ 
-  onu, 
-  onProvision, 
-  onReject 
+const PendingOnuCard: React.FC<PendingOnuCardProps> = ({
+  onu,
+  onProvision,
+  onReject,
 }) => {
   const signalStatus = onu.rxPower ? getSignalStatus(onu.rxPower) : 'warning';
-  
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'good': return '#10b981';
-      case 'warning': return '#f59e0b';
-      case 'critical': return '#ef4444';
-      default: return '#6b7280';
+      case 'good':
+        return '#10b981';
+      case 'warning':
+        return '#f59e0b';
+      case 'critical':
+        return '#ef4444';
+      default:
+        return '#6b7280';
     }
   };
 
   const getStatusIcon = () => {
     switch (signalStatus) {
-      case 'good': return <CheckCircle sx={{ color: '#10b981' }} />;
-      case 'warning': return <Warning sx={{ color: '#f59e0b' }} />;
-      case 'critical': return <Error sx={{ color: '#ef4444' }} />;
-      default: return <SignalWifi4Bar sx={{ color: '#6b7280' }} />;
+      case 'good':
+        return <CheckCircle sx={{ color: '#10b981' }} />;
+      case 'warning':
+        return <Warning sx={{ color: '#f59e0b' }} />;
+      case 'critical':
+        return <Error sx={{ color: '#ef4444' }} />;
+      default:
+        return <SignalWifi4Bar sx={{ color: '#6b7280' }} />;
     }
   };
 
@@ -68,7 +76,7 @@ const PendingOnuCard: React.FC<PendingOnuCardProps> = ({
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMinutes = Math.floor(diffMs / 60000);
-    
+
     if (diffMinutes < 1) return 'Agora mesmo';
     if (diffMinutes < 60) return `${diffMinutes}m atrás`;
     if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)}h atrás`;
@@ -90,7 +98,14 @@ const PendingOnuCard: React.FC<PendingOnuCardProps> = ({
     >
       <CardContent sx={{ p: 3 }}>
         {/* Header com ONU Type e Status */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            mb: 3,
+          }}
+        >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Avatar
               sx={{
@@ -106,12 +121,16 @@ const PendingOnuCard: React.FC<PendingOnuCardProps> = ({
               <Typography variant="h6" fontWeight="600" fontSize="16px">
                 {onu.onuType}
               </Typography>
-              <Typography variant="body2" color="text.secondary" fontSize="12px">
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                fontSize="12px"
+              >
                 S/N: {onu.serialNumber}
               </Typography>
             </Box>
           </Box>
-          
+
           <Chip
             icon={<Schedule fontSize="small" />}
             label={formatDiscoveredTime(onu.discoveredAt)}
@@ -145,7 +164,7 @@ const PendingOnuCard: React.FC<PendingOnuCardProps> = ({
               />
             </Tooltip>
           </Stack>
-          
+
           <Typography variant="body2" color="text.secondary" fontSize="13px">
             Distância: {onu.distance}km
           </Typography>
@@ -155,14 +174,24 @@ const PendingOnuCard: React.FC<PendingOnuCardProps> = ({
 
         {/* Métricas de Sinal e Temperatura */}
         <Box sx={{ mb: 3 }}>
-          <Typography variant="body2" fontWeight="600" sx={{ mb: 2, color: '#1a1a1a' }}>
+          <Typography
+            variant="body2"
+            fontWeight="600"
+            sx={{ mb: 2, color: '#1a1a1a' }}
+          >
             Status do Sinal
           </Typography>
-          
+
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
             {getStatusIcon()}
             <Box sx={{ flexGrow: 1 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  mb: 0.5,
+                }}
+              >
                 <Typography variant="body2" fontSize="12px">
                   RX Power
                 </Typography>
@@ -172,7 +201,10 @@ const PendingOnuCard: React.FC<PendingOnuCardProps> = ({
               </Box>
               <LinearProgress
                 variant="determinate"
-                value={Math.max(0, Math.min(100, ((onu.rxPower || -30) + 30) * 3.33))}
+                value={Math.max(
+                  0,
+                  Math.min(100, ((onu.rxPower || -30) + 30) * 3.33)
+                )}
                 sx={{
                   height: 4,
                   borderRadius: 2,
@@ -189,7 +221,11 @@ const PendingOnuCard: React.FC<PendingOnuCardProps> = ({
           {onu.temperature && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Thermostat fontSize="small" sx={{ color: '#6b7280' }} />
-              <Typography variant="body2" fontSize="13px" color="text.secondary">
+              <Typography
+                variant="body2"
+                fontSize="13px"
+                color="text.secondary"
+              >
                 Temperatura: {onu.temperature}°C
               </Typography>
             </Box>
@@ -219,7 +255,7 @@ const PendingOnuCard: React.FC<PendingOnuCardProps> = ({
           >
             Provisionar
           </Button>
-          
+
           {onReject && (
             <Button
               variant="outlined"

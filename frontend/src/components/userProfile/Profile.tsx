@@ -1,33 +1,33 @@
-import { BusinessCenter, Mail, Place } from "@mui/icons-material";
-import { Box, Card, Divider, Grid, styled } from "@mui/material";
-import FlexBox from "components/FlexBox";
-import MoreOptions from "components/MoreOptions";
-import { H3, H4, H6, Small } from "components/Typography";
-import FollowerIcon from "icons/FollowerIcon";
-import UserPlusIcon from "icons/UserPlusIcon";
-import { FC, MouseEvent, useState } from "react";
-import PostCard from "./PostCard";
+import { BusinessCenter, Mail, Place } from '@mui/icons-material';
+import { Box, Card, Divider, Grid, styled } from '@mui/material';
+import FlexBox from 'components/FlexBox';
+import MoreOptions from 'components/MoreOptions';
+import { H3, H4, H6, Small } from 'components/Typography';
+import FollowerIcon from 'icons/FollowerIcon';
+import UserPlusIcon from 'icons/UserPlusIcon';
+import { FC, MouseEvent, useState } from 'react';
+import PostCard from './PostCard';
 
 // styled components
 const IconWrapper = styled(Box)<{ color?: string }>(({ theme, color }) => ({
   width: 40,
   height: 40,
-  color: "white",
-  display: "flex",
-  borderRadius: "4px",
-  alignItems: "center",
-  justifyContent: "center",
+  color: 'white',
+  display: 'flex',
+  borderRadius: '4px',
+  alignItems: 'center',
+  justifyContent: 'center',
   backgroundColor: color ? color : theme.palette.primary.main,
 }));
 
 const FollowWrapper = styled(Box)(() => ({
   maxWidth: 300,
-  margin: "auto",
+  margin: 'auto',
   paddingTop: 32,
   paddingBottom: 32,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
 }));
 
 const Profile: FC = () => {
@@ -107,36 +107,36 @@ const Profile: FC = () => {
 const details = [
   {
     Icon: Place,
-    boldText: "Kuwait",
-    smallText: "Lives at",
+    boldText: 'Kuwait',
+    smallText: 'Lives at',
   },
   {
     Icon: Mail,
-    boldText: "",
-    smallText: "Lenore_Rosenbaum@gmail.com",
+    boldText: '',
+    smallText: 'Lenore_Rosenbaum@gmail.com',
   },
   {
     Icon: BusinessCenter,
-    boldText: "UI_LIB",
-    smallText: "Manager at",
+    boldText: 'UI_LIB',
+    smallText: 'Manager at',
   },
   {
     Icon: BusinessCenter,
-    smallText: "Studied at",
-    boldText: "Corwin - Blick",
+    smallText: 'Studied at',
+    boldText: 'Corwin - Blick',
   },
 ];
 
 const postList = [
   {
     id: 1,
-    postTitle: "Coffee and Afternoon",
-    postImage: "/static/post-image/post-1.png",
+    postTitle: 'Coffee and Afternoon',
+    postImage: '/static/post-image/post-1.png',
   },
   {
     id: 2,
-    postTitle: "Coffee and Afternoon",
-    postImage: "",
+    postTitle: 'Coffee and Afternoon',
+    postImage: '',
   },
 ];
 

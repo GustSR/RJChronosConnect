@@ -1,11 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 
 interface UsePageAnimationProps {
   delay?: number;
   duration?: number;
 }
 
-export const usePageAnimation = ({ delay = 0, duration = 600 }: UsePageAnimationProps = {}) => {
+export const usePageAnimation = ({
+  delay = 0,
+  duration = 600,
+}: UsePageAnimationProps = {}) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {

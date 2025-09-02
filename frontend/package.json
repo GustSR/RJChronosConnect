@@ -38,7 +38,11 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "tsc",
-    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\"",
+    "lint:fix": "eslint --fix \"src/**/*.{js,jsx,ts,tsx}\"",
+    "fm:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\"",
+    "fm:fix": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
+    "fix:all": "npm run fm:fix && npm run lint:fix",
     "test": "vitest",
     "fix:prettier": "prettier --write ."
   },

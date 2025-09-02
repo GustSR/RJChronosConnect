@@ -1,44 +1,44 @@
-import { LoadingButton } from "@mui/lab";
-import { Box, Button, Card, FormHelperText } from "@mui/material";
-import FlexBox from "components/FlexBox";
-import LightTextField from "components/LightTextField";
-import { H1, Small } from "components/Typography";
-import { useFormik } from "formik";
-import { FC, useState } from "react";
-import toast from "react-hot-toast";
-import { Link } from "react-router-dom";
-import * as Yup from "yup";
+import { LoadingButton } from '@mui/lab';
+import { Box, Button, Card, FormHelperText } from '@mui/material';
+import FlexBox from 'components/FlexBox';
+import LightTextField from 'components/LightTextField';
+import { H1, Small } from 'components/Typography';
+import { useFormik } from 'formik';
+import { FC, useState } from 'react';
+import toast from 'react-hot-toast';
+import { Link } from 'react-router-dom';
+import * as Yup from 'yup';
 
 const ForgetPassword: FC = () => {
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const initialValues = {
-    email: "demo@example.com",
+    email: 'demo@example.com',
     submit: null,
   };
   // form field value validation schema
   const validationSchema = Yup.object().shape({
     email: Yup.string()
-      .email("Must be a valid email")
+      .email('Must be a valid email')
       .max(255)
-      .required("Email is required"),
+      .required('Email is required'),
   });
 
   const { errors, values, touched, handleBlur, handleChange, handleSubmit } =
     useFormik({
       initialValues,
       validationSchema,
-      onSubmit: (values) => {
+      onSubmit: (_values) => {
         setLoading(true);
 
         setTimeout(() => {
           setLoading(false);
-          toast.success("Reset link has been sent!");
+          toast.success('Reset link has been sent!');
         }, 1000);
 
         if (error) {
-          setError("Error!");
+          setError('Error!');
           setLoading(false);
         }
       },
@@ -67,7 +67,7 @@ const ForgetPassword: FC = () => {
         </FlexBox>
 
         <FlexBox justifyContent="space-between" flexWrap="wrap" my={2}>
-          <form noValidate onSubmit={handleSubmit} style={{ width: "100%" }}>
+          <form noValidate onSubmit={handleSubmit} style={{ width: '100%' }}>
             <LightTextField
               fullWidth
               name="email"
@@ -75,7 +75,7 @@ const ForgetPassword: FC = () => {
               label="Email"
               onBlur={handleBlur}
               onChange={handleChange}
-              value={values.email || ""}
+              value={values.email || ''}
               error={Boolean(touched.email && errors.email)}
               helperText={touched.email && errors.email}
             />
@@ -87,7 +87,7 @@ const ForgetPassword: FC = () => {
                   mt: 2,
                   fontSize: 13,
                   fontWeight: 500,
-                  textAlign: "center",
+                  textAlign: 'center',
                 }}
               >
                 {error}
@@ -108,7 +108,7 @@ const ForgetPassword: FC = () => {
           </form>
 
           <Small margin="auto" mt={3} color="text.disabled">
-            Don't have an account?{" "}
+            Don't have an account?{' '}
             <Link to="/register">
               <Small color="primary.main">Create an account</Small>
             </Link>

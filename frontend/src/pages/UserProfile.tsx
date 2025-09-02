@@ -1,28 +1,28 @@
-import { TabContext, TabList, TabPanel } from "@mui/lab";
-import { Box, Card, Grid, styled, Tab } from "@mui/material";
-import FlexBox from "components/FlexBox";
-import SearchInput from "components/SearchInput";
-import { H3, Small } from "components/Typography";
-import UkoAvatar from "components/UkoAvatar";
-import FollowerCard from "components/userProfile/FollowerCard";
-import FriendCard from "components/userProfile/FriendCard";
-import Gallery from "components/userProfile/Gallery";
-import Profile from "components/userProfile/Profile";
-import useAuth from "hooks/useAuth";
-import useTitle from "hooks/useTitle";
-import { FC, SyntheticEvent, useState } from "react";
+import { TabContext, TabList, TabPanel } from '@mui/lab';
+import { Box, Card, Grid, styled, Tab } from '@mui/material';
+import FlexBox from 'components/FlexBox';
+import SearchInput from 'components/SearchInput';
+import { H3, Small } from 'components/Typography';
+import UkoAvatar from 'components/UkoAvatar';
+import FollowerCard from 'components/userProfile/FollowerCard';
+import FriendCard from 'components/userProfile/FriendCard';
+import Gallery from 'components/userProfile/Gallery';
+import Profile from 'components/userProfile/Profile';
+import useAuth from 'hooks/useAuth';
+import useTitle from 'hooks/useTitle';
+import { FC, SyntheticEvent, useState } from 'react';
 
 // styled components
 const StyledCard = styled(Card)(() => ({
-  position: "relative",
+  position: 'relative',
   borderTopLeftRadius: 0,
   borderTopRightRadius: 0,
 }));
 
 const ContentWrapper = styled(FlexBox)(() => ({
   top: -20,
-  alignItems: "center",
-  position: "relative",
+  alignItems: 'center',
+  position: 'relative',
 }));
 
 const StyledTab = styled(Tab)(({ theme }) => ({
@@ -32,16 +32,16 @@ const StyledTab = styled(Tab)(({ theme }) => ({
 
 const StyledTabList = styled(TabList)(({ theme }) => ({
   [theme.breakpoints.down(780)]: {
-    width: "100%",
-    "& .MuiTabs-flexContainer": {
-      justifyContent: "space-between",
+    width: '100%',
+    '& .MuiTabs-flexContainer': {
+      justifyContent: 'space-between',
     },
     marginBottom: 20,
   },
-  [theme.breakpoints.up("sm")]: {
-    "& .MuiTabs-flexContainer": {
+  [theme.breakpoints.up('sm')]: {
+    '& .MuiTabs-flexContainer': {
       minWidth: 400,
-      justifyContent: "space-between",
+      justifyContent: 'space-between',
     },
   },
 }));
@@ -52,10 +52,10 @@ const StyledTabPanel = styled(TabPanel)(() => ({
 
 const UserProfile: FC = () => {
   // change navbar title
-  useTitle("User Profile");
+  useTitle('User Profile');
   const { user } = useAuth();
 
-  const [value, setValue] = useState("1");
+  const [value, setValue] = useState('1');
 
   const handleChange = (_: SyntheticEvent, newValue: string) => {
     setValue(newValue);
@@ -65,13 +65,13 @@ const UserProfile: FC = () => {
     <Box pt={2} pb={4}>
       <TabContext value={value}>
         <StyledCard>
-          <Box sx={{ height: 200, width: "100%", overflow: "hidden" }}>
+          <Box sx={{ height: 200, width: '100%', overflow: 'hidden' }}>
             <img
               src="/static/background/user-cover-pic.png"
               alt="User Cover"
               height="100%"
               width="100%"
-              style={{ objectFit: "cover" }}
+              style={{ objectFit: 'cover' }}
             />
           </Box>
 
@@ -83,12 +83,12 @@ const UserProfile: FC = () => {
           >
             <ContentWrapper>
               <UkoAvatar
-                src={user?.avatar || "/static/avatar/001-man.svg"}
+                src={user?.avatar || '/static/avatar/001-man.svg'}
                 sx={{
                   border: 4,
                   width: 100,
                   height: 100,
-                  borderColor: "background.paper",
+                  borderColor: 'background.paper',
                 }}
               />
 
@@ -146,160 +146,160 @@ const UserProfile: FC = () => {
 
 const followers = [
   {
-    image: "/static/avatar/040-man-11.svg",
-    name: "Mr. Breast",
-    profession: "Product Designer",
+    image: '/static/avatar/040-man-11.svg',
+    name: 'Mr. Breast',
+    profession: 'Product Designer',
     following: true,
   },
   {
-    image: "/static/avatar/041-woman-11.svg",
-    name: "Ethan Drake",
-    profession: "UI Designer",
+    image: '/static/avatar/041-woman-11.svg',
+    name: 'Ethan Drake',
+    profession: 'UI Designer',
     following: true,
   },
   {
-    image: "/static/avatar/042-vampire.svg",
-    name: "Selena Gomez",
-    profession: "Marketing Manager",
+    image: '/static/avatar/042-vampire.svg',
+    name: 'Selena Gomez',
+    profession: 'Marketing Manager',
     following: false,
   },
   {
-    image: "/static/avatar/043-chef.svg",
-    name: "Sally Becker",
-    profession: "UI Designer",
+    image: '/static/avatar/043-chef.svg',
+    name: 'Sally Becker',
+    profession: 'UI Designer',
     following: true,
   },
   {
-    image: "/static/avatar/044-farmer.svg",
-    name: "Dua Lipa",
-    profession: "Marketing Manager",
+    image: '/static/avatar/044-farmer.svg',
+    name: 'Dua Lipa',
+    profession: 'Marketing Manager',
     following: false,
   },
   {
-    image: "/static/avatar/045-man-12.svg",
-    name: "Joe Murry",
-    profession: "Product Designer",
+    image: '/static/avatar/045-man-12.svg',
+    name: 'Joe Murry',
+    profession: 'Product Designer',
     following: true,
   },
   {
-    image: "/static/avatar/040-man-11.svg",
-    name: "Mr. Breast",
-    profession: "Product Designer",
+    image: '/static/avatar/040-man-11.svg',
+    name: 'Mr. Breast',
+    profession: 'Product Designer',
     following: true,
   },
   {
-    image: "/static/avatar/041-woman-11.svg",
-    name: "Ethan Drake",
-    profession: "UI Designer",
+    image: '/static/avatar/041-woman-11.svg',
+    name: 'Ethan Drake',
+    profession: 'UI Designer',
     following: true,
   },
   {
-    image: "/static/avatar/042-vampire.svg",
-    name: "Selena Gomez",
-    profession: "Marketing Manager",
+    image: '/static/avatar/042-vampire.svg',
+    name: 'Selena Gomez',
+    profession: 'Marketing Manager',
     following: false,
   },
   {
-    image: "/static/avatar/043-chef.svg",
-    name: "Sally Becker",
-    profession: "UI Designer",
+    image: '/static/avatar/043-chef.svg',
+    name: 'Sally Becker',
+    profession: 'UI Designer',
     following: true,
   },
   {
-    image: "/static/avatar/044-farmer.svg",
-    name: "Dua Lipa",
-    profession: "Marketing Manager",
+    image: '/static/avatar/044-farmer.svg',
+    name: 'Dua Lipa',
+    profession: 'Marketing Manager',
     following: false,
   },
   {
-    image: "/static/avatar/045-man-12.svg",
-    name: "Joe Murry",
-    profession: "Product Designer",
+    image: '/static/avatar/045-man-12.svg',
+    name: 'Joe Murry',
+    profession: 'Product Designer',
     following: true,
   },
 ];
 
 const friends = [
   {
-    name: "Selena Gomez",
-    image: "/static/avatar/012-woman-2.svg",
-    profession: "Marketing Manager",
-    facebookUrl: "",
-    twitterUrl: "",
-    instagramUrl: "",
-    dribbleUrl: "",
+    name: 'Selena Gomez',
+    image: '/static/avatar/012-woman-2.svg',
+    profession: 'Marketing Manager',
+    facebookUrl: '',
+    twitterUrl: '',
+    instagramUrl: '',
+    dribbleUrl: '',
   },
   {
-    name: "Selena Gomez",
-    image: "/static/avatar/012-woman-2.svg",
-    profession: "Marketing Manager",
-    facebookUrl: "",
-    twitterUrl: "",
-    instagramUrl: "",
-    dribbleUrl: "",
+    name: 'Selena Gomez',
+    image: '/static/avatar/012-woman-2.svg',
+    profession: 'Marketing Manager',
+    facebookUrl: '',
+    twitterUrl: '',
+    instagramUrl: '',
+    dribbleUrl: '',
   },
   {
-    name: "Selena Gomez",
-    image: "/static/avatar/012-woman-2.svg",
-    profession: "Marketing Manager",
-    facebookUrl: "",
-    twitterUrl: "",
-    instagramUrl: "",
-    dribbleUrl: "",
+    name: 'Selena Gomez',
+    image: '/static/avatar/012-woman-2.svg',
+    profession: 'Marketing Manager',
+    facebookUrl: '',
+    twitterUrl: '',
+    instagramUrl: '',
+    dribbleUrl: '',
   },
   {
-    name: "Selena Gomez",
-    image: "/static/avatar/012-woman-2.svg",
-    profession: "Marketing Manager",
-    facebookUrl: "",
-    twitterUrl: "",
-    instagramUrl: "",
-    dribbleUrl: "",
+    name: 'Selena Gomez',
+    image: '/static/avatar/012-woman-2.svg',
+    profession: 'Marketing Manager',
+    facebookUrl: '',
+    twitterUrl: '',
+    instagramUrl: '',
+    dribbleUrl: '',
   },
   {
-    name: "Selena Gomez",
-    image: "/static/avatar/012-woman-2.svg",
-    profession: "Marketing Manager",
-    facebookUrl: "",
-    twitterUrl: "",
-    instagramUrl: "",
-    dribbleUrl: "",
+    name: 'Selena Gomez',
+    image: '/static/avatar/012-woman-2.svg',
+    profession: 'Marketing Manager',
+    facebookUrl: '',
+    twitterUrl: '',
+    instagramUrl: '',
+    dribbleUrl: '',
   },
   {
-    name: "Selena Gomez",
-    image: "/static/avatar/012-woman-2.svg",
-    profession: "Marketing Manager",
-    facebookUrl: "",
-    twitterUrl: "",
-    instagramUrl: "",
-    dribbleUrl: "",
+    name: 'Selena Gomez',
+    image: '/static/avatar/012-woman-2.svg',
+    profession: 'Marketing Manager',
+    facebookUrl: '',
+    twitterUrl: '',
+    instagramUrl: '',
+    dribbleUrl: '',
   },
   {
-    name: "Selena Gomez",
-    image: "/static/avatar/012-woman-2.svg",
-    profession: "Marketing Manager",
-    facebookUrl: "",
-    twitterUrl: "",
-    instagramUrl: "",
-    dribbleUrl: "",
+    name: 'Selena Gomez',
+    image: '/static/avatar/012-woman-2.svg',
+    profession: 'Marketing Manager',
+    facebookUrl: '',
+    twitterUrl: '',
+    instagramUrl: '',
+    dribbleUrl: '',
   },
   {
-    name: "Selena Gomez",
-    image: "/static/avatar/012-woman-2.svg",
-    profession: "Marketing Manager",
-    facebookUrl: "",
-    twitterUrl: "",
-    instagramUrl: "",
-    dribbleUrl: "",
+    name: 'Selena Gomez',
+    image: '/static/avatar/012-woman-2.svg',
+    profession: 'Marketing Manager',
+    facebookUrl: '',
+    twitterUrl: '',
+    instagramUrl: '',
+    dribbleUrl: '',
   },
   {
-    name: "Selena Gomez",
-    image: "/static/avatar/012-woman-2.svg",
-    profession: "Marketing Manager",
-    facebookUrl: "",
-    twitterUrl: "",
-    instagramUrl: "",
-    dribbleUrl: "",
+    name: 'Selena Gomez',
+    image: '/static/avatar/012-woman-2.svg',
+    profession: 'Marketing Manager',
+    facebookUrl: '',
+    twitterUrl: '',
+    instagramUrl: '',
+    dribbleUrl: '',
   },
 ];
 

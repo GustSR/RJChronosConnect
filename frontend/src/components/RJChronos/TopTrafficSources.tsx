@@ -9,209 +9,267 @@ import {
   Typography,
   LinearProgress,
   Avatar,
-} from "@mui/material";
-import { H5 } from "components/Typography";
-import { FC } from "react";
-import AnimatedCard from "components/common/AnimatedCard";
+  Skeleton,
+  Alert,
+  Chip,
+} from '@mui/material';
+import { H5 } from 'components/Typography';
+import { FC, useEffect, useState } from 'react';
+import AnimatedCard from 'components/common/AnimatedCard';
 import {
   Router as RouterIcon,
   TrendingUp,
   TrendingDown,
   Remove,
-} from "@mui/icons-material";
-
-interface TrafficSourceData {
-  id: number;
-  name: string;
-  region: string;
-  icon: string;
-  traffic: number;
-  percentage: number;
-  trend: "up" | "down" | "stable";
-  trendValue: string;
-  color: string;
-}
+  Settings,
+  Hub,
+} from '@mui/icons-material';
+import { genieacsApi } from '../../services/genieacsApi';
+import { TrafficSourcesStats } from '../../services/types';
 
 const TopTrafficSources: FC = () => {
-  const trafficSources: TrafficSourceData[] = [
-    {
-      id: 1,
-      name: "OLT-Central-01",
-      region: "Centro",
-      icon: "R",
-      traffic: 2847,
-      percentage: 32.5,
-      trend: "up",
-      trendValue: "+12.3%",
-      color: "#3b82f6",
-    },
-    {
-      id: 2,
-      name: "OLT-Norte-03",
-      region: "Zona Norte",
-      icon: "N",
-      traffic: 2156,
-      percentage: 24.6,
-      trend: "up",
-      trendValue: "+8.7%",
-      color: "#10b981",
-    },
-    {
-      id: 3,
-      name: "OLT-Sul-02",
-      region: "Zona Sul",
-      icon: "S",
-      traffic: 1892,
-      percentage: 21.6,
-      trend: "down",
-      trendValue: "-2.1%",
-      color: "#f59e0b",
-    },
-    {
-      id: 4,
-      name: "OLT-Oeste-01",
-      region: "Zona Oeste",
-      icon: "O",
-      traffic: 1523,
-      percentage: 17.4,
-      trend: "stable",
-      trendValue: "0.0%",
-      color: "#8b5cf6",
-    },
-    {
-      id: 5,
-      name: "OLT-Leste-04",
-      region: "Zona Leste",
-      icon: "L",
-      traffic: 985,
-      percentage: 11.2,
-      trend: "up",
-      trendValue: "+5.2%",
-      color: "#ef4444",
-    },
-  ];
+  const [trafficStats, setTrafficStats] = useState<TrafficSourcesStats | null>(
+    null
+  );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const getTrendIcon = (trend: "up" | "down" | "stable") => {
-    switch (trend) {
-      case "up":
-        return <TrendingUp sx={{ fontSize: 16, color: "success.main" }} />;
-      case "down":
-        return <TrendingDown sx={{ fontSize: 16, color: "error.main" }} />;
-      case "stable":
-        return <Remove sx={{ fontSize: 16, color: "text.secondary" }} />;
+  const fetchTrafficSources = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const stats = await genieacsApi.getTrafficSources();
+      setTrafficStats(stats);
+    } catch (error) {
+      console.error('Erro ao carregar fontes de tráfego:', error);
+      setError('Erro ao carregar dados');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getTrendColor = (trend: "up" | "down" | "stable") => {
+  useEffect(() => {
+    fetchTrafficSources();
+  }, []);
+
+  // Loading state
+  if (loading) {
+    return (
+      <AnimatedCard sx={{ padding: '2rem' }} delay={400}>
+        <Box sx={{ mb: 3 }}>
+          <Skeleton width="40%" height={32} />
+          <Skeleton width="60%" height={20} sx={{ mt: 1 }} />
+        </Box>
+
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow>
+                {[
+                  'Dispositivo',
+                  'Região',
+                  'Tráfego',
+                  'Participação',
+                  'Tendência',
+                ].map((_, index) => (
+                  <TableCell key={index}>
+                    <Skeleton width="80%" height={20} />
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {[1, 2, 3, 4, 5].map((index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Skeleton variant="circular" width={40} height={40} />
+                      <Box>
+                        <Skeleton width="120px" height={20} />
+                        <Skeleton width="80px" height={16} sx={{ mt: 1 }} />
+                      </Box>
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton width="80px" height={20} />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton width="60px" height={20} />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton width="100px" height={20} />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton width="60px" height={20} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </AnimatedCard>
+    );
+  }
+
+  // Error state
+  if (error || !trafficStats) {
+    return (
+      <AnimatedCard sx={{ padding: '2rem' }} delay={400}>
+        <H5>Top Fontes de Tráfego</H5>
+        <Alert severity="error" sx={{ mt: 2 }}>
+          {error} - Dados em cache não disponíveis
+        </Alert>
+      </AnimatedCard>
+    );
+  }
+
+  const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
     switch (trend) {
-      case "up":
-        return "success.main";
-      case "down":
-        return "error.main";
-      case "stable":
-        return "text.secondary";
+      case 'up':
+        return <TrendingUp sx={{ fontSize: 16, color: 'success.main' }} />;
+      case 'down':
+        return <TrendingDown sx={{ fontSize: 16, color: 'error.main' }} />;
+      case 'stable':
+        return <Remove sx={{ fontSize: 16, color: 'text.secondary' }} />;
+    }
+  };
+
+  const getDeviceIcon = (deviceType: 'OLT' | 'Router' | 'Switch') => {
+    switch (deviceType) {
+      case 'OLT':
+        return <Hub sx={{ fontSize: 20 }} />;
+      case 'Router':
+        return <RouterIcon sx={{ fontSize: 20 }} />;
+      case 'Switch':
+        return <Settings sx={{ fontSize: 20 }} />;
+    }
+  };
+
+  const getStatusColor = (status: 'online' | 'offline' | 'warning') => {
+    switch (status) {
+      case 'online':
+        return '#10b981';
+      case 'warning':
+        return '#f59e0b';
+      case 'offline':
+        return '#ef4444';
+      default:
+        return '#6b7280';
     }
   };
 
   return (
-    <AnimatedCard sx={{ padding: "2rem" }} delay={600}>
-      <Box sx={{ mb: 3, display: "flex", alignItems: "center", gap: 1 }}>
-        <RouterIcon sx={{ color: "primary.main" }} />
+    <AnimatedCard sx={{ padding: '2rem' }} delay={400}>
+      <Box sx={{ mb: 3 }}>
         <H5>Top Fontes de Tráfego</H5>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          Principais geradores de tráfego nas últimas 24h
+        </Typography>
       </Box>
 
       <TableContainer>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: 600, color: "text.secondary" }}>
-                Fonte
-              </TableCell>
-              <TableCell sx={{ fontWeight: 600, color: "text.secondary" }}>
-                Tráfego
-              </TableCell>
-              <TableCell sx={{ fontWeight: 600, color: "text.secondary" }}>
-                Progresso
-              </TableCell>
-              <TableCell sx={{ fontWeight: 600, color: "text.secondary" }}>
-                Tendência
-              </TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Dispositivo</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Região</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Tráfego</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Participação</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Tendência</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {trafficSources.map((source) => (
-              <TableRow key={source.id}>
-                {/* Fonte */}
+            {trafficStats.sources.map((source) => (
+              <TableRow key={source.id} hover>
                 <TableCell>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Avatar
                       sx={{
-                        width: 32,
-                        height: 32,
-                        backgroundColor: source.color,
-                        fontSize: "14px",
-                        fontWeight: 600,
+                        backgroundColor: getStatusColor(source.status),
+                        color: 'white',
+                        width: 40,
+                        height: 40,
                       }}
                     >
-                      {source.icon}
+                      {getDeviceIcon(source.device_type)}
                     </Avatar>
                     <Box>
                       <Typography variant="body2" fontWeight={600}>
                         {source.name}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {source.region}
+                        {source.device_type}
                       </Typography>
                     </Box>
                   </Box>
                 </TableCell>
-
-                {/* Tráfego */}
+                <TableCell>
+                  <Typography variant="body2">{source.region}</Typography>
+                </TableCell>
                 <TableCell>
                   <Typography variant="body2" fontWeight={600}>
-                    {source.traffic.toLocaleString()} GB
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {source.percentage}% do total
+                    {source.traffic_mbps.toFixed(0)} Mbps
                   </Typography>
                 </TableCell>
-
-                {/* Progresso */}
-                <TableCell sx={{ width: 120 }}>
-                  <Box sx={{ width: "100%" }}>
+                <TableCell>
+                  <Box sx={{ minWidth: 120 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        mb: 0.5,
+                      }}
+                    >
+                      <Typography variant="body2" fontWeight={600}>
+                        {source.percentage.toFixed(1)}%
+                      </Typography>
+                    </Box>
                     <LinearProgress
                       variant="determinate"
                       value={source.percentage}
                       sx={{
                         height: 6,
                         borderRadius: 3,
-                        backgroundColor: "grey.200",
-                        "& .MuiLinearProgress-bar": {
-                          backgroundColor: source.color,
+                        backgroundColor: 'rgba(0,0,0,0.1)',
+                        '& .MuiLinearProgress-bar': {
+                          backgroundColor: getStatusColor(source.status),
                           borderRadius: 3,
                         },
                       }}
                     />
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ mt: 0.5, display: "block" }}
-                    >
-                      {source.percentage}%
-                    </Typography>
                   </Box>
                 </TableCell>
-
-                {/* Tendência */}
                 <TableCell>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Chip
+                    label={source.status}
+                    size="small"
+                    sx={{
+                      backgroundColor: getStatusColor(source.status),
+                      color: 'white',
+                      fontWeight: 500,
+                      textTransform: 'capitalize',
+                    }}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     {getTrendIcon(source.trend)}
                     <Typography
                       variant="body2"
                       fontWeight={600}
-                      color={getTrendColor(source.trend)}
+                      color={
+                        source.trend === 'up'
+                          ? 'success.main'
+                          : source.trend === 'down'
+                          ? 'error.main'
+                          : 'text.secondary'
+                      }
                     >
-                      {source.trendValue}
+                      {source.trend_value > 0 ? '+' : ''}
+                      {source.trend_value.toFixed(1)}%
                     </Typography>
                   </Box>
                 </TableCell>
@@ -220,6 +278,16 @@ const TopTrafficSources: FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Resumo do tráfego total */}
+      <Box sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+        <Typography variant="body2" color="text.secondary">
+          <strong>Tráfego Total:</strong>{' '}
+          {trafficStats.total_traffic.toFixed(0)} Mbps
+          {' • '}
+          <strong>Período:</strong> {trafficStats.period}
+        </Typography>
+      </Box>
     </AnimatedCard>
   );
 };

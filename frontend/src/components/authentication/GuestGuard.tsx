@@ -1,4 +1,4 @@
-import React, { Fragment, ReactNode } from "react";
+import React, { Fragment, ReactNode } from 'react';
 
 // component props interface
 interface GuestGuardProps {

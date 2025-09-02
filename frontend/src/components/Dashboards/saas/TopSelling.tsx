@@ -1,11 +1,11 @@
-import { Box, Card, Rating } from "@mui/material";
-import FlexBox from "components/FlexBox";
-import { H5, Small } from "components/Typography";
-import { FC } from "react";
+import { Box, Card, Rating } from '@mui/material';
+import FlexBox from 'components/FlexBox';
+import { H5, Small } from 'components/Typography';
+import { FC } from 'react';
 
 const TopSelling: FC = () => {
   return (
-    <Card sx={{ padding: "2rem", height: "100%" }}>
+    <Card sx={{ padding: '2rem', height: '100%' }}>
       <H5>Top selling Products</H5>
 
       {productList.map((product, index) => (
@@ -19,7 +19,7 @@ const TopSelling: FC = () => {
               size="small"
               defaultValue={product.rating}
               readOnly
-              sx={{ my: "3px" }}
+              sx={{ my: '3px' }}
             />
             <Small fontWeight={600}>${product.price}</Small>
           </Box>
@@ -31,20 +31,20 @@ const TopSelling: FC = () => {
 
 const productList = [
   {
-    title: "Nike airmax 170",
-    image: "/static/products/black-keds.png",
+    title: 'Nike airmax 170',
+    image: '/static/products/black-keds.png',
     price: 567,
     rating: 5,
   },
   {
-    title: "Nike airmax 170",
-    image: "/static/products/green-keds.png",
+    title: 'Nike airmax 170',
+    image: '/static/products/green-keds.png',
     price: 200,
     rating: 5,
   },
   {
-    title: "Nike airmax 170",
-    image: "/static/products/yellow-keds.png",
+    title: 'Nike airmax 170',
+    image: '/static/products/yellow-keds.png',
     price: 400,
     rating: 5,
   },

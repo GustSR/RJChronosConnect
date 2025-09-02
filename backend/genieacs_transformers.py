@@ -138,11 +138,11 @@ def transform_genieacs_to_cpe(device_data: Dict[str, Any]) -> Dict[str, Any]:
             ip_candidate = safe_get_nested(device_data, ip_path)
             if ip_candidate and ip_candidate.strip() and ip_candidate != "0.0.0.0":
                 external_ip = ip_candidate.strip()
-                logger.info(f"✅ IP encontrado para {cpe_id}: {external_ip} (via {ip_path})")
+                logger.info(f"IP encontrado para {cpe_id}: {external_ip} (via {ip_path})")
                 break
         
         if not external_ip:
-            logger.warning(f"⚠️ Nenhum IP válido encontrado para dispositivo {cpe_id}")
+            logger.warning(f"Nenhum IP válido encontrado para dispositivo {cpe_id}")
         
         # WiFi SSID
         wifi_ssid = safe_get_nested(
@@ -497,24 +497,14 @@ def extract_wifi_config_from_device(device_data: Dict[str, Any], band: str = "2.
         ]
         
         password = ""
-        logger.info(f"🔍 BUSCANDO SENHA WiFi para {device_id} (banda {band}):")
         for password_path in password_paths:
             password_candidate = safe_get_nested(device_data, password_path, "")
-            logger.info(f"  🔍 {password_path}: '{password_candidate}'")
             if password_candidate and password_candidate.strip():
                 password = password_candidate
-                logger.info(f"🔑 ✅ SENHA ENCONTRADA: '{password}' via {password_path}")
                 break
         
         if not password:
-            logger.info(f"🔒 Senha não disponível para leitura - campo será deixado em branco para nova senha")
-            # DEBUG: Mostrar estrutura disponível apenas no log
-            wlan_data = safe_get_nested(device_data, base_path, {})
-            if isinstance(wlan_data, dict):
-                logger.debug(f"📊 Estrutura disponível em {base_path}:")
-                for key in sorted(wlan_data.keys()):
-                    if 'key' in key.lower() or 'pass' in key.lower() or 'security' in key.lower():
-                        logger.debug(f"    🔑 {key}: {safe_get_nested(wlan_data, key)}")
+            logger.debug(f"Senha não disponível para leitura - campo será deixado em branco para nova senha")
         
         
         # Potência de transmissão (alguns modelos Huawei)
@@ -556,7 +546,7 @@ def extract_wifi_config_from_device(device_data: Dict[str, Any], band: str = "2.
                 # Se o valor parece ser RSSI (negativo entre -100 e 0)
                 if -100 <= signal_candidate <= 0:
                     signal_strength = float(signal_candidate)
-                    logger.info(f"📶 Sinal WiFi encontrado para {device_id}: {signal_strength}dBm (via {signal_path})")
+                    logger.debug(f"Sinal WiFi encontrado para {device_id}: {signal_strength}dBm (via {signal_path})")
                     break
         
         # Se não conseguiu obter sinal real, usar valor simulado mais realista
@@ -570,7 +560,7 @@ def extract_wifi_config_from_device(device_data: Dict[str, Any], band: str = "2.
                 else:
                     # 2.4GHz tem melhor alcance
                     signal_strength = round(random.uniform(-55, -35), 1)
-                logger.info(f"📶 Sinal WiFi simulado para {device_id} (banda {band}): {signal_strength}dBm")
+                logger.debug(f"Sinal WiFi simulado para {device_id} (banda {band}): {signal_strength}dBm")
             else:
                 signal_strength = None
         
@@ -625,7 +615,7 @@ def create_wifi_parameter_updates(device_id: str, updates: Dict[str, Any], band:
         Lista de tasks para o GenieACS
     """
     try:
-        logger.info(f"🔄 CRIANDO TASKS WiFi para dispositivo {device_id} (banda: {band})")
+        logger.debug(f"CRIANDO TASKS WiFi para dispositivo {device_id} (banda: {band})")
         logger.info(f"   Updates recebidos: {updates}")
         
         tasks = []
@@ -655,7 +645,7 @@ def create_wifi_parameter_updates(device_id: str, updates: Dict[str, Any], band:
         
         # Processar cada atualização
         for field, value in updates.items():
-            logger.info(f"🔍 Processando field: {field} = {value}")
+            logger.debug(f"Processando field: {field} = {value}")
             if value is None:
                 continue
                 
@@ -723,18 +713,44 @@ def create_wifi_parameter_updates(device_id: str, updates: Dict[str, Any], band:
                     "parameterValues": [[parameter_name, parameter_value]]
                 })
         
-        # Se há mudança de senha e security != Open
-        if "password" in updates and updates.get("security", "WPA2") != "Open":
+        # SENHA WIFI - Tratamento especial para password
+        if "password" in updates:
             password = updates["password"]
-            if password:
-                # Para WPA/WPA2, usar PreSharedKey
+            if password and len(str(password).strip()) > 0:
+                logger.info(f"🔐 Processando senha WiFi: '{password}' (len={len(password)})")
+                
+                # Estratégia: tentar os caminhos mais comuns primeiro
+                # Para máxima compatibilidade, usar apenas o caminho mais comum
+                primary_password_path = f"{base_path}.PreSharedKey.1.KeyPassphrase"
+                
+                # Task principal de senha
                 tasks.append({
                     "name": "setParameterValues",
-                    "parameterValues": [[f"{base_path}.PreSharedKey.1.KeyPassphrase", password]]
+                    "parameterValues": [[primary_password_path, str(password)]]
                 })
-                logger.info(f"✅ Adicionada task de senha WiFi: {password}")
+                logger.debug(f"Task principal de senha: {primary_password_path} = '{password}'")
+                
+                # Para garantir compatibilidade, adicionar também o caminho alternativo mais comum
+                alternative_password_path = f"{base_path}.KeyPassphrase"
+                tasks.append({
+                    "name": "setParameterValues", 
+                    "parameterValues": [[alternative_password_path, str(password)]]
+                })
+                logger.debug(f"Task alternativa de senha: {alternative_password_path} = '{password}'")
+                
+                # Para WPA/WPA2, também definir o BeaconType se não foi especificado
+                if "security" not in updates:
+                    # Assumir WPA2 como padrão para senhas
+                    tasks.append({
+                        "name": "setParameterValues",
+                        "parameterValues": [[f"{base_path}.BeaconType", "11i"]]
+                    })
+                    logger.debug(f"Definindo BeaconType para WPA2 (11i) automaticamente")
+                
+            else:
+                logger.warning(f"Senha vazia ou inválida recebida: '{password}'")
         
-        logger.info(f"✅ TASKS CRIADAS: {len(tasks)} tasks para dispositivo {device_id}")
+        logger.debug(f"TASKS CRIADAS: {len(tasks)} tasks para dispositivo {device_id}")
         for i, task in enumerate(tasks):
             logger.info(f"   Task {i+1}: {task}")
         return tasks

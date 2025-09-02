@@ -1,30 +1,30 @@
-import { Box, Card, useTheme } from "@mui/material";
-import { ApexOptions } from "apexcharts";
-import FlexBox from "components/FlexBox";
-import { H5 } from "components/Typography";
-import { FC } from "react";
-import Chart from "react-apexcharts";
-import AnalyticsPopover from "./AnalyticsPopover";
+import { Box, Card, useTheme } from '@mui/material';
+import { ApexOptions } from 'apexcharts';
+import FlexBox from 'components/FlexBox';
+import { H5 } from 'components/Typography';
+import { FC } from 'react';
+import Chart from 'react-apexcharts';
+import AnalyticsPopover from './AnalyticsPopover';
 
 const data = {
   series: [75, 50, 25],
-  categories: ["Sales", "Orders", "Return"],
+  categories: ['Sales', 'Orders', 'Return'],
 };
 
 const Analytics: FC = () => {
   const theme = useTheme();
 
   const chartOptions: ApexOptions = {
-    chart: { background: "transparent" },
-    colors: [theme.palette.primary.main, "#FF9777", "#FF6B93"],
-    labels: ["Sales", "Orders", "Return"],
+    chart: { background: 'transparent' },
+    colors: [theme.palette.primary.main, '#FF9777', '#FF6B93'],
+    labels: ['Sales', 'Orders', 'Return'],
     plotOptions: {
       radialBar: {
         dataLabels: {
           name: { show: false },
           value: { show: false },
         },
-        hollow: { size: "28%" },
+        hollow: { size: '28%' },
         track: {
           background: theme.palette.divider,
           margin: 12,
@@ -35,31 +35,31 @@ const Analytics: FC = () => {
       mode: theme.palette.mode,
     },
     stroke: {
-      lineCap: "round",
-      curve: "smooth",
+      lineCap: 'round',
+      curve: 'smooth',
     },
     legend: {
       show: true,
-      position: "bottom",
-      fontFamily: "inherit",
-      fontSize: "13px",
+      position: 'bottom',
+      fontFamily: 'inherit',
+      fontSize: '13px',
       fontWeight: 500,
       onItemClick: { toggleDataSeries: false },
       onItemHover: { highlightDataSeries: true },
     },
     tooltip: {
       enabled: true,
-      style: { fontFamily: "inherit" },
+      style: { fontFamily: 'inherit' },
       y: {
         formatter: (value) => `$${value}`,
       },
     },
     states: {
       hover: {
-        filter: { type: "none" },
+        filter: { type: 'none' },
       },
       active: {
-        filter: { type: "none" },
+        filter: { type: 'none' },
       },
     },
   };
@@ -68,9 +68,9 @@ const Analytics: FC = () => {
   return (
     <Card
       sx={{
-        padding: "2rem",
-        height: "100%",
-        [theme.breakpoints.down(425)]: { padding: "1.5rem" },
+        padding: '2rem',
+        height: '100%',
+        [theme.breakpoints.down(425)]: { padding: '1.5rem' },
       }}
     >
       <FlexBox alignItems="center" justifyContent="space-between">
@@ -81,17 +81,17 @@ const Analytics: FC = () => {
       <Box
         sx={{
           paddingTop: 2,
-          "& .apexcharts-tooltip": {
-            boxShadow: "none",
-            "& .apexcharts-active": { paddingBottom: 0 },
-            "&.apexcharts-theme-light": {
-              border: "none",
-              color: "white",
-              borderRadius: "8px",
+          '& .apexcharts-tooltip': {
+            boxShadow: 'none',
+            '& .apexcharts-active': { paddingBottom: 0 },
+            '&.apexcharts-theme-light': {
+              border: 'none',
+              color: 'white',
+              borderRadius: '8px',
             },
           },
-          "& .apexcharts-legend.position-bottom.apexcharts-align-center, .apexcharts-legend.position-top.apexcharts-align-center":
-            { justifyContent: "space-evenly" },
+          '& .apexcharts-legend.position-bottom.apexcharts-align-center, .apexcharts-legend.position-top.apexcharts-align-center':
+            { justifyContent: 'space-evenly' },
           [theme.breakpoints.down(425)]: { padding: 0 },
         }}
       >

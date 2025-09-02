@@ -106,15 +106,18 @@ export const mockKanbanData: KanbanColumnData[] = [
   },
 ];
 
-export const generateNewCard = (title: string, category: string = 'New Task') => ({
+export const generateNewCard = (
+  title: string,
+  category: string = 'New Task'
+) => ({
   id: `card-${Date.now()}`,
   title,
   category,
   progress: 0,
-  dueDate: new Date().toLocaleDateString('en-US', { 
-    month: 'short', 
-    day: 'numeric', 
-    year: 'numeric' 
+  dueDate: new Date().toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
   }),
   teamMembers: [
     {

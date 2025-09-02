@@ -1,4 +1,4 @@
-import { PhotoCamera } from "@mui/icons-material";
+import { PhotoCamera } from '@mui/icons-material';
 import {
   alpha,
   Box,
@@ -8,24 +8,24 @@ import {
   IconButton,
   styled,
   Switch,
-} from "@mui/material";
-import LightTextField from "components/LightTextField";
-import { Small, Tiny } from "components/Typography";
-import { useFormik } from "formik";
-import useTitle from "hooks/useTitle";
-import { FC } from "react";
-import * as Yup from "yup";
+} from '@mui/material';
+import LightTextField from 'components/LightTextField';
+import { Small, Tiny } from 'components/Typography';
+import { useFormik } from 'formik';
+import useTitle from 'hooks/useTitle';
+import { FC } from 'react';
+import * as Yup from 'yup';
 
 // styled components
 const ButtonWrapper = styled(Box)(({ theme }) => ({
   width: 100,
   height: 100,
-  display: "flex",
-  borderRadius: "50%",
-  alignItems: "center",
-  justifyContent: "center",
+  display: 'flex',
+  borderRadius: '50%',
+  alignItems: 'center',
+  justifyContent: 'center',
   backgroundColor:
-    theme.palette.mode === "light"
+    theme.palette.mode === 'light'
       ? theme.palette.secondary[200]
       : alpha(theme.palette.primary[100], 0.1),
 }));
@@ -33,52 +33,52 @@ const ButtonWrapper = styled(Box)(({ theme }) => ({
 const UploadButton = styled(Box)(({ theme }) => ({
   width: 50,
   height: 50,
-  display: "flex",
-  borderRadius: "50%",
-  border: "2px solid",
-  alignItems: "center",
-  justifyContent: "center",
+  display: 'flex',
+  borderRadius: '50%',
+  border: '2px solid',
+  alignItems: 'center',
+  justifyContent: 'center',
   borderColor: theme.palette.background.paper,
   backgroundColor:
-    theme.palette.mode === "light"
+    theme.palette.mode === 'light'
       ? theme.palette.secondary[400]
       : alpha(theme.palette.background.paper, 0.9),
 }));
 
 const SwitchWrapper = styled(Box)(() => ({
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  width: "100%",
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  width: '100%',
   marginTop: 10,
 }));
 
 const AddNewUser: FC = () => {
   // change navbar title
-  useTitle("Add New User");
+  useTitle('Add New User');
 
   const initialValues = {
-    fullName: "",
-    email: "",
-    phone: "",
-    country: "",
-    state: "",
-    city: "",
-    address: "",
-    zip: "",
-    about: "",
+    fullName: '',
+    email: '',
+    phone: '',
+    country: '',
+    state: '',
+    city: '',
+    address: '',
+    zip: '',
+    about: '',
   };
 
   const validationSchema = Yup.object().shape({
-    fullName: Yup.string().required("Name is Required!"),
-    email: Yup.string().email().required("Email is Required!"),
-    phone: Yup.number().min(8).required("Phone is Required!"),
-    country: Yup.string().required("Country is Required!"),
-    state: Yup.string().required("State is Required!"),
-    city: Yup.string().required("City is Required!"),
-    address: Yup.string().required("Address is Required!"),
-    zip: Yup.string().required("Zip is Required!"),
-    about: Yup.string().required("About is Required!"),
+    fullName: Yup.string().required('Name is Required!'),
+    email: Yup.string().email().required('Email is Required!'),
+    phone: Yup.number().min(8).required('Phone is Required!'),
+    country: Yup.string().required('Country is Required!'),
+    state: Yup.string().required('State is Required!'),
+    city: Yup.string().required('City is Required!'),
+    address: Yup.string().required('Address is Required!'),
+    zip: Yup.string().required('Zip is Required!'),
+    about: Yup.string().required('About is Required!'),
   });
 
   const { values, errors, handleChange, handleSubmit, touched } = useFormik({
@@ -97,9 +97,9 @@ const AddNewUser: FC = () => {
                 padding: 3,
                 boxShadow: 2,
                 minHeight: 400,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
               }}
             >
               <ButtonWrapper>
@@ -109,10 +109,10 @@ const AddNewUser: FC = () => {
                       accept="image/*"
                       id="upload-btn"
                       type="file"
-                      style={{ display: "none" }}
+                      style={{ display: 'none' }}
                     />
                     <IconButton component="span">
-                      <PhotoCamera sx={{ fontSize: 26, color: "white" }} />
+                      <PhotoCamera sx={{ fontSize: 26, color: 'white' }} />
                     </IconButton>
                   </label>
                 </UploadButton>
@@ -272,7 +272,7 @@ const AddNewUser: FC = () => {
                       error={Boolean(touched.about && errors.about)}
                       helperText={touched.about && errors.about}
                       sx={{
-                        "& .MuiOutlinedInput-root textarea": { padding: 0 },
+                        '& .MuiOutlinedInput-root textarea': { padding: 0 },
                       }}
                     />
                   </Grid>

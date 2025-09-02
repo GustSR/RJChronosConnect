@@ -16,7 +16,7 @@ class GenieACSClient:
     """Cliente para comunicação com GenieACS NBI API"""
     
     def __init__(self, base_url: str = None):
-        self.base_url = (base_url or os.getenv("GENIACS_API_URL", "http://genieacs:7557")).rstrip('/')
+        self.base_url = (base_url or os.getenv("GENIACS_API_URL", "http://localhost:7557")).rstrip('/')
         self.client = httpx.AsyncClient(
             timeout=30.0,
             headers={
@@ -185,7 +185,7 @@ class GenieACSClient:
             url = f"{self.base_url}/devices/{device_id}/tasks"
             if immediate:
                 url += "?connection_request"
-                logger.info(f"🚀 USANDO CONNECTION REQUEST IMEDIATO")
+                logger.debug(f"USANDO CONNECTION REQUEST IMEDIATO")
             
             logger.info(f"   URL: {url}")
             logger.info(f"   Data: {data}")
@@ -199,17 +199,17 @@ class GenieACSClient:
             
             response.raise_for_status()
             
-            logger.info(f"✅ Parâmetro {parameter} definido para {value} no dispositivo {device_id}")
+            logger.debug(f"Parâmetro {parameter} definido para {value} no dispositivo {device_id}")
             return True
             
         except httpx.HTTPError as e:
-            logger.error(f"❌ ERRO HTTP ao definir parâmetro {parameter}: {e}")
+            logger.error(f"ERRO HTTP ao definir parâmetro {parameter}: {e}")
             if hasattr(e, 'response') and e.response:
                 logger.error(f"   Response status: {e.response.status_code}")
                 logger.error(f"   Response body: {e.response.text}")
             return False
         except Exception as e:
-            logger.error(f"❌ ERRO inesperado ao definir parâmetro {parameter}: {e}")
+            logger.error(f"ERRO inesperado ao definir parâmetro {parameter}: {e}")
             return False
     
     async def refresh_wifi_passwords(self, device_id: str) -> bool:
@@ -241,20 +241,20 @@ class GenieACSClient:
                     
                     url = f"{self.base_url}/devices/{device_id}/tasks?connection_request"
                     
-                    logger.info(f"🔄 REFRESH WiFi passwords - {obj_name}")
+                    logger.debug(f"REFRESH WiFi passwords - {obj_name}")
                     
                     response = await self.client.post(url, json=data)
                     response.raise_for_status()
                     success_count += 1
                     
                 except Exception as e:
-                    logger.warning(f"⚠️ Falha ao refresh {obj_name}: {e}")
+                    logger.warning(f"Falha ao refresh {obj_name}: {e}")
             
-            logger.info(f"✅ Refresh WiFi passwords: {success_count}/{len(wifi_password_objects)} sucessos")
+            logger.info(f"Refresh WiFi passwords: {success_count}/{len(wifi_password_objects)} sucessos")
             return success_count > 0
             
         except Exception as e:
-            logger.error(f"❌ ERRO no refresh WiFi passwords: {e}")
+            logger.error(f"ERRO no refresh WiFi passwords: {e}")
             return False
 
     async def summon_device(self, device_id: str) -> bool:
@@ -288,17 +288,17 @@ class GenieACSClient:
             
             response.raise_for_status()
             
-            logger.info(f"✅ Dispositivo {device_id} summonado com sucesso!")
+            logger.debug(f"Dispositivo {device_id} summonado com sucesso!")
             return True
             
         except httpx.HTTPError as e:
-            logger.error(f"❌ ERRO HTTP ao summonar dispositivo {device_id}: {e}")
+            logger.error(f"ERRO HTTP ao summonar dispositivo {device_id}: {e}")
             if hasattr(e, 'response') and e.response:
                 logger.error(f"   Response status: {e.response.status_code}")
                 logger.error(f"   Response body: {e.response.text}")
             return False
         except Exception as e:
-            logger.error(f"❌ ERRO inesperado ao summonar dispositivo {device_id}: {e}")
+            logger.error(f"ERRO inesperado ao summonar dispositivo {device_id}: {e}")
             return False
     
     async def refresh_ip_parameters(self, device_id: str) -> bool:
@@ -336,17 +336,17 @@ class GenieACSClient:
                     response = await self.client.post(url, json=data)
                     if response.status_code in [200, 202]:
                         success_count += 1
-                        logger.info(f"✅ Refresh IP parameter: {param}")
+                        logger.debug(f"Refresh IP parameter: {param}")
                     
                 except Exception as e:
-                    logger.warning(f"⚠️ Falha ao refresh {param}: {e}")
+                    logger.warning(f"Falha ao refresh {param}: {e}")
                     continue
             
             logger.info(f"🌐 IP Parameters refresh: {success_count}/{len(ip_parameters)} sucessos")
             return success_count > 0
             
         except Exception as e:
-            logger.error(f"❌ ERRO ao fazer refresh de parâmetros IP: {e}")
+            logger.error(f"ERRO ao fazer refresh de parâmetros IP: {e}")
             return False
 
     async def refresh_device(self, device_id: str) -> bool:

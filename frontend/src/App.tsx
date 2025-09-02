@@ -1,11 +1,11 @@
-import { CssBaseline, ThemeProvider } from "@mui/material";
-import { StyledEngineProvider } from "@mui/material/styles";
-import { FC } from "react";
-import { Toaster } from "react-hot-toast";
-import { useRoutes } from "react-router-dom";
-import routes from "./routes";
-import { ukoTheme } from "./theme";
-import { ProvisioningProvider } from "./contexts/ProvisioningContext";
+import { CssBaseline, ThemeProvider } from '@mui/material';
+import { StyledEngineProvider } from '@mui/material/styles';
+import { FC } from 'react';
+import { Toaster } from 'react-hot-toast';
+import { useRoutes } from 'react-router-dom';
+import routes from './routes';
+import { ukoTheme } from './theme';
+import { ProvisioningProvider } from './contexts/ProvisioningContext';
 
 const App: FC = () => {
   const allPages = useRoutes(routes);

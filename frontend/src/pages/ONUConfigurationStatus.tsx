@@ -35,20 +35,46 @@ interface ConfigurationStatus {
 const ONUConfigurationStatus: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+
   useTitle('Status da Configuração - RJ Chronos');
 
   // Simular status da configuração
   const [configurationSteps] = React.useState<ConfigurationStatus[]>([
-    { step: 'Validação dos dados', status: 'completed', message: 'Configurações validadas com sucesso' },
-    { step: 'Aplicação na ONU', status: 'completed', message: 'Comandos enviados para a ONU' },
-    { step: 'Configuração Wi-Fi', status: 'completed', message: 'Redes Wi-Fi configuradas' },
-    { step: 'Configuração de VLAN', status: 'completed', message: 'VLANs aplicadas' },
-    { step: 'Testes de conectividade', status: 'completed', message: 'Conectividade testada com sucesso' },
-    { step: 'Finalização', status: 'completed', message: 'ONU provisionada e ativa' },
+    {
+      step: 'Validação dos dados',
+      status: 'completed',
+      message: 'Configurações validadas com sucesso',
+    },
+    {
+      step: 'Aplicação na ONU',
+      status: 'completed',
+      message: 'Comandos enviados para a ONU',
+    },
+    {
+      step: 'Configuração Wi-Fi',
+      status: 'completed',
+      message: 'Redes Wi-Fi configuradas',
+    },
+    {
+      step: 'Configuração de VLAN',
+      status: 'completed',
+      message: 'VLANs aplicadas',
+    },
+    {
+      step: 'Testes de conectividade',
+      status: 'completed',
+      message: 'Conectividade testada com sucesso',
+    },
+    {
+      step: 'Finalização',
+      status: 'completed',
+      message: 'ONU provisionada e ativa',
+    },
   ]);
 
-  const [overallStatus] = React.useState<'success' | 'error' | 'pending'>('success');
+  const [overallStatus] = React.useState<'success' | 'error' | 'pending'>(
+    'success'
+  );
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -76,12 +102,14 @@ const ONUConfigurationStatus: React.FC = () => {
         wifi: {
           ssid2g: 'CHRONOS_5678_2G',
           ssid5g: 'CHRONOS_5678_5G',
-          security: 'wpa2'
-        }
-      }
+          security: 'wpa2',
+        },
+      },
     };
 
-    const blob = new Blob([JSON.stringify(configData, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(configData, null, 2)], {
+      type: 'application/json',
+    });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -94,8 +122,8 @@ const ONUConfigurationStatus: React.FC = () => {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-        <IconButton 
-          onClick={() => navigate('/dashboard/provisionar')} 
+        <IconButton
+          onClick={() => navigate('/dashboard/provisionar')}
           sx={{ mr: 2, color: 'primary.main' }}
         >
           <ArrowBack />
@@ -116,25 +144,29 @@ const ONUConfigurationStatus: React.FC = () => {
           <AnimatedCard delay={100}>
             <CardContent>
               {overallStatus === 'success' && (
-                <Alert 
-                  severity="success" 
-                  icon={<CheckIcon />}
-                  sx={{ mb: 3 }}
-                >
+                <Alert severity="success" icon={<CheckIcon />} sx={{ mb: 3 }}>
                   <Typography variant="h6" fontWeight="600">
                     Configuração Aplicada com Sucesso!
                   </Typography>
                   <Typography variant="body2" sx={{ mt: 1 }}>
-                    A ONU foi provisionada e está ativa na rede. Todos os testes de conectividade foram bem-sucedidos.
+                    A ONU foi provisionada e está ativa na rede. Todos os testes
+                    de conectividade foram bem-sucedidos.
                   </Typography>
                 </Alert>
               )}
 
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 3,
+                }}
+              >
                 <Typography variant="h6" fontWeight="600">
                   Progresso da Configuração
                 </Typography>
-                <Chip 
+                <Chip
                   label="Concluído"
                   color="success"
                   icon={<CheckIcon />}
@@ -144,7 +176,11 @@ const ONUConfigurationStatus: React.FC = () => {
 
               <Stepper orientation="vertical">
                 {configurationSteps.map((step, index) => (
-                  <Step key={index} active={true} completed={step.status === 'completed'}>
+                  <Step
+                    key={index}
+                    active={true}
+                    completed={step.status === 'completed'}
+                  >
                     <StepLabel
                       icon={getStatusIcon(step.status)}
                       sx={{
@@ -160,9 +196,9 @@ const ONUConfigurationStatus: React.FC = () => {
                         <Typography variant="body1" fontWeight="500">
                           {step.step}
                         </Typography>
-                        <Typography 
-                          variant="body2" 
-                          color="text.secondary" 
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
                           sx={{ mt: 0.5 }}
                         >
                           {step.message}
@@ -183,7 +219,7 @@ const ONUConfigurationStatus: React.FC = () => {
               <Typography variant="h6" fontWeight="600" sx={{ mb: 3 }}>
                 Detalhes da Configuração
               </Typography>
-              
+
               <Stack spacing={2}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" color="text.secondary">
@@ -193,7 +229,7 @@ const ONUConfigurationStatus: React.FC = () => {
                     GPON12345678
                   </Typography>
                 </Box>
-                
+
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" color="text.secondary">
                     Perfil Aplicado:
@@ -202,7 +238,7 @@ const ONUConfigurationStatus: React.FC = () => {
                     Residencial 100MB
                   </Typography>
                 </Box>
-                
+
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" color="text.secondary">
                     VLAN:
@@ -211,7 +247,7 @@ const ONUConfigurationStatus: React.FC = () => {
                     100
                   </Typography>
                 </Box>
-                
+
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" color="text.secondary">
                     Wi-Fi 2.4GHz:
@@ -220,7 +256,7 @@ const ONUConfigurationStatus: React.FC = () => {
                     CHRONOS_5678_2G
                   </Typography>
                 </Box>
-                
+
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" color="text.secondary">
                     Wi-Fi 5GHz:
@@ -229,14 +265,14 @@ const ONUConfigurationStatus: React.FC = () => {
                     CHRONOS_5678_5G
                   </Typography>
                 </Box>
-                
+
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" color="text.secondary">
                     Status:
                   </Typography>
-                  <Chip 
-                    label="Ativo" 
-                    color="success" 
+                  <Chip
+                    label="Ativo"
+                    color="success"
                     size="small"
                     sx={{ fontWeight: 600 }}
                   />
@@ -253,7 +289,7 @@ const ONUConfigurationStatus: React.FC = () => {
               <Typography variant="h6" fontWeight="600" sx={{ mb: 3 }}>
                 Próximos Passos
               </Typography>
-              
+
               <Stack spacing={2}>
                 <Button
                   fullWidth
@@ -270,7 +306,7 @@ const ONUConfigurationStatus: React.FC = () => {
                 >
                   Baixar Configuração
                 </Button>
-                
+
                 <Button
                   fullWidth
                   variant="outlined"
@@ -280,7 +316,7 @@ const ONUConfigurationStatus: React.FC = () => {
                 >
                   Reconfigurar ONU
                 </Button>
-                
+
                 <Button
                   fullWidth
                   variant="outlined"
@@ -290,10 +326,10 @@ const ONUConfigurationStatus: React.FC = () => {
                   Voltar para Lista
                 </Button>
               </Stack>
-              
+
               <Alert severity="info" sx={{ mt: 3 }}>
                 <Typography variant="body2">
-                  A ONU está agora ativa e pode ser utilizada pelo cliente. 
+                  A ONU está agora ativa e pode ser utilizada pelo cliente.
                   Lembre-se de informar as credenciais Wi-Fi ao usuário final.
                 </Typography>
               </Alert>

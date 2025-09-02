@@ -1,4 +1,4 @@
-import { LoadingButton } from "@mui/lab";
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Button,
@@ -7,57 +7,57 @@ import {
   FormControlLabel,
   FormHelperText,
   Switch,
-} from "@mui/material";
+} from '@mui/material';
 import {
   SocialIconButton,
   TextFieldWrapper,
-} from "components/authentication/StyledComponents";
-import FlexBox from "components/FlexBox";
-import LightTextField from "components/LightTextField";
-import { H1, H3, Paragraph, Small } from "components/Typography";
-import { useFormik } from "formik";
-import useAuth from "hooks/useAuth";
-import FacebookIcon from "icons/FacebookIcon";
-import GoogleIcon from "icons/GoogleIcon";
-import { FC, useState } from "react";
-import toast from "react-hot-toast";
-import { Link, useNavigate } from "react-router-dom";
-import * as Yup from "yup";
+} from 'components/authentication/StyledComponents';
+import FlexBox from 'components/FlexBox';
+import LightTextField from 'components/LightTextField';
+import { H1, H3, Paragraph, Small } from 'components/Typography';
+import { useFormik } from 'formik';
+import useAuth from 'hooks/useAuth';
+import FacebookIcon from 'icons/FacebookIcon';
+import GoogleIcon from 'icons/GoogleIcon';
+import { FC, useState } from 'react';
+import toast from 'react-hot-toast';
+import { Link, useNavigate } from 'react-router-dom';
+import * as Yup from 'yup';
 
 const Login: FC = () => {
   const { login } = useAuth();
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   let navigate = useNavigate();
 
   const initialValues = {
-    email: "demo@example.com",
-    password: "v&)3?2]:",
+    email: 'demo@example.com',
+    password: 'v&)3?2]:',
     submit: null,
     remember: true,
   };
   // form field value validation schema
   const validationSchema = Yup.object().shape({
     email: Yup.string()
-      .email("Must be a valid email")
+      .email('Must be a valid email')
       .max(255)
-      .required("Email is required"),
+      .required('Email is required'),
     password: Yup.string()
-      .min(6, "Password should be of minimum 6 characters length")
-      .required("Password is required"),
+      .min(6, 'Password should be of minimum 6 characters length')
+      .required('Password is required'),
   });
 
   const { errors, values, touched, handleBlur, handleChange, handleSubmit } =
     useFormik({
       initialValues,
       validationSchema,
-      onSubmit: (values: any) => {
+      onSubmit: (values: { email: string; password: string }) => {
         setLoading(true);
         login(values.email, values.password)
           .then(() => {
             setLoading(false);
-            toast.success("You Logged In Successfully test");
-            navigate("/dashboard");
+            toast.success('You Logged In Successfully test');
+            navigate('/dashboard');
           })
           .catch((error) => {
             setError(error.message);
@@ -69,10 +69,10 @@ const Login: FC = () => {
   return (
     <FlexBox
       sx={{
-        alignItems: "center",
-        flexDirection: "column",
-        justifyContent: "center",
-        height: { sm: "100%" },
+        alignItems: 'center',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        height: { sm: '100%' },
       }}
     >
       <Card sx={{ padding: 4, maxWidth: 600, boxShadow: 1 }}>
@@ -104,13 +104,13 @@ const Login: FC = () => {
             Sign in with Facebook
           </SocialIconButton>
 
-          <Divider sx={{ my: 3, width: "100%", alignItems: "flex-start" }}>
+          <Divider sx={{ my: 3, width: '100%', alignItems: 'flex-start' }}>
             <H3 color="text.disabled" px={1}>
               Or
             </H3>
           </Divider>
 
-          <form noValidate onSubmit={handleSubmit} style={{ width: "100%" }}>
+          <form noValidate onSubmit={handleSubmit} style={{ width: '100%' }}>
             <FlexBox justifyContent="space-between" flexWrap="wrap">
               <TextFieldWrapper>
                 <Paragraph fontWeight={600} mb={1}>
@@ -122,7 +122,7 @@ const Login: FC = () => {
                   type="email"
                   onBlur={handleBlur}
                   onChange={handleChange}
-                  value={values.email || ""}
+                  value={values.email || ''}
                   error={Boolean(touched.email && errors.email)}
                   helperText={touched.email && errors.email}
                 />
@@ -138,7 +138,7 @@ const Login: FC = () => {
                   type="password"
                   onBlur={handleBlur}
                   onChange={handleChange}
-                  value={values.password || ""}
+                  value={values.password || ''}
                   error={Boolean(touched.password && errors.password)}
                   helperText={touched.password && errors.password}
                 />
@@ -155,7 +155,7 @@ const Login: FC = () => {
                   />
                 }
                 label="Remember Me"
-                sx={{ "& .MuiTypography-root": { fontWeight: 600 } }}
+                sx={{ '& .MuiTypography-root': { fontWeight: 600 } }}
               />
               <Link to="/forget-password">
                 <Small color="secondary.red">Forgot Password?</Small>
@@ -169,7 +169,7 @@ const Login: FC = () => {
                   mt: 2,
                   fontSize: 13,
                   fontWeight: 500,
-                  textAlign: "center",
+                  textAlign: 'center',
                 }}
               >
                 {error}
@@ -190,7 +190,7 @@ const Login: FC = () => {
           </form>
 
           <Small margin="auto" mt={3} color="text.disabled">
-            Don't have an account?{" "}
+            Don't have an account?{' '}
             <Link to="/register">
               <Small color="primary.main">Create an account</Small>
             </Link>

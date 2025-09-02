@@ -1,16 +1,16 @@
-import { AuthProvider } from "contexts/JWTAuthContext";
-import SettingsProvider from "contexts/SettingsContext";
-import TitleContextProvider from "contexts/TitleContext";
-import "nprogress/nprogress.css";
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import "react-image-lightbox/style.css";
-import { BrowserRouter } from "react-router-dom";
-import "simplebar/dist/simplebar.min.css";
-import App from "./App";
-import "./__fakeApi__";
+import { AuthProvider } from 'contexts/JWTAuthContext';
+import SettingsProvider from 'contexts/SettingsContext';
+import TitleContextProvider from 'contexts/TitleContext';
+import 'nprogress/nprogress.css';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import 'react-image-lightbox/style.css';
+import { BrowserRouter } from 'react-router-dom';
+import 'simplebar/dist/simplebar.min.css';
+import App from './App';
+import './__fakeApi__';
 
-const container = document.getElementById("root");
+const container = document.getElementById('root');
 const root = createRoot(container!);
 
 root.render(

@@ -1,8 +1,8 @@
-import { Box, useTheme } from "@mui/material";
-import FlexBox from "components/FlexBox";
-import { H1, Paragraph } from "components/Typography";
-import { FC } from "react";
-import { NavLink } from "react-router-dom";
+import { Box, useTheme } from '@mui/material';
+import FlexBox from 'components/FlexBox';
+import { H1, Paragraph } from 'components/Typography';
+import { FC } from 'react';
+import { NavLink } from 'react-router-dom';
 
 const ErrorPage: FC = () => {
   const theme = useTheme();
@@ -32,10 +32,10 @@ const ErrorPage: FC = () => {
       <NavLink
         to="/dashboard"
         style={{
-          display: "block",
-          marginTop: "1.5rem",
+          display: 'block',
+          marginTop: '1.5rem',
           fontWeight: 600,
-          textDecoration: "underline",
+          textDecoration: 'underline',
           color: theme.palette.primary.main,
         }}
       >

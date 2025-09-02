@@ -22,12 +22,12 @@ export interface ProvisionedONU {
   onuId: number;
   authorizedAt: string;
   onuType: string;
-  
+
   // Informações do cliente
   clientName: string;
   clientAddress: string;
   comment?: string;
-  
+
   // Status e monitoramento
   status: 'online' | 'offline' | 'disabled';
   uptime: string;
@@ -35,15 +35,15 @@ export interface ProvisionedONU {
   oltRx: number;
   attachedVlans: number[];
   onuMode: 'routing' | 'bridge';
-  
+
   // Configuração de rede
   tr069Profile: string;
   wanSetupMode: 'dhcp' | 'static' | 'pppoe';
-  
+
   // Configuração PPPoE (quando aplicável)
   pppoeUsername?: string;
   pppoePassword?: string;
-  
+
   // Configurações de portas LAN
   lanPorts: {
     id: number;
@@ -51,7 +51,7 @@ export interface ProvisionedONU {
     mode: 'auto' | '10M' | '100M' | '1G';
     description?: string;
   }[];
-  
+
   // Configurações WiFi
   wifiSettings: {
     enabled: boolean;
@@ -62,7 +62,7 @@ export interface ProvisionedONU {
     security: 'WPA2' | 'WPA3' | 'WPA2/WPA3';
     frequency: '2.4GHz' | '5GHz' | 'dual';
   }[];
-  
+
   // Configurações VoIP
   voipEnabled?: boolean;
   voipSettings?: {
@@ -86,7 +86,7 @@ export const mockPendingONUs: PendingONU[] = [
     onuType: 'ZTE F601',
     status: 'pending',
     rxPower: -18.5,
-    temperature: 32
+    temperature: 32,
   },
   {
     id: 'pending-2',
@@ -99,7 +99,7 @@ export const mockPendingONUs: PendingONU[] = [
     onuType: 'FiberHome AN5506-04-A',
     status: 'pending',
     rxPower: -21.2,
-    temperature: 35
+    temperature: 35,
   },
   {
     id: 'pending-3',
@@ -112,7 +112,7 @@ export const mockPendingONUs: PendingONU[] = [
     onuType: 'Huawei HG8240H5',
     status: 'pending',
     rxPower: -16.8,
-    temperature: 29
+    temperature: 29,
   },
   {
     id: 'pending-4',
@@ -125,8 +125,8 @@ export const mockPendingONUs: PendingONU[] = [
     onuType: 'ZTE F670L',
     status: 'pending',
     rxPower: -23.1,
-    temperature: 38
-  }
+    temperature: 38,
+  },
 ];
 
 // Dados mockados para ONUs provisionadas
@@ -140,30 +140,30 @@ export const mockProvisionedONUs: ProvisionedONU[] = [
     onuId: 1,
     authorizedAt: '2024-08-28T14:20:00Z',
     onuType: 'ZTE F601',
-    
+
     clientName: 'João Silva Santos',
     clientAddress: 'Rua das Flores, 123, Centro - Rio de Janeiro/RJ',
     comment: 'Cliente VIP - Plano 500MB',
-    
+
     status: 'online',
     uptime: '2d 14h 30m',
     onuRx: -19.2,
     oltRx: -18.5,
     attachedVlans: [100, 200],
     onuMode: 'routing',
-    
+
     tr069Profile: 'default-profile',
     wanSetupMode: 'pppoe',
     pppoeUsername: 'joao.silva@provedor.com.br',
     pppoePassword: '********',
-    
+
     lanPorts: [
       { id: 1, enabled: true, mode: 'auto', description: 'Port 1' },
       { id: 2, enabled: true, mode: 'auto', description: 'Port 2' },
       { id: 3, enabled: false, mode: 'auto', description: 'Port 3' },
-      { id: 4, enabled: true, mode: '1G', description: 'Port 4 - IPTV' }
+      { id: 4, enabled: true, mode: '1G', description: 'Port 4 - IPTV' },
     ],
-    
+
     wifiSettings: [
       {
         enabled: true,
@@ -172,7 +172,7 @@ export const mockProvisionedONUs: ProvisionedONU[] = [
         channel: 6,
         bandwidth: '20MHz',
         security: 'WPA2/WPA3',
-        frequency: '2.4GHz'
+        frequency: '2.4GHz',
       },
       {
         enabled: true,
@@ -181,10 +181,10 @@ export const mockProvisionedONUs: ProvisionedONU[] = [
         channel: 36,
         bandwidth: '80MHz',
         security: 'WPA2/WPA3',
-        frequency: '5GHz'
-      }
+        frequency: '5GHz',
+      },
     ],
-    
+
     // Configurações VoIP
     voipEnabled: true,
     voipSettings: {
@@ -192,7 +192,7 @@ export const mockProvisionedONUs: ProvisionedONU[] = [
       sipUser: 'joao.silva',
       sipPassword: '********',
       displayName: 'João Silva Santos',
-    }
+    },
   },
   {
     id: 'provisioned-2',
@@ -203,28 +203,28 @@ export const mockProvisionedONUs: ProvisionedONU[] = [
     onuId: 5,
     authorizedAt: '2024-08-27T09:30:00Z',
     onuType: 'FiberHome AN5506-04-A',
-    
+
     clientName: 'Maria Oliveira Costa',
     clientAddress: 'Av. Atlântica, 456, Copacabana - Rio de Janeiro/RJ',
     comment: 'Instalação residencial',
-    
+
     status: 'online',
     uptime: '3d 8h 15m',
     onuRx: -20.8,
     oltRx: -19.2,
     attachedVlans: [100],
     onuMode: 'bridge',
-    
+
     tr069Profile: 'residential-profile',
     wanSetupMode: 'dhcp',
-    
+
     lanPorts: [
       { id: 1, enabled: true, mode: 'auto', description: 'LAN 1' },
       { id: 2, enabled: true, mode: 'auto', description: 'LAN 2' },
       { id: 3, enabled: true, mode: 'auto', description: 'LAN 3' },
-      { id: 4, enabled: true, mode: 'auto', description: 'LAN 4' }
+      { id: 4, enabled: true, mode: 'auto', description: 'LAN 4' },
     ],
-    
+
     wifiSettings: [
       {
         enabled: true,
@@ -233,10 +233,10 @@ export const mockProvisionedONUs: ProvisionedONU[] = [
         channel: 11,
         bandwidth: '40MHz',
         security: 'WPA3',
-        frequency: 'dual'
-      }
+        frequency: 'dual',
+      },
     ],
-    
+
     // Configurações VoIP
     voipEnabled: false,
     voipSettings: {
@@ -244,8 +244,8 @@ export const mockProvisionedONUs: ProvisionedONU[] = [
       sipUser: '',
       sipPassword: '',
       displayName: '',
-    }
-  }
+    },
+  },
 ];
 
 // Perfis TR069 disponíveis
@@ -254,16 +254,24 @@ export const tr069Profiles = [
   { value: 'business-profile', label: 'Perfil Empresarial' },
   { value: 'gaming-profile', label: 'Perfil Gaming' },
   { value: 'iptv-profile', label: 'Perfil IPTV' },
-  { value: 'custom-profile', label: 'Perfil Personalizado' }
+  { value: 'custom-profile', label: 'Perfil Personalizado' },
 ];
 
 // Tipos de ONUs disponíveis
 export const onuTypes = [
   { value: 'zte-f601', label: 'ZTE F601', manufacturer: 'ZTE' },
   { value: 'zte-f670l', label: 'ZTE F670L', manufacturer: 'ZTE' },
-  { value: 'fiberhome-an5506', label: 'FiberHome AN5506-04-A', manufacturer: 'FiberHome' },
-  { value: 'huawei-hg8240h5', label: 'Huawei HG8240H5', manufacturer: 'Huawei' },
-  { value: 'huawei-hg8245h', label: 'Huawei HG8245H', manufacturer: 'Huawei' }
+  {
+    value: 'fiberhome-an5506',
+    label: 'FiberHome AN5506-04-A',
+    manufacturer: 'FiberHome',
+  },
+  {
+    value: 'huawei-hg8240h5',
+    label: 'Huawei HG8240H5',
+    manufacturer: 'Huawei',
+  },
+  { value: 'huawei-hg8245h', label: 'Huawei HG8245H', manufacturer: 'Huawei' },
 ];
 
 // Utilitário para formatar tempo de uptime
@@ -272,7 +280,9 @@ export const formatUptime = (uptimeString: string): string => {
 };
 
 // Utilitário para determinar status de sinal
-export const getSignalStatus = (rxPower: number): 'good' | 'warning' | 'critical' => {
+export const getSignalStatus = (
+  rxPower: number
+): 'good' | 'warning' | 'critical' => {
   if (rxPower >= -20) return 'good';
   if (rxPower >= -25) return 'warning';
   return 'critical';

@@ -1,8 +1,8 @@
-import { Box, Button, Card, styled, useTheme } from "@mui/material";
-import FlexBox from "components/FlexBox";
-import { H6, Tiny } from "components/Typography";
-import UkoAvatar from "components/UkoAvatar";
-import { FC } from "react";
+import { Box, Button, Card, styled, useTheme } from '@mui/material';
+import FlexBox from 'components/FlexBox';
+import { H6, Tiny } from 'components/Typography';
+import UkoAvatar from 'components/UkoAvatar';
+import { FC } from 'react';
 
 // component props interface
 interface FollowerCardProps {
@@ -20,7 +20,7 @@ const StyledButton = styled(Button)(({ theme }) => ({
   height: 25,
   fontSize: 10,
   fontWeight: 500,
-  borderRadius: "11px",
+  borderRadius: '11px',
   color: theme.palette.text.disabled,
 }));
 
@@ -28,10 +28,10 @@ const FollowerCard: FC<FollowerCardProps> = ({ follower }) => {
   const theme = useTheme();
   // button background color
   const backgroundColor =
-    theme.palette.mode === "light" ? "secondary.200" : "divider";
+    theme.palette.mode === 'light' ? 'secondary.200' : 'divider';
   // button border color
   const borderColor =
-    theme.palette.mode === "light" ? "secondary.200" : "divider";
+    theme.palette.mode === 'light' ? 'secondary.200' : 'divider';
 
   return (
     <Card sx={{ padding: 3 }}>
@@ -51,7 +51,7 @@ const FollowerCard: FC<FollowerCardProps> = ({ follower }) => {
           <StyledButton
             sx={{
               backgroundColor,
-              "&:hover": { backgroundColor },
+              '&:hover': { backgroundColor },
             }}
           >
             Following
@@ -61,7 +61,7 @@ const FollowerCard: FC<FollowerCardProps> = ({ follower }) => {
             variant="outlined"
             sx={{
               borderColor,
-              "&:hover": { borderColor },
+              '&:hover': { borderColor },
             }}
           >
             Follow

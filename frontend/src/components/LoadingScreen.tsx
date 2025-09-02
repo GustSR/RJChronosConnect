@@ -1,6 +1,6 @@
-import { Box, CircularProgress } from "@mui/material";
-import NProgress from "nprogress";
-import { useEffect } from "react";
+import { Box, CircularProgress } from '@mui/material';
+import NProgress from 'nprogress';
+import { useEffect } from 'react';
 
 const LoadingScreen = () => {
   NProgress.configure({
@@ -24,10 +24,10 @@ const LoadingScreen = () => {
 
       <Box
         sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100vh",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
         }}
       >
         <CircularProgress />

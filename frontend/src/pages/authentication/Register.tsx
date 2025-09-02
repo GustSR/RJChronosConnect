@@ -1,4 +1,4 @@
-import { LoadingButton } from "@mui/lab";
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Button,
@@ -7,61 +7,66 @@ import {
   Divider,
   FormControlLabel,
   FormHelperText,
-} from "@mui/material";
+} from '@mui/material';
 import {
   SocialIconButton,
   TextFieldWrapper,
-} from "components/authentication/StyledComponents";
-import FlexBox from "components/FlexBox";
-import LightTextField from "components/LightTextField";
-import { H1, H3, Small } from "components/Typography";
-import { useFormik } from "formik";
-import useAuth from "hooks/useAuth";
-import FacebookIcon from "icons/FacebookIcon";
-import GoogleIcon from "icons/GoogleIcon";
-import { FC, useState } from "react";
-import toast from "react-hot-toast";
-import { Link, useNavigate } from "react-router-dom";
-import * as Yup from "yup";
+} from 'components/authentication/StyledComponents';
+import FlexBox from 'components/FlexBox';
+import LightTextField from 'components/LightTextField';
+import { H1, H3, Small } from 'components/Typography';
+import { useFormik } from 'formik';
+import useAuth from 'hooks/useAuth';
+import FacebookIcon from 'icons/FacebookIcon';
+import GoogleIcon from 'icons/GoogleIcon';
+import { FC, useState } from 'react';
+import toast from 'react-hot-toast';
+import { Link, useNavigate } from 'react-router-dom';
+import * as Yup from 'yup';
 
 const Register: FC = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const initialValues = {
-    name: "",
-    email: "",
-    password: "",
+    name: '',
+    email: '',
+    password: '',
     terms: true,
     submit: null,
   };
   // form field value validation schema
   const validationSchema = Yup.object().shape({
-    name: Yup.string().required("Name is required"),
+    name: Yup.string().required('Name is required'),
     email: Yup.string()
-      .email("Must be a valid email")
+      .email('Must be a valid email')
       .max(255)
-      .required("Email is required"),
+      .required('Email is required'),
     password: Yup.string()
-      .min(6, "Password should be of minimum 6 characters length")
-      .required("Password is required"),
+      .min(6, 'Password should be of minimum 6 characters length')
+      .required('Password is required'),
   });
 
   const { errors, values, touched, handleBlur, handleChange, handleSubmit } =
     useFormik({
       initialValues,
       validationSchema,
-      onSubmit: async (values: any) => {
+      onSubmit: async (values: {
+        email: string;
+        password: string;
+        name: string;
+      }) => {
         setLoading(true);
         try {
           await register(values.email, values.password, values.name);
           setLoading(false);
-          toast.success("You registered successfully");
-          navigate("/dashboard");
-        } catch (error: any) {
-          setError(error?.message);
+          toast.success('You registered successfully');
+          navigate('/dashboard');
+        } catch (error: unknown) {
+          const err = error as { message?: string };
+          setError(err?.message);
           setLoading(false);
         }
       },
@@ -70,10 +75,10 @@ const Register: FC = () => {
   return (
     <FlexBox
       sx={{
-        alignItems: "center",
-        flexDirection: "column",
-        justifyContent: "center",
-        height: { sm: "100%" },
+        alignItems: 'center',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        height: { sm: '100%' },
       }}
     >
       <Card sx={{ padding: 4, maxWidth: 600, boxShadow: 1 }}>
@@ -94,24 +99,24 @@ const Register: FC = () => {
         <FlexBox justifyContent="space-between" flexWrap="wrap" my="1rem">
           <SocialIconButton
             // onClick={loginWithGoogle}
-            startIcon={<GoogleIcon sx={{ mr: "0.5rem" }} />}
+            startIcon={<GoogleIcon sx={{ mr: '0.5rem' }} />}
           >
             Sign up with Google
           </SocialIconButton>
           <SocialIconButton
             // onClick={loginWithFacebook}
-            startIcon={<FacebookIcon sx={{ mr: "0.5rem" }} />}
+            startIcon={<FacebookIcon sx={{ mr: '0.5rem' }} />}
           >
             Sign up with Facebook
           </SocialIconButton>
 
-          <Divider sx={{ my: 3, width: "100%", alignItems: "flex-start" }}>
+          <Divider sx={{ my: 3, width: '100%', alignItems: 'flex-start' }}>
             <H3 color="text.disabled" px={1}>
               Or
             </H3>
           </Divider>
 
-          <form noValidate onSubmit={handleSubmit} style={{ width: "100%" }}>
+          <form noValidate onSubmit={handleSubmit} style={{ width: '100%' }}>
             <FlexBox justifyContent="space-between" flexWrap="wrap">
               <TextFieldWrapper>
                 <LightTextField
@@ -121,7 +126,7 @@ const Register: FC = () => {
                   label="Name"
                   onBlur={handleBlur}
                   onChange={handleChange}
-                  value={values.name || ""}
+                  value={values.name || ''}
                   error={Boolean(touched.name && errors.name)}
                   helperText={touched.name && errors.name}
                 />
@@ -135,14 +140,14 @@ const Register: FC = () => {
                   label="Email"
                   onBlur={handleBlur}
                   onChange={handleChange}
-                  value={values.email || ""}
+                  value={values.email || ''}
                   error={Boolean(touched.email && errors.email)}
                   helperText={touched.email && errors.email}
                 />
               </TextFieldWrapper>
             </FlexBox>
 
-            <TextFieldWrapper sx={{ mt: 2, width: "100%" }}>
+            <TextFieldWrapper sx={{ mt: 2, width: '100%' }}>
               <LightTextField
                 fullWidth
                 name="password"
@@ -150,7 +155,7 @@ const Register: FC = () => {
                 label="Password"
                 onBlur={handleBlur}
                 onChange={handleChange}
-                value={values.password || ""}
+                value={values.password || ''}
                 error={Boolean(touched.password && errors.password)}
                 helperText={touched.password && errors.password}
               />
@@ -167,8 +172,8 @@ const Register: FC = () => {
               }
               label="I agree to terms & conditions"
               sx={{
-                marginTop: "0.5rem",
-                "& .MuiTypography-root": { fontWeight: 600 },
+                marginTop: '0.5rem',
+                '& .MuiTypography-root': { fontWeight: 600 },
               }}
             />
 
@@ -179,7 +184,7 @@ const Register: FC = () => {
                   mt: 2,
                   fontSize: 13,
                   fontWeight: 500,
-                  textAlign: "center",
+                  textAlign: 'center',
                 }}
               >
                 {error}
@@ -200,7 +205,7 @@ const Register: FC = () => {
           </form>
 
           <Small margin="auto" mt={3} color="text.disabled">
-            Do you already have an account?{" "}
+            Do you already have an account?{' '}
             <Link to="/login">
               <Small color="primary.main">Log in</Small>
             </Link>

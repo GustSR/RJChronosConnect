@@ -16,6 +16,7 @@ import {
   Select,
   MenuItem,
   Stack,
+  LinearProgress,
 } from '@mui/material';
 import {
   Add,
@@ -35,56 +36,101 @@ import { useProvisioning } from '../contexts/ProvisioningContext';
 
 const Provisioning: React.FC = () => {
   useTitle('Provisionamento - RJ Chronos');
-  
+
   const navigate = useNavigate();
-  const { pendingONUs, provisionONU } = useProvisioning();
+  const {
+    pendingONUs,
+    loading,
+    error,
+    provisionONU,
+    rejectONU,
+    refreshPendingONUs,
+  } = useProvisioning();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [oltFilter, setOltFilter] = useState<string>('all');
+  const [processingONU, setProcessingONU] = useState<string | null>(null);
 
   // Filtrar ONUs baseado nos critérios
   const filteredONUs = pendingONUs.filter((onu) => {
-    const matchesSearch = 
+    const matchesSearch =
       onu.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       onu.onuType.toLowerCase().includes(searchTerm.toLowerCase()) ||
       onu.oltName.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'all' || onu.status === statusFilter;
     const matchesOlt = oltFilter === 'all' || onu.oltName === oltFilter;
-    
+
     return matchesSearch && matchesStatus && matchesOlt;
   });
 
   // Estatísticas
   const stats = {
     total: pendingONUs.length,
-    pending: pendingONUs.filter(onu => onu.status === 'pending').length,
-    authorized: pendingONUs.filter(onu => onu.status === 'authorized').length,
-    failed: pendingONUs.filter(onu => onu.status === 'failed').length,
+    pending: pendingONUs.filter((onu) => onu.status === 'pending').length,
+    authorized: pendingONUs.filter((onu) => onu.status === 'authorized').length,
+    failed: pendingONUs.filter((onu) => onu.status === 'failed').length,
   };
 
   // Obter OLTs únicas para filtro
-  const uniqueOlts = [...new Set(pendingONUs.map(onu => onu.oltName))];
+  const uniqueOlts = [...new Set(pendingONUs.map((onu) => onu.oltName))];
 
-  const handleProvision = (onuId: string) => {
-    // Primeiro provisionar a ONU (move para clientes)
-    const provisionedONU = provisionONU(onuId);
-    
-    // Depois redirecionar para configuração da ONU provisionada
-    if (provisionedONU) {
-      navigate(`/dashboard/provisionar/${provisionedONU.id}`);
+  const handleProvision = async (onuId: string) => {
+    try {
+      setProcessingONU(onuId);
+
+      // Provisionar com dados básicos - o resto será configurado na tela de configuração
+      const success = await provisionONU(onuId, {
+        client_name: `Cliente ${onuId.slice(-6)}`, // Nome temporário baseado no ID
+        client_address: 'Endereço a ser configurado',
+        service_profile: 'default',
+        vlan_id: 100,
+        wan_mode: 'dhcp',
+      });
+
+      if (success) {
+        // Redirecionar imediatamente para configuração
+        navigate(`/dashboard/clientes/${onuId}/configurar`);
+      } else {
+        alert('Erro ao autorizar ONU. Tente novamente.');
+      }
+    } catch (error) {
+      console.error('Erro no provisionamento:', error);
+      alert('Erro ao processar provisionamento');
+    } finally {
+      setProcessingONU(null);
     }
   };
 
-  const handleReject = (_onuId: string) => {
-    // Atualizar status para failed na lista de pendentes
-    // Por enquanto, apenas remove da lista
-    // TODO: Implementar lista de rejeitadas se necessário
+  const handleReject = async (onuId: string) => {
+    const reason =
+      prompt('Motivo da rejeição (opcional):') ||
+      'Rejeitada pelo administrador';
+
+    if (!confirm('Tem certeza que deseja rejeitar esta ONU?')) {
+      return;
+    }
+
+    try {
+      setProcessingONU(onuId);
+
+      const success = await rejectONU(onuId, reason);
+
+      if (success) {
+        alert('ONU rejeitada com sucesso');
+      } else {
+        alert('Erro ao rejeitar ONU. Tente novamente.');
+      }
+    } catch (error) {
+      console.error('Erro na rejeição:', error);
+      alert('Erro ao processar rejeição');
+    } finally {
+      setProcessingONU(null);
+    }
   };
 
-  const handleRefresh = () => {
-    // Simular refresh dos dados
-    window.location.reload();
+  const handleRefresh = async () => {
+    await refreshPendingONUs();
   };
 
   return (
@@ -92,16 +138,32 @@ const Provisioning: React.FC = () => {
       <Container maxWidth="xl">
         {/* Header */}
         <Box sx={{ mb: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 2,
+            }}
+          >
             <Box>
-              <Typography variant="h4" fontWeight="700" fontSize="28px" color="#1a1a1a">
+              <Typography
+                variant="h4"
+                fontWeight="700"
+                fontSize="28px"
+                color="#1a1a1a"
+              >
                 Provisionamento
               </Typography>
-              <Typography variant="body1" color="text.secondary" fontSize="16px">
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                fontSize="16px"
+              >
                 Gerencie ONUs/ONTs pendentes de autorização na rede
               </Typography>
             </Box>
-            
+
             <Stack direction="row" spacing={2}>
               <Button
                 variant="outlined"
@@ -148,7 +210,7 @@ const Provisioning: React.FC = () => {
                 sx={{ fontWeight: 600 }}
               />
             </Box>
-            
+
             <Grid container spacing={2} alignItems="center">
               <Grid item xs={12} md={5}>
                 <TextField
@@ -171,7 +233,7 @@ const Provisioning: React.FC = () => {
                   }}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={3}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Status</InputLabel>
@@ -188,7 +250,7 @@ const Provisioning: React.FC = () => {
                   </Select>
                 </FormControl>
               </Grid>
-              
+
               <Grid item xs={12} md={4}>
                 <FormControl fullWidth size="small">
                   <InputLabel>OLT</InputLabel>
@@ -200,13 +262,35 @@ const Provisioning: React.FC = () => {
                   >
                     <MenuItem value="all">Todas</MenuItem>
                     {uniqueOlts.map((olt) => (
-                      <MenuItem key={olt} value={olt}>{olt}</MenuItem>
+                      <MenuItem key={olt} value={olt}>
+                        {olt}
+                      </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
               </Grid>
             </Grid>
           </AnimatedCard>
+
+          {/* Indicadores de Loading e Error */}
+          {loading && (
+            <AnimatedCard delay={150} sx={{ mb: 3 }}>
+              <Alert
+                severity="info"
+                icon={<LinearProgress sx={{ width: 20, mr: 1 }} />}
+              >
+                Carregando ONUs pendentes do GenieACS...
+              </Alert>
+            </AnimatedCard>
+          )}
+
+          {error && (
+            <AnimatedCard delay={150} sx={{ mb: 3 }}>
+              <Alert severity="error" sx={{ borderRadius: 3 }}>
+                {error}
+              </Alert>
+            </AnimatedCard>
+          )}
 
           {/* Estatísticas */}
           <Grid container spacing={3} sx={{ mb: 3 }}>
@@ -268,29 +352,29 @@ const Provisioning: React.FC = () => {
         {/* Lista de ONUs Pendentes */}
         {filteredONUs.length === 0 ? (
           <AnimatedCard delay={600}>
-            <Alert 
-              severity="info" 
-              sx={{ 
+            <Alert
+              severity="info"
+              sx={{
                 borderRadius: 3,
                 fontSize: '16px',
                 py: 2,
               }}
             >
-              {searchTerm || statusFilter !== 'all' || oltFilter !== 'all' 
+              {searchTerm || statusFilter !== 'all' || oltFilter !== 'all'
                 ? 'Nenhuma ONU encontrada com os filtros aplicados.'
-                : 'Nenhuma ONU pendente de autorização no momento.'
-              }
+                : 'Nenhuma ONU pendente de autorização no momento.'}
             </Alert>
           </AnimatedCard>
         ) : (
           <Grid container spacing={3}>
             {filteredONUs.map((onu, index) => (
               <Grid item xs={12} md={6} lg={4} key={onu.id}>
-                <AnimatedCard delay={600 + (index * 100)}>
+                <AnimatedCard delay={600 + index * 100}>
                   <PendingOnuCard
                     onu={onu}
                     onProvision={handleProvision}
                     onReject={handleReject}
+                    isProcessing={processingONU === onu.id}
                   />
                 </AnimatedCard>
               </Grid>

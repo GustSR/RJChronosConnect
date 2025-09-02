@@ -1,23 +1,23 @@
-import { Box, Grid } from "@mui/material";
-import useTitle from "hooks/useTitle";
-import { FC } from "react";
+import { Box, Grid } from '@mui/material';
+import useTitle from 'hooks/useTitle';
+import { FC } from 'react';
 
 // Componentes RJ Chronos
-import OLTGrid from "../components/RJChronos/OLTGrid";
-import OLTMonitoring from "../components/RJChronos/OLTMonitoring";
-import UserActivity from "../components/RJChronos/UserActivity";
-import ONTStatusChart from "../components/RJChronos/ONTStatusChart";
-import BandwidthAreaChart from "../components/RJChronos/BandwidthAreaChart";
-import TopTrafficSources from "../components/RJChronos/TopTrafficSources";
-import OLTPerformanceChart from "../components/RJChronos/OLTPerformanceChart";
-import NetworkStatsCards from "../components/RJChronos/NetworkStatsCards";
+import OLTGrid from '../components/RJChronos/OLTGrid';
+import OLTMonitoring from '../components/RJChronos/OLTMonitoring';
+import UserActivity from '../components/RJChronos/UserActivity';
+import ONTStatusChart from '../components/RJChronos/ONTStatusChart';
+import BandwidthAreaChart from '../components/RJChronos/BandwidthAreaChart';
+import TopTrafficSources from '../components/RJChronos/TopTrafficSources';
+import OLTPerformanceChart from '../components/RJChronos/OLTPerformanceChart';
+import NetworkStatsCards from '../components/RJChronos/NetworkStatsCards';
 
 const Dashboard: FC = () => {
   // change navbar title
-  useTitle("Dashboard - RJ Chronos");
+  useTitle('Dashboard - RJ Chronos');
 
   return (
-    <Box sx={{ p: 3, backgroundColor: "#fafafa", minHeight: "100vh" }}>
+    <Box sx={{ p: 3, backgroundColor: '#fafafa', minHeight: '100vh' }}>
       {/* Cards de Estatísticas Principais - Layout em 4 colunas */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12}>
@@ -34,7 +34,7 @@ const Dashboard: FC = () => {
             <Grid item xs={12}>
               <BandwidthAreaChart />
             </Grid>
-            
+
             {/* Performance das OLTs - Largura Total */}
             <Grid item xs={12}>
               <OLTPerformanceChart />
@@ -54,12 +54,12 @@ const Dashboard: FC = () => {
             <Grid item xs={12}>
               <ONTStatusChart />
             </Grid>
-            
+
             {/* Top Traffic Sources */}
             <Grid item xs={12}>
               <TopTrafficSources />
             </Grid>
-            
+
             {/* OLT Monitoring */}
             <Grid item xs={12}>
               <OLTMonitoring />

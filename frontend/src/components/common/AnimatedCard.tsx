@@ -1,5 +1,5 @@
-import { Card, CardProps, styled } from "@mui/material";
-import { FC, ReactNode, useState, useEffect } from "react";
+import { Card, CardProps, styled } from '@mui/material';
+import { FC, ReactNode, useState, useEffect } from 'react';
 
 interface AnimatedCardProps extends CardProps {
   children: ReactNode;
@@ -7,39 +7,43 @@ interface AnimatedCardProps extends CardProps {
   duration?: number;
 }
 
-const StyledCard = styled(Card)<{ isVisible: boolean; delay: number; duration: number }>(
-  ({ theme, isVisible, delay, duration }) => ({
-    backgroundColor: "rgb(255, 255, 255)",
-    color: "rgb(17, 24, 39)",
-    boxShadow: "0px 2px 1px -1px rgba(107, 114, 128, 0.03), 0px 1px 1px 0px rgba(107, 114, 128, 0.04), 0px 1px 3px 0px rgba(107, 114, 128, 0.08)",
-    backgroundImage: "none",
-    overflow: "hidden",
-    borderRadius: "12px",
-    border: "none",
-    
-    // Animações de entrada
-    opacity: isVisible ? 1 : 0,
-    transform: isVisible ? 'translateY(0px)' : 'translateY(24px)',
-    transition: `
+const StyledCard = styled(Card)<{
+  isVisible: boolean;
+  delay: number;
+  duration: number;
+}>(({ theme: _theme, isVisible, delay, duration }) => ({
+  backgroundColor: 'rgb(255, 255, 255)',
+  color: 'rgb(17, 24, 39)',
+  boxShadow:
+    '0px 2px 1px -1px rgba(107, 114, 128, 0.03), 0px 1px 1px 0px rgba(107, 114, 128, 0.04), 0px 1px 3px 0px rgba(107, 114, 128, 0.08)',
+  backgroundImage: 'none',
+  overflow: 'hidden',
+  borderRadius: '12px',
+  border: 'none',
+
+  // Animações de entrada
+  opacity: isVisible ? 1 : 0,
+  transform: isVisible ? 'translateY(0px)' : 'translateY(24px)',
+  transition: `
       opacity ${duration}ms cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms,
       transform ${duration}ms cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms,
       all 300ms ease
     `,
-    
-    // Hover effect 
-    "&:hover": {
-      transform: isVisible ? 'translateY(-4px)' : 'translateY(24px)',
-      boxShadow: "0px 4px 8px -2px rgba(107, 114, 128, 0.08), 0px 2px 4px -1px rgba(107, 114, 128, 0.06), 0px 1px 6px 0px rgba(107, 114, 128, 0.12)",
-    }
-  })
-);
 
-const AnimatedCard: FC<AnimatedCardProps> = ({ 
-  children, 
-  delay = 0, 
+  // Hover effect
+  '&:hover': {
+    transform: isVisible ? 'translateY(-4px)' : 'translateY(24px)',
+    boxShadow:
+      '0px 4px 8px -2px rgba(107, 114, 128, 0.08), 0px 2px 4px -1px rgba(107, 114, 128, 0.06), 0px 1px 6px 0px rgba(107, 114, 128, 0.12)',
+  },
+}));
+
+const AnimatedCard: FC<AnimatedCardProps> = ({
+  children,
+  delay = 0,
   duration = 600,
   sx,
-  ...props 
+  ...props
 }) => {
   const [isVisible, setIsVisible] = useState(false);
 

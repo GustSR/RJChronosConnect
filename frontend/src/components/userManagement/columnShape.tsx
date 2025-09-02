@@ -1,13 +1,17 @@
-import FlexBox from "components/FlexBox";
-import { H6, Small, Tiny } from "components/Typography";
-import UkoAvatar from "components/UkoAvatar";
+import FlexBox from 'components/FlexBox';
+import { H6, Small, Tiny } from 'components/Typography';
+import UkoAvatar from 'components/UkoAvatar';
 
 const UserListColumnShape = [
   {
-    Header: "Name",
-    accessor: "name",
+    Header: 'Name',
+    accessor: 'name',
     minWidth: 200,
-    Cell: ({ row }: any) => {
+    Cell: ({
+      row,
+    }: {
+      row: { original: { avatar: string; name: string; address: string } };
+    }) => {
       const { avatar, name, address } = row.original;
       return (
         <FlexBox alignItems="center">
@@ -21,16 +25,16 @@ const UserListColumnShape = [
     },
   },
   {
-    Header: "Role",
-    accessor: "role",
+    Header: 'Role',
+    accessor: 'role',
     minWidth: 200,
-    Cell: ({ value }: any) => (
+    Cell: ({ value }: { value: string }) => (
       <Small
         sx={{
           borderRadius: 10,
-          padding: ".2rem 1rem",
-          color: "background.paper",
-          backgroundColor: "#A798FF",
+          padding: '.2rem 1rem',
+          color: 'background.paper',
+          backgroundColor: '#A798FF',
         }}
       >
         {value}
@@ -38,18 +42,18 @@ const UserListColumnShape = [
     ),
   },
   {
-    Header: "Company",
-    accessor: "company",
+    Header: 'Company',
+    accessor: 'company',
     minWidth: 150,
   },
   {
-    Header: "Project",
-    accessor: "project",
+    Header: 'Project',
+    accessor: 'project',
     minWidth: 150,
   },
   {
-    Header: "Verified",
-    accessor: "verified",
+    Header: 'Verified',
+    accessor: 'verified',
     minWidth: 100,
     maxWidth: 100,
   },

@@ -1,8 +1,8 @@
-import { Box, Card, Typography, LinearProgress, Rating } from "@mui/material";
-import { H5 } from "components/Typography";
-import { FC } from "react";
-import { useTheme } from "@mui/material/styles";
-import StarIcon from '@mui/icons-material/Star';
+import { Box, Card, Typography, LinearProgress, Rating } from '@mui/material';
+// import { H5 } from 'components/Typography';
+import { FC } from 'react';
+import { useTheme } from '@mui/material/styles';
+// import StarIcon from '@mui/icons-material/Star';
 
 const RatingComponent: FC = () => {
   const theme = useTheme();
@@ -21,23 +21,31 @@ const RatingComponent: FC = () => {
   return (
     <Card
       sx={{
-        padding: "24px",
-        height: "100%",
-        background: "linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)",
+        padding: '24px',
+        height: '100%',
+        background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
         border: `1px solid ${theme.palette.divider}`,
-        borderRadius: "16px",
-        boxShadow: "0 4px 20px rgba(99, 102, 241, 0.08)",
+        borderRadius: '16px',
+        boxShadow: '0 4px 20px rgba(99, 102, 241, 0.08)',
       }}
     >
       {/* Header */}
-      <Box sx={{ textAlign: "center", mb: 3 }}>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1, mb: 1 }}>
+      <Box sx={{ textAlign: 'center', mb: 3 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 1,
+            mb: 1,
+          }}
+        >
           <Rating
             value={5}
             readOnly
             sx={{
-              "& .MuiRating-iconFilled": {
-                color: "#F59E0B",
+              '& .MuiRating-iconFilled': {
+                color: '#F59E0B',
               },
             }}
           />
@@ -47,9 +55,9 @@ const RatingComponent: FC = () => {
           sx={{
             fontWeight: 700,
             background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-            backgroundClip: "text",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
             mb: 0.5,
           }}
         >
@@ -63,11 +71,17 @@ const RatingComponent: FC = () => {
       {/* Rating Breakdown */}
       <Box>
         {ratingData.map((item) => (
-          <Box key={item.stars} sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-            <Typography variant="body2" sx={{ minWidth: "60px", color: "text.secondary" }}>
+          <Box
+            key={item.stars}
+            sx={{ display: 'flex', alignItems: 'center', mb: 2 }}
+          >
+            <Typography
+              variant="body2"
+              sx={{ minWidth: '60px', color: 'text.secondary' }}
+            >
               {item.stars} Star
             </Typography>
-            
+
             <Box sx={{ flex: 1, mx: 2 }}>
               <LinearProgress
                 variant="determinate"
@@ -76,21 +90,21 @@ const RatingComponent: FC = () => {
                   height: 8,
                   borderRadius: 4,
                   backgroundColor: theme.palette.grey[200],
-                  "& .MuiLinearProgress-bar": {
+                  '& .MuiLinearProgress-bar': {
                     backgroundColor: theme.palette.primary.main,
                     borderRadius: 4,
                   },
                 }}
               />
             </Box>
-            
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                minWidth: "40px", 
-                textAlign: "right", 
-                color: "text.secondary",
-                fontWeight: 500 
+
+            <Typography
+              variant="body2"
+              sx={{
+                minWidth: '40px',
+                textAlign: 'right',
+                color: 'text.secondary',
+                fontWeight: 500,
               }}
             >
               {item.percentage}%

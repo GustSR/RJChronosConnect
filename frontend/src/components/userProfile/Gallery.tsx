@@ -1,10 +1,10 @@
-import { TabContext, TabList } from "@mui/lab";
-import { Box, Card, Grid, Tab } from "@mui/material";
-import { FC, useState } from "react";
-import LightBox from "react-image-lightbox";
+import { TabContext, TabList } from '@mui/lab';
+import { Box, Card, Grid, Tab } from '@mui/material';
+import { FC, useState } from 'react';
+import LightBox from 'react-image-lightbox';
 
 const Gallery: FC = () => {
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState('');
   const [photoIndex, setPhotoIndex] = useState(0);
   const [openLightBox, setOpenLightBox] = useState(false);
 
@@ -23,12 +23,12 @@ const Gallery: FC = () => {
   return (
     <Card>
       <TabContext value={value}>
-        <Box sx={{ borderBottom: 1, borderColor: "divider", marginY: 2 }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', marginY: 2 }}>
           <TabList
             onChange={(e, newValue) => setValue(newValue)}
             sx={{
-              "& .MuiTabs-flexContainer": {
-                justifyContent: "center",
+              '& .MuiTabs-flexContainer': {
+                justifyContent: 'center',
               },
             }}
           >
@@ -48,7 +48,7 @@ const Gallery: FC = () => {
               onClick={handleImageClick(item.img)}
               width="100%"
               height="100%"
-              style={{ cursor: "pointer" }}
+              style={{ cursor: 'pointer' }}
             />
           </Grid>
         ))}
@@ -74,29 +74,29 @@ const Gallery: FC = () => {
 
 const itemData = [
   {
-    img: "/static/post-image/post-1.png",
-    title: "Breakfast",
-    category: ["branding", "fashion"],
+    img: '/static/post-image/post-1.png',
+    title: 'Breakfast',
+    category: ['branding', 'fashion'],
   },
   {
-    img: "/static/post-image/post-2.png",
-    title: "Burger",
-    category: ["branding", "fashion"],
+    img: '/static/post-image/post-2.png',
+    title: 'Burger',
+    category: ['branding', 'fashion'],
   },
   {
-    img: "/static/post-image/post-3.png",
-    title: "Camera",
-    category: ["branding", "development"],
+    img: '/static/post-image/post-3.png',
+    title: 'Camera',
+    category: ['branding', 'development'],
   },
   {
-    img: "/static/post-image/post-4.png",
-    title: "Coffee",
-    category: ["fashion"],
+    img: '/static/post-image/post-4.png',
+    title: 'Coffee',
+    category: ['fashion'],
   },
   {
-    img: "/static/post-image/post-5.png",
-    title: "Hats",
-    category: ["development"],
+    img: '/static/post-image/post-5.png',
+    title: 'Hats',
+    category: ['development'],
   },
 ];
 

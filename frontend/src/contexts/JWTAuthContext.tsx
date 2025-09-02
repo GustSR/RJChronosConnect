@@ -1,11 +1,11 @@
-import LoadingScreen from "components/LoadingScreen";
-import jwtDecode from "jwt-decode";
-import { createContext, ReactNode, useEffect, useReducer } from "react";
-import axios from "utils/axios";
+import LoadingScreen from 'components/LoadingScreen';
+import jwtDecode from 'jwt-decode';
+import { createContext, ReactNode, useEffect, useReducer } from 'react';
+import axios from 'utils/axios';
 
 // All types
 // =============================================
-export type ActionMap<M extends { [index: string]: any }> = {
+export type ActionMap<M extends { [index: string]: unknown }> = {
   [Key in keyof M]: M[Key] extends undefined
     ? {
         type: Key;
@@ -16,7 +16,7 @@ export type ActionMap<M extends { [index: string]: any }> = {
       };
 };
 
-export type AuthUser = null | Record<string, any>;
+export type AuthUser = null | Record<string, unknown>;
 
 export type AuthState = {
   isAuthenticated: boolean;
@@ -25,10 +25,10 @@ export type AuthState = {
 };
 
 enum Types {
-  Init = "INIT",
-  Login = "LOGIN",
-  Logout = "LOGOUT",
-  Register = "REGISTER",
+  Init = 'INIT',
+  Login = 'LOGIN',
+  Logout = 'LOGOUT',
+  Register = 'REGISTER',
 }
 
 type JWTAuthPayload = {
@@ -60,38 +60,38 @@ const isValidToken = (accessToken: string) => {
 
 const setSession = (accessToken: string | null) => {
   if (accessToken) {
-    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem('accessToken', accessToken);
     axios.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
   } else {
-    localStorage.removeItem("accessToken");
+    localStorage.removeItem('accessToken');
     delete axios.defaults.headers.common.Authorization;
   }
 };
 
 const reducer = (state: AuthState, action: JWTActions) => {
   switch (action.type) {
-    case "INIT": {
+    case 'INIT': {
       return {
         isInitialized: true,
         user: action.payload.user,
         isAuthenticated: action.payload.isAuthenticated,
       };
     }
-    case "LOGIN": {
+    case 'LOGIN': {
       return {
         ...state,
         isAuthenticated: true,
         user: action.payload.user,
       };
     }
-    case "LOGOUT": {
+    case 'LOGOUT': {
       return {
         ...state,
         user: null,
         isAuthenticated: false,
       };
     }
-    case "REGISTER": {
+    case 'REGISTER': {
       return {
         ...state,
         isAuthenticated: true,
@@ -107,10 +107,10 @@ const reducer = (state: AuthState, action: JWTActions) => {
 
 const AuthContext = createContext({
   ...initialState,
-  method: "JWT",
-  login: (email: string, password: string) => Promise.resolve(),
+  method: 'JWT',
+  login: (_email: string, _password: string) => Promise.resolve(),
   logout: () => {},
-  register: (email: string, password: string, username: string) =>
+  register: (_email: string, _password: string, _username: string) =>
     Promise.resolve(),
 });
 
@@ -123,11 +123,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   const login = async (email: string, password: string) => {
-    const response = await axios.post("/api/auth/login", {
+    const response = await axios.post('/api/auth/login', {
       email,
       password,
     });
-    //@ts-ignore
+    //@ts-expect-error - response data typing
     const { accessToken, user } = response.data;
 
     setSession(accessToken);
@@ -144,12 +144,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     username: string,
     password: string
   ) => {
-    const response = await axios.post("/api/auth/register", {
+    const response = await axios.post('/api/auth/register', {
       email,
       username,
       password,
     });
-    // @ts-ignore
+    // @ts-expect-error - response data typing
     const { accessToken, user } = response.data;
     setSession(accessToken);
     console.log(response.data);
@@ -170,13 +170,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     (async () => {
       try {
-        const accessToken = window.localStorage.getItem("accessToken");
+        const accessToken = window.localStorage.getItem('accessToken');
 
         if (accessToken && isValidToken(accessToken)) {
           setSession(accessToken);
 
-          const response = await axios.get("/api/auth/profile");
-          //@ts-ignore
+          const response = await axios.get('/api/auth/profile');
+          //@ts-expect-error - response data typing
           const { user } = response.data;
 
           dispatch({
@@ -216,7 +216,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     <AuthContext.Provider
       value={{
         ...state,
-        method: "JWT",
+        method: 'JWT',
         login,
         logout,
         register,

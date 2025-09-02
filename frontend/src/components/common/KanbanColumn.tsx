@@ -1,11 +1,6 @@
 import React from 'react';
 import { Droppable } from 'react-beautiful-dnd';
-import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-} from '@mui/material';
+import { Box, Typography, Paper, Button } from '@mui/material';
 import { Add } from '@mui/icons-material';
 import KanbanCard, { KanbanCardData } from './KanbanCard';
 
@@ -83,8 +78,8 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ column, onAddCard }) => {
               minHeight: 500,
               p: 2,
               backgroundColor: snapshot.isDraggingOver ? '#f8fafc' : '#fafbfc',
-              border: snapshot.isDraggingOver 
-                ? '2px dashed #6366f1' 
+              border: snapshot.isDraggingOver
+                ? '2px dashed #6366f1'
                 : '2px dashed transparent',
               borderRadius: 3,
               transition: 'all 0.2s ease',
@@ -93,11 +88,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ column, onAddCard }) => {
           >
             {/* Cards */}
             {column.cards.map((card, index) => (
-              <KanbanCard
-                key={card.id}
-                card={card}
-                index={index}
-              />
+              <KanbanCard key={card.id} card={card} index={index} />
             ))}
             {provided.placeholder}
 
@@ -114,10 +105,9 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ column, onAddCard }) => {
                 }}
               >
                 <Typography variant="body2" color="text.secondary">
-                  {column.id === 'todo' 
+                  {column.id === 'todo'
                     ? 'Click "Add Task" to create a new task'
-                    : 'Drop tasks here'
-                  }
+                    : 'Drop tasks here'}
                 </Typography>
               </Box>
             )}

@@ -1,7 +1,7 @@
-import useAuth from "hooks/useAuth";
-import Login from "pages/authentication/Login";
-import React, { Fragment, ReactNode, useState } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import useAuth from 'hooks/useAuth';
+import Login from 'pages/authentication/Login';
+import React, { Fragment, ReactNode, useState } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 
 // component props interface
 interface AuthGuardProps {

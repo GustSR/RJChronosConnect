@@ -1,8 +1,8 @@
-import { createContext, ReactNode, useState } from "react";
+import { createContext, ReactNode, useState } from 'react';
 
 export const TitleContext = createContext({
-  title: "",
-  setTitle: (arg: string) => {},
+  title: '',
+  setTitle: (_arg: string) => {},
 });
 
 // props types for provider
@@ -11,7 +11,7 @@ type ProviderProps = {
 };
 
 const TitleContextProvider = ({ children }: ProviderProps) => {
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState('');
 
   return (
     <TitleContext.Provider value={{ title, setTitle }}>

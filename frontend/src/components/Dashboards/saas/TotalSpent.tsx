@@ -1,29 +1,29 @@
-import { Box, Card, useTheme } from "@mui/material";
-import { ApexOptions } from "apexcharts";
-import { H2, H5 } from "components/Typography";
-import { FC } from "react";
-import Chart from "react-apexcharts";
+import { Box, Card, useTheme } from '@mui/material';
+import { ApexOptions } from 'apexcharts';
+import { H2, H5 } from 'components/Typography';
+import { FC } from 'react';
+import Chart from 'react-apexcharts';
 
 const data = {
   series: [
     {
-      name: "Spent",
+      name: 'Spent',
       data: [22, 80, 36, 50, 60, 30, 90, 26, 75, 10, 55, 65],
     },
   ],
   categories: [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ],
 };
 
@@ -32,7 +32,7 @@ const TotalSpent: FC = () => {
 
   const chartOptions: ApexOptions = {
     chart: {
-      background: "transparent",
+      background: 'transparent',
       toolbar: { show: false },
     },
     colors: [theme.palette.primary.main],
@@ -43,10 +43,10 @@ const TotalSpent: FC = () => {
     },
     states: {
       active: {
-        filter: { type: "none" },
+        filter: { type: 'none' },
       },
       hover: {
-        filter: { type: "none" },
+        filter: { type: 'none' },
       },
     },
     theme: {
@@ -69,7 +69,7 @@ const TotalSpent: FC = () => {
     plotOptions: {
       bar: {
         borderRadius: 8,
-        columnWidth: "60%",
+        columnWidth: '60%',
         rangeBarOverlap: false,
       },
     },
@@ -116,10 +116,10 @@ const TotalSpent: FC = () => {
     <Card
       sx={{
         paddingX: 4,
-        height: "100%",
-        paddingBottom: "1.5rem",
-        paddingTop: "calc(1.5rem + 15px)",
-        [theme.breakpoints.down(425)]: { padding: "1.5rem" },
+        height: '100%',
+        paddingBottom: '1.5rem',
+        paddingTop: 'calc(1.5rem + 15px)',
+        [theme.breakpoints.down(425)]: { padding: '1.5rem' },
       }}
     >
       <H5>Total Spent</H5>
@@ -127,19 +127,19 @@ const TotalSpent: FC = () => {
 
       <Box
         sx={{
-          "& .apexcharts-tooltip *": {
+          '& .apexcharts-tooltip *': {
             fontFamily: theme.typography.fontFamily,
             fontWeight: 500,
           },
-          "& .apexcharts-tooltip": {
+          '& .apexcharts-tooltip': {
             boxShadow: 0,
             borderRadius: 4,
-            alignItems: "center",
-            "& .apexcharts-tooltip-text-y-value": { color: "primary.main" },
-            "& .apexcharts-tooltip.apexcharts-theme-light": {
+            alignItems: 'center',
+            '& .apexcharts-tooltip-text-y-value': { color: 'primary.main' },
+            '& .apexcharts-tooltip.apexcharts-theme-light': {
               border: `1px solid ${theme.palette.divider}`,
             },
-            "& .apexcharts-tooltip-series-group:last-child": {
+            '& .apexcharts-tooltip-series-group:last-child': {
               paddingBottom: 0,
             },
           },

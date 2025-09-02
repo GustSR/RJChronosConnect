@@ -1,22 +1,22 @@
-import { Box, Grid, useTheme } from "@mui/material";
-import Analytics from "components/Dashboards/saas/Analytics";
-import SaaSCard from "components/Dashboards/saas/Card";
-import Footer from "components/Dashboards/saas/Footer";
-import RecentOrders from "components/Dashboards/saas/RecentOrders";
-import TopSelling from "components/Dashboards/saas/TopSelling";
-import TotalSpent from "components/Dashboards/saas/TotalSpent";
-import RatingComponent from "components/Dashboards/saas/RatingComponent";
-import GoalProgress from "components/Dashboards/saas/GoalProgress";
-import useTitle from "hooks/useTitle";
-import BucketIcon from "icons/BucketIcon";
-import EarningIcon from "icons/EarningIcon";
-import PeopleIcon from "icons/PeopleIcon";
-import WindowsLogoIcon from "icons/WindowsLogoIcon";
-import { FC } from "react";
+import { Box, Grid, useTheme } from '@mui/material';
+// import Analytics from 'components/Dashboards/saas/Analytics';
+import SaaSCard from 'components/Dashboards/saas/Card';
+import Footer from 'components/Dashboards/saas/Footer';
+import RecentOrders from 'components/Dashboards/saas/RecentOrders';
+import TopSelling from 'components/Dashboards/saas/TopSelling';
+import TotalSpent from 'components/Dashboards/saas/TotalSpent';
+import RatingComponent from 'components/Dashboards/saas/RatingComponent';
+import GoalProgress from 'components/Dashboards/saas/GoalProgress';
+import useTitle from 'hooks/useTitle';
+import BucketIcon from 'icons/BucketIcon';
+import EarningIcon from 'icons/EarningIcon';
+import PeopleIcon from 'icons/PeopleIcon';
+import WindowsLogoIcon from 'icons/WindowsLogoIcon';
+import { FC } from 'react';
 
 const SaaS: FC = () => {
   // change navbar title
-  useTitle("Saas");
+  useTitle('Saas');
 
   const theme = useTheme();
 
@@ -24,42 +24,42 @@ const SaaS: FC = () => {
     {
       price: 1352,
       Icon: PeopleIcon,
-      title: "Daily Visitors",
+      title: 'Daily Visitors',
       color: theme.palette.primary.main,
     },
     {
       price: 51352,
-      title: "Average Daily Sales",
+      title: 'Average Daily Sales',
       Icon: EarningIcon,
       color: theme.palette.success.main,
     },
     {
       price: 1352,
       Icon: BucketIcon,
-      title: "Order This Month",
+      title: 'Order This Month',
       color: theme.palette.error.main,
     },
     {
       price: 20360,
       Icon: WindowsLogoIcon,
-      title: "Monthly Earnings",
+      title: 'Monthly Earnings',
       color: theme.palette.primary.main,
     },
   ];
 
   const goalData = [
     {
-      title: "1,500 to Goal",
+      title: '1,500 to Goal',
       current: 1500,
       target: 2000,
       color: theme.palette.success.main,
     },
     {
-      title: "$25,000 to Goal",
+      title: '$25,000 to Goal',
       current: 25000,
       target: 32000,
       color: theme.palette.primary.main,
-      prefix: "$",
+      prefix: '$',
     },
   ];
 

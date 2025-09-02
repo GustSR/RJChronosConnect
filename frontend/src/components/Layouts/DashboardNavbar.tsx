@@ -6,15 +6,15 @@ import {
   Theme,
   Toolbar,
   useMediaQuery,
-} from "@mui/material";
-import { Menu as MenuIcon } from "@mui/icons-material";
-import { H2 } from "components/Typography";
-import { TitleContext } from "contexts/TitleContext";
-import { FC, useContext } from "react";
-import LanguagePopover from "./popovers/LanguagePopover";
-import NotificationsPopover from "./popovers/NotificationsPopover";
-import ProfilePopover from "./popovers/ProfilePopover";
-import ServicePopover from "./popovers/ServicePopover";
+} from '@mui/material';
+import { Menu as MenuIcon } from '@mui/icons-material';
+import { H2 } from 'components/Typography';
+import { TitleContext } from 'contexts/TitleContext';
+import { FC, useContext } from 'react';
+import LanguagePopover from './popovers/LanguagePopover';
+import NotificationsPopover from './popovers/NotificationsPopover';
+import ProfilePopover from './popovers/ProfilePopover';
+import ServicePopover from './popovers/ServicePopover';
 
 // root component interface
 interface DashboardNavBarProps {
@@ -24,18 +24,18 @@ interface DashboardNavBarProps {
 // custom styled components
 const DashboardNavbarRoot = styled(AppBar)(() => ({
   zIndex: 11,
-  boxShadow: "none",
-  paddingTop: "1rem",
-  paddingBottom: "1rem",
-  backdropFilter: "blur(6px)",
-  backgroundColor: "transparent",
+  boxShadow: 'none',
+  paddingTop: '1rem',
+  paddingBottom: '1rem',
+  backdropFilter: 'blur(6px)',
+  backgroundColor: 'transparent',
 }));
 
 const StyledToolBar = styled(Toolbar)(() => ({
-  "@media (min-width: 0px)": {
+  '@media (min-width: 0px)': {
     paddingLeft: 0,
     paddingRight: 0,
-    minHeight: "auto",
+    minHeight: 'auto',
   },
 }));
 
@@ -43,7 +43,7 @@ const StyledToolBar = styled(Toolbar)(() => ({
 const MenuButton = styled(IconButton)(({ theme }) => ({
   marginRight: theme.spacing(2),
   color: theme.palette.text.primary,
-  "&:hover": {
+  '&:hover': {
     backgroundColor: theme.palette.action.hover,
   },
 }));
@@ -53,8 +53,8 @@ const DashboardNavbar: FC<DashboardNavBarProps> = ({
   setShowMobileSideBar,
 }) => {
   const { title } = useContext(TitleContext);
-  const upSm = useMediaQuery((theme: Theme) => theme.breakpoints.up("sm"));
-  const downSm = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));      
+  const upSm = useMediaQuery((theme: Theme) => theme.breakpoints.up('sm'));
+  const downSm = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'));
 
   if (downSm) {
     return (
