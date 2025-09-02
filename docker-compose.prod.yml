@@ -66,6 +66,15 @@ services:
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
 
+  olt-manager-huawei:
+    build:
+      context: ./services/olts-managers/olt-manager-huawei
+      dockerfile: Dockerfile
+    container_name: rjchronos_olt_manager_huawei_prod
+    restart: always
+    networks:
+      - rjchronos-net
+
   rabbitmq:
     container_name: rjchronos_rabbitmq_prod
     image: rabbitmq:3-management-alpine

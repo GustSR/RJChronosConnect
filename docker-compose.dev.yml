@@ -71,6 +71,17 @@ services:
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
 
+  olt-manager-huawei:
+    build:
+      context: ./services/olts-managers/olt-manager-huawei
+      dockerfile: Dockerfile
+    container_name: rjchronos_olt_manager_huawei_dev
+    volumes:
+      - ./services/olts-managers/olt-manager-huawei/src:/app/src
+    networks:
+      - rjchronos-net
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
   # --- Nomes e Volumes Específicos para DEV ---
   reverse-proxy:
     container_name: rjchronos_proxy_dev
