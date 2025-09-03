@@ -42,6 +42,11 @@ const ONUConfigurationStatus = Loadable(
   lazy(() => import('./pages/ONUConfigurationStatus'))
 );
 
+// OLT Management pages
+const OLTManagement = Loadable(lazy(() => import('./pages/OLTManagement')));
+const OLTAdd = Loadable(lazy(() => import('./pages/OLTAdd')));
+const OLTDetails = Loadable(lazy(() => import('./pages/OLTDetails')));
+
 // user profile
 const UserProfile = Loadable(lazy(() => import('./pages/UserProfile')));
 
@@ -106,30 +111,10 @@ const routes = [
         element: <Kanban />,
       },
       {
-        path: 'provisionar',
-        element: <Provisioning />,
-      },
-      {
-        path: 'clientes',
-        element: <Clientes />,
-      },
-      {
-        path: 'clientes/:id/configurar',
-        element: <ONUConfiguration />,
-      },
-      {
-        path: 'provisionar/:id',
-        element: <ONUConfiguration />,
-      },
-      {
-        path: 'provisionar/:id/status',
-        element: <ONUConfigurationStatus />,
-      },
-      {
         path: 'user-profile',
         element: <UserProfile />,
       },
-
+      // User management routes
       {
         path: 'user-list',
         element: <UserList />,
@@ -141,6 +126,69 @@ const routes = [
       {
         path: 'add-user',
         element: <AddNewUser />,
+      },
+    ],
+  },
+  // Independent routes with DashboardLayout
+  {
+    path: 'provisionar',
+    element: (
+      <AuthGuard>
+        <DashboardLayout />
+      </AuthGuard>
+    ),
+    children: [
+      {
+        path: '',
+        element: <Provisioning />,
+      },
+      {
+        path: ':id',
+        element: <ONUConfiguration />,
+      },
+      {
+        path: ':id/status',
+        element: <ONUConfigurationStatus />,
+      },
+    ],
+  },
+  {
+    path: 'clientes',
+    element: (
+      <AuthGuard>
+        <DashboardLayout />
+      </AuthGuard>
+    ),
+    children: [
+      {
+        path: '',
+        element: <Clientes />,
+      },
+      {
+        path: ':id/configurar',
+        element: <ONUConfiguration />,
+      },
+    ],
+  },
+  {
+    path: 'olts',
+    element: (
+      <AuthGuard>
+        <DashboardLayout />
+      </AuthGuard>
+    ),
+    children: [
+      {
+        path: '',
+        element: <OLTManagement />,
+      },
+      {
+        path: 'add',
+        element: <OLTAdd />,
+      },
+      {
+        path: ':id',
+        element: <OLTDetails />,
       },
     ],
   },

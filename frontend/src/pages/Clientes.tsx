@@ -43,6 +43,7 @@ import { useNavigate } from 'react-router-dom';
 import useTitle from '../hooks/useTitle';
 import AnimatedCard from '../components/common/AnimatedCard';
 import { useProvisioning } from '../contexts/ProvisioningContext';
+import { ProvisionedONU } from '../lib/provisioningData';
 
 // Interfaces
 interface Cliente {
@@ -89,42 +90,58 @@ const Clientes: React.FC = () => {
   const [sinalFilter, setSinalFilter] = useState('all');
 
   // Converter ONUs provisionadas para formato de Cliente
-  const convertProvisionedToCliente = (
-    onu: Record<string, unknown>
-  ): Cliente => ({
-    id: onu.id,
-    status: onu.status,
-    nome: onu.clientName,
-    serialNumber: onu.serialNumber,
-    oltName: onu.oltName,
-    board: `${onu.board}/${onu.port}`,
-    port: onu.port.toString(),
-    sinal: onu.onuRx,
-    modo: onu.onuMode,
-    vlan: onu.attachedVlans.join(','),
-    voip: onu.voipEnabled || false,
-    dataAutenticacao: onu.authorizedAt,
-    tipoOnu: onu.onuType,
-    endereco: onu.clientAddress,
-    rxPower: onu.onuRx,
-  });
+  const convertProvisionedToCliente = (onu: ProvisionedONU): Cliente => {
+    // Mapear status
+    let status: 'online' | 'offline' | 'powered_off' | 'admin_disabled';
+    if (onu.status === 'disabled') {
+      status = 'admin_disabled';
+    } else {
+      status = onu.status;
+    }
 
-  const clientes = provisionedONUs.map(convertProvisionedToCliente);
+    return {
+      id: onu.id,
+      status,
+      nome: onu.clientName,
+      serialNumber: onu.serialNumber,
+      oltName: onu.oltName,
+      board: `${onu.board}/${onu.port}`,
+      port: onu.port.toString(),
+      sinal: onu.onuRx,
+      modo: onu.onuMode,
+      vlan: onu.attachedVlans.join(','),
+      voip: onu.voipEnabled || false,
+      dataAutenticacao: onu.authorizedAt,
+      tipoOnu: onu.onuType,
+      endereco: onu.clientAddress,
+      rxPower: onu.onuRx,
+    };
+  };
+
+  // Memoizar clientes para evitar recalculos desnecessários
+  const clientes = React.useMemo(
+    () => provisionedONUs.map(convertProvisionedToCliente),
+    [provisionedONUs]
+  );
 
   useEffect(() => {
     const loadClientes = async () => {
       setLoading(true);
       // Simular carregamento
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      setFilteredClientes(clientes);
       setLoading(false);
     };
 
     loadClientes();
-  }, [provisionedONUs, clientes]);
+  }, []);
 
   // Aplicar filtros
   useEffect(() => {
+    if (clientes.length === 0) {
+      setFilteredClientes([]);
+      return;
+    }
+
     let filtered = clientes.filter((cliente) => {
       const matchesSearch =
         cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -165,6 +182,7 @@ const Clientes: React.FC = () => {
     setFilteredClientes(filtered);
     setPage(0);
   }, [
+    clientes,
     searchTerm,
     statusFilter,
     oltFilter,
@@ -173,7 +191,6 @@ const Clientes: React.FC = () => {
     vlanFilter,
     tipoOnuFilter,
     sinalFilter,
-    clientes,
   ]);
 
   const handleChangePage = (_event: unknown, newPage: number) => {
@@ -188,7 +205,7 @@ const Clientes: React.FC = () => {
   };
 
   const handleViewClient = (clienteId: string) => {
-    navigate(`/dashboard/provisionar/${clienteId}`);
+    navigate(`/provisionar/${clienteId}`);
   };
 
   const getStatusChip = (status: string) => {

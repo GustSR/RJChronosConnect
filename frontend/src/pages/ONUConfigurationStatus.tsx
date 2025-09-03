@@ -123,7 +123,7 @@ const ONUConfigurationStatus: React.FC = () => {
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
         <IconButton
-          onClick={() => navigate('/dashboard/provisionar')}
+          onClick={() => navigate('/provisionar')}
           sx={{ mr: 2, color: 'primary.main' }}
         >
           <ArrowBack />
@@ -311,7 +311,7 @@ const ONUConfigurationStatus: React.FC = () => {
                   fullWidth
                   variant="outlined"
                   startIcon={<Refresh />}
-                  onClick={() => navigate(`/dashboard/provisionar/${id}`)}
+                  onClick={() => navigate(`/provisionar/${id}`)}
                   sx={{ borderRadius: 3 }}
                 >
                   Reconfigurar ONU
@@ -320,7 +320,7 @@ const ONUConfigurationStatus: React.FC = () => {
                 <Button
                   fullWidth
                   variant="outlined"
-                  onClick={() => navigate('/dashboard/provisionar')}
+                  onClick={() => navigate('/provisionar')}
                   sx={{ borderRadius: 3 }}
                 >
                   Voltar para Lista

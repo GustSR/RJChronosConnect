@@ -49,7 +49,6 @@ const Provisioning: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [oltFilter, setOltFilter] = useState<string>('all');
-  const [processingONU, setProcessingONU] = useState<string | null>(null);
 
   // Filtrar ONUs baseado nos critérios
   const filteredONUs = pendingONUs.filter((onu) => {
@@ -77,8 +76,6 @@ const Provisioning: React.FC = () => {
 
   const handleProvision = async (onuId: string) => {
     try {
-      setProcessingONU(onuId);
-
       // Provisionar com dados básicos - o resto será configurado na tela de configuração
       const success = await provisionONU(onuId, {
         client_name: `Cliente ${onuId.slice(-6)}`, // Nome temporário baseado no ID
@@ -90,15 +87,13 @@ const Provisioning: React.FC = () => {
 
       if (success) {
         // Redirecionar imediatamente para configuração
-        navigate(`/dashboard/clientes/${onuId}/configurar`);
+        navigate(`/clientes/${onuId}/configurar`);
       } else {
         alert('Erro ao autorizar ONU. Tente novamente.');
       }
     } catch (error) {
       console.error('Erro no provisionamento:', error);
       alert('Erro ao processar provisionamento');
-    } finally {
-      setProcessingONU(null);
     }
   };
 
@@ -112,8 +107,6 @@ const Provisioning: React.FC = () => {
     }
 
     try {
-      setProcessingONU(onuId);
-
       const success = await rejectONU(onuId, reason);
 
       if (success) {
@@ -124,8 +117,6 @@ const Provisioning: React.FC = () => {
     } catch (error) {
       console.error('Erro na rejeição:', error);
       alert('Erro ao processar rejeição');
-    } finally {
-      setProcessingONU(null);
     }
   };
 
@@ -374,7 +365,6 @@ const Provisioning: React.FC = () => {
                     onu={onu}
                     onProvision={handleProvision}
                     onReject={handleReject}
-                    isProcessing={processingONU === onu.id}
                   />
                 </AnimatedCard>
               </Grid>

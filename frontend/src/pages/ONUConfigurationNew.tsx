@@ -245,7 +245,7 @@ const ONUConfigurationNew: React.FC = () => {
       setLoading(true);
 
       if (!id) {
-        navigate('/dashboard/provisionar');
+        navigate('/provisionar');
         return;
       }
 
@@ -861,7 +861,7 @@ const ONUConfigurationNew: React.FC = () => {
     setActionDialog({ open: false, action: null, title: '', message: '' });
 
     if (actionDialog.action === 'delete') {
-      navigate('/dashboard/provisionar');
+      navigate('/provisionar');
     }
   };
 
@@ -1202,10 +1202,7 @@ const ONUConfigurationNew: React.FC = () => {
     return (
       <Container maxWidth="xl" sx={{ py: 4 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <IconButton
-            onClick={() => navigate('/dashboard/provisionar')}
-            sx={{ mr: 2 }}
-          >
+          <IconButton onClick={() => navigate('/provisionar')} sx={{ mr: 2 }}>
             <ArrowBack />
           </IconButton>
           <Typography variant="h4" fontWeight="600">
@@ -1222,9 +1219,7 @@ const ONUConfigurationNew: React.FC = () => {
       <Container maxWidth="xl" sx={{ py: 4 }}>
         <Alert severity="error">
           ONU não encontrada.{' '}
-          <Button onClick={() => navigate('/dashboard/provisionar')}>
-            Voltar
-          </Button>
+          <Button onClick={() => navigate('/provisionar')}>Voltar</Button>
         </Alert>
       </Container>
     );
@@ -1235,7 +1230,7 @@ const ONUConfigurationNew: React.FC = () => {
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
         <IconButton
-          onClick={() => navigate('/dashboard/provisionar')}
+          onClick={() => navigate('/provisionar')}
           sx={{ mr: 2, color: 'primary.main' }}
         >
           <ArrowBack />
@@ -2042,7 +2037,7 @@ const ONUConfigurationNew: React.FC = () => {
             <Button
               variant="outlined"
               startIcon={<Cancel />}
-              onClick={() => navigate('/dashboard/provisionar')}
+              onClick={() => navigate('/provisionar')}
               sx={{ borderRadius: 3 }}
             >
               Cancelar

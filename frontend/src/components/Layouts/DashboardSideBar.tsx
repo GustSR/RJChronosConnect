@@ -336,10 +336,10 @@ const DashboardSideBar: React.FC<SideNavBarProps> = ({
       }}
     >
       <LogoBox>
-        <LogoIcon>U</LogoIcon>
+        <LogoIcon>RJ</LogoIcon>
         {!sidebarCollapsed && (
           <H6 fontSize={18} fontWeight={600} color="#1e293b">
-            UKO
+            RJ Chronos
           </H6>
         )}
       </LogoBox>

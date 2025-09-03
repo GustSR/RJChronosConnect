@@ -7,7 +7,10 @@ interface AnimatedCardProps extends CardProps {
   duration?: number;
 }
 
-const StyledCard = styled(Card)<{
+const StyledCard = styled(Card, {
+  shouldForwardProp: (prop) =>
+    !['isVisible', 'delay', 'duration'].includes(prop as string),
+})<{
   isVisible: boolean;
   delay: number;
   duration: number;
