@@ -1,20 +1,15 @@
-from fastapi import APIRouter, HTTPException
-from typing import List
+from fastapi import APIRouter, HTTPException, Depends
+from typing import List, Optional
 from datetime import datetime
+
+from ..schemas.device import CPE, ONU, OLT
+from ..services.genieacs_client import get_genieacs_client
+from ..services.genieacs_transformers import transform_genieacs_to_cpe, transform_genieacs_to_onu
+
 import logging
-
-# Import schemas and services
-from app.schemas.device import CPE, ONU, OLT
-from app.services.genieacs_client import get_genieacs_client
-from app.services.genieacs_transformers import transform_genieacs_to_cpe
-
-# Logger
 logger = logging.getLogger(__name__)
 
-# APIRouter
-router = APIRouter()
-
-# Mock data (will be moved or replaced later)
+# Mock data (temporarily here, will be moved)
 mock_cpes = [
     CPE(
         id=f"cpe-{i:03d}",
@@ -61,6 +56,9 @@ mock_olts = [
     ) for i in range(1, 6)
 ]
 
+from ..crud.provisioning import provisioned_devices_db
+
+router = APIRouter()
 
 @router.get("/cpes", response_model=List[CPE])
 async def get_cpes():
@@ -91,8 +89,73 @@ async def get_cpes():
 
 @router.get("/onus", response_model=List[ONU])
 async def get_onus():
-    return mock_onus
+    """
+    Retorna lista de ONUs APENAS provisionadas/autorizadas pelo sistema
+    """
+    try:
+        if not provisioned_devices_db:
+            logger.info("Nenhuma ONU provisionada encontrada")
+            return []
+        
+        client = await get_genieacs_client()
+        raw_devices = await client.get_devices()
+        
+        onus = []
+        for device_data in raw_devices:
+            device_id = device_data.get("_id", "")
+            
+            if device_id in provisioned_devices_db:
+                onu_data = transform_genieacs_to_onu(device_data)
+                if onu_data:
+                    provisioned_info = provisioned_devices_db[device_id]
+                    onu_data.update({
+                        "customer_name": provisioned_info.client_name,
+                        "customer_address": provisioned_info.client_address,
+                        "service_profile": provisioned_info.service_profile,
+                        "vlan_id": provisioned_info.vlan_id,
+                        "wan_mode": provisioned_info.wan_mode,
+                        "comment": provisioned_info.comment,
+                        "provisioned_at": provisioned_info.provisioned_at.isoformat(),
+                        "provisioned_by": provisioned_info.provisioned_by
+                    })
+                    onus.append(ONU(**onu_data))
+        
+        logger.info(f"Retornando {len(onus)} ONUs provisionadas pelo sistema")
+        return onus
+            
+    except Exception as e:
+        logger.error(f"Erro ao buscar ONUs provisionadas: {e}")
+        return []
 
 @router.get("/olts", response_model=List[OLT])
 async def get_olts():
     return mock_olts
+
+@router.get("/olts/{olt_id}/stats")
+async def get_olt_stats(olt_id: str):
+    """
+    Retorna estatísticas de uma OLT específica
+    """
+    try:
+        olt_exists = any(olt.id == olt_id for olt in mock_olts)
+        if not olt_exists:
+            raise HTTPException(status_code=404, detail="OLT não encontrada")
+        
+        provisioned_onus = [onu for onu in provisioned_devices_db.values()]
+        mock_onus_for_olt = [onu for onu in mock_onus if onu.olt_id == olt_id]
+        
+        total_onus = len(provisioned_onus) + len(mock_onus_for_olt)
+        online_onus = len(provisioned_onus) + len([onu for onu in mock_onus_for_olt if onu.status == "online"])
+        offline_onus = total_onus - online_onus
+        
+        return {
+            "total": total_onus,
+            "online": online_onus,
+            "offline": offline_onus
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao buscar estatísticas da OLT {olt_id}: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")

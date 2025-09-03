@@ -1,86 +1,175 @@
-# RJChronosConnect - Frontend
+<h1><a href="https://ui-lib.com/downloads/uko-lite-react-dashboard/">Uko React Admin Dashboard Template</a></h1>
 
-[![CI](https://github.com/Gustavo-RJ/RJChronosConnect/actions/workflows/ci.yml/badge.svg)](https://github.com/Gustavo-RJ/RJChronosConnect/actions/workflows/ci.yml)
+<a href="https://uko-react-free.netlify.app/"><img alt="Uko React Admin" src="https://ui-lib.com/wp-content/uploads/2022/06/uko-react-free.png" /></a>
 
-## 1. Visão Geral
+<p>Professional React dashboard template with robust MUI components.
+Its clean codebase and design significantly reduce development costs, time, and effort.</p>
 
-Este é o projeto do frontend para a plataforma **RJChronosConnect**. O objetivo é criar uma interface de usuário moderna, reativa e intuitiva para monitoramento e gestão de redes, consumindo os dados fornecidos pelo nosso [backend em FastAPI](./../backend-api/README.md).
+<h2>Features and Pages</h2>
+<ul>
+  <li>JWT authentication</li>
+  <li>React Router</li>
+  <li>React Hooks</li>
+  <li>Lazy loading components</li>
+  <li>Code splitting</li>
+  <li><a href="https://uko-react-free.netlify.app/dashboard">Dashboard</a></li>
+  <li>Users
+    <ul>
+      <li><a href="https://uko-react-free.netlify.app/dashboard/user-profile">User Profile</a></li>
+      <li><a href="https://uko-react-free.netlify.app/dashboard/user-list">User List</a></li>
+      <li><a href="https://uko-react-free.netlify.app/dashboard/user-grid">User Grid</a></li>
+      <li><a href="https://uko-react-free.netlify.app/dashboard/add-user">Add User</a></li>
+    </ul>
+  </li>
+  <li>UI kits
+    <ul>
+      <li><a href="https://mui.com/components/">MUI components</a></li>
+    </ul>
+  </li>
+  <li>Session pages
+    <ul>
+      <li><a href="https://uko-react-free.netlify.app/login">Sign in</a></li>
+      <li><a href="https://uko-react-free.netlify.app/register">Sign up</a></li>
+    </ul>
+  </li>
+</ul>
 
----
 
-## 2. Estado Atual do Projeto
+<h2>Free vs Pro</h2>
+<table>
+<tr>
+<th>Uko Lite</th>
+<th>Uko</th>
+</tr>
+<tr>
+<td>
+<a href="https://uko-react-free.netlify.app/">Live Preview</a> <br>
+<a href="https://ui-lib.com/downloads/uko-lite-react-dashboard/">Download Uko Lite</a>
+</td>
+<td>
+<a href="https://uko-react.vercel.app/dashboard/sales">Live Preview</a> <br>
+<a href="https://mui.com/store/items/uko-client-admin-dashboard/">Get Uko</a>
+</td>
+</tr>
+<tr>
+<td valign="top">
+<ul>
+  <li>JWT authentication</li>
+  <li>Lazy loading components</li>
+  <li>Code splitting</li>
+  <li>Dashboard</li>
+  <li>Users
+    <ul>
+      <li>User Profile</li>
+      <li>User List</li>
+      <li>User Grid</li>
+      <li>Add User</li>
+    </ul>
+  </li>
+  <li>UI kits
+    <ul>
+      <li>All MUI components</li>
+    </ul>
+  </li>
+  <li>Session pages
+    <ul>
+      <li>Sign in</li>
+      <li>Sign up</li>
+    </ul>
+  </li>
+  </ul>
+</td>
+<td valign="top">
+<ul>
+  <li>All features of Uko Lite +</li>
+  <li>Firebase authentication</li>
+  <li>Auth0 authentication</li>
+  <li>Dashboards
+    <ul>
+      <li>SaaS</li>
+      <li>Sales</li>
+      <li>Project Management v1</li>
+      <li>Project Management v2</li>
+    </ul>
+  </li>
+  <li>User Account settings</li>
+  <li> Datatables
+    <ul>
+      <li>React table style 1</li>
+      <li>React table style 2</li>
+    </ul>
+  </li>
+  <li>Ecommerce management
+    <ul>
+      <li>Product List/add/edit</li>
+      <li>Order List/add/edit</li>
+      <li>Customer List/add/edit</li>
+    </ul>
+  </li>
+  <li>Online store
+    <ul>
+      <li>Shop</li>
+      <li>Cart</li>
+      <li>Checkout</li>
+      <li>Purchase confirmation</li>
+    </ul>
+  </li>
+  <li>
+  <ul> Invoice
+    <li>Invoice list</li>
+    <li>Invoice details</li>
+    <li>Add Invoice</li>
+  </ul>
+  </li>
+  <li>Project management
+    <ul>
+      <li>Project list 1</li>
+      <li>Project list 2</li>
+      <li>Project list 3</li>
+      <li>Project details</li>
+      <li>Project team members</li>
+    </ul>
+  </li>
+  
+  <li>Working Apps
+    <ul>
+      <li>Canban card</li>
+      <li>Shop/eCommerce</li>
+      <li>Scrum board</li>
+      <li>Invoice builder</li>
+      <li>Event calendar</li>
+      <li>Chat</li>
+      <li>Inbox</li>
+    </ul>
+  </li>
+  <li>Pages
+    <ul>
+      <li>About</li>
+      <li>Contact</li>
+      <li>Pricing</li>
+      <li>Privacy</li>
+    </ul>
+  </li>
+  <li>Charts
+    <ul>
+      <li>eChart</li>
+      <li>Rechart</li>
+      <li>Victory chart</li>
+      <li>React vis</li>
+    </ul>
+  </li>
+  <li>User profile</li>
+  <li>6 months support</li>
 
-**Desenvolvimento Ativo**
+</ul>
+</td>
+</tr>
+</table>
 
-O projeto possui uma base de UI customizada, construída com **Material-UI (MUI)**. A estrutura de pastas está populada com dezenas de componentes, hooks e páginas, e as principais dependências de UI, gráficos e gerenciamento de estado estão instaladas e salvas no `package.json`.
 
-O foco atual é conectar os componentes existentes à API real do backend e refinar as funcionalidades.
+<h3>Download</h3>
+Download From <a href="https://ui-lib.com/downloads/uko-lite-react-client-admin-dashboard/">official website</a>
+<br/>
+Browse <a href="https://uko-react-doc.vercel.app/">Documentation</a>
 
----
-
-## 3. Estrutura de Pastas
-
-A estrutura de pastas foi pensada para organizar o código de forma lógica e escalável.
-
-```
-src/
-├── components/         # Componentes React reutilizáveis.
-│   ├── common/         # Componentes genéricos (botões, modais, etc.).
-│   ├── layout/         # Componentes de estrutura (Sidebar, Header, Footer).
-│   └── ui/             # Componentes de UI base.
-├── hooks/              # Hooks customizados para lógica compartilhada (ex: useApi, useAuth).
-├── lib/                # Utilitários, instâncias de clientes (axios, queryClient) e configs.
-├── pages/              # Componentes que representam as páginas completas da aplicação.
-├── services/           # Funções para realizar chamadas à API backend.
-├── theme/              # Configurações de tema (cores, fontes, etc.).
-├── types/              # Definições de tipos e interfaces TypeScript globais.
-├── App.tsx             # Componente raiz da aplicação.
-└── main.tsx            # Ponto de entrada da aplicação no DOM.
-```
-
----
-
-## 4. Tecnologias
-
-### Stack Principal
-
--   **Framework:** React 18 + TypeScript
--   **Build Tool:** Vite
--   **UI Framework:** Material-UI (MUI) v5
--   **Gerenciamento de Estado/Cache:** React Query (TanStack Query)
--   **Roteamento:** React Router
-
-### Nota sobre o Futuro
-
-No futuro, planejamos migrar a base de UI para um template de mercado, como o **Berry - React Material Admin**, para acelerar o desenvolvimento e padronizar o design system.
-
----
-
-## 5. Como Executar Localmente
-
-O ambiente de desenvolvimento é gerenciado via Docker. Para instruções, consulte o guia principal do projeto:
-
-**[>> Guia do Ambiente de Desenvolvimento <<](../../DEVELOPMENT.md)**
-
----
-
-## 6. Roadmap de Desenvolvimento
-
--   [x] **Fase 1: Fundação e UI**
-    -   [x] Inicializar projeto com Vite + React + TS.
-    -   [x] Definir a arquitetura e estrutura de pastas.
-    -   [x] Integrar o template Berry MUI e seus componentes.
-    -   [x] Configurar React Query, React Router e outras dependências principais.
-    -   [x] Corrigir e declarar todas as dependências no `package.json`.
-
--   [ ] **Fase 2: Conexão com Backend e Funcionalidades**
-    -   [ ] Substituir dados mock por chamadas reais à API para o Dashboard.
-    -   [ ] Conectar a página de Inventário de CPEs à API.
-    -   [ ] Implementar a lógica de busca e filtros do inventário com o backend.
-    -   [ ] Desenvolver a funcionalidade de atualização de Wi-Fi na interface, conectada à API.
-    -   [ ] Conectar a página de Alertas aos dados da API.
-
--   [ ] **Fase 3: Funcionalidades Avançadas e Polimento**
-    -   [ ] Implementar o fluxo de autenticação de usuário com JWT.
-    -   [ ] Adicionar atualizações em tempo real com WebSockets.
-    -   [ ] Aumentar a cobertura de testes (unitários e de integração).
+<h3>For questions and support mail us at <a href="mailto:support@ui-lib.com">support@ui-lib.com</a></h3>

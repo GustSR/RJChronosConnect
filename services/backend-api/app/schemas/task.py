@@ -1,8 +1,16 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List, Dict
+from datetime import datetime
 
-# Pydantic model for the task request
-class TaskRequest(BaseModel):
-    device_id: str
+class ActivityLog(BaseModel):
+    id: str
+    device_id: Optional[str] = None
+    device_name: Optional[str] = None
     action: str
-    parameters: Optional[dict] = None
+    description: str
+    executed_by: Optional[str] = None
+    timestamp: datetime
+    status: str
+    duration: Optional[str] = None
+    result: Optional[str] = None
+    metadata: Optional[dict] = None

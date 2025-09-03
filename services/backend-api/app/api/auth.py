@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from datetime import datetime
 
-from app.schemas.user import User
+from ..schemas.user import User
 
 router = APIRouter()
 security = HTTPBearer(auto_error=False)
 
-# Mock data
+# Mock user and auth
 mock_user = User(
     id="user-001",
     email="admin@rjchronos.com",
@@ -18,7 +18,8 @@ mock_user = User(
 )
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    # Mock authentication - in production, validate JWT token
+    # In a real app, you'd validate the token here
+    # For now, we just return the mock user
     return mock_user
 
 @router.get("/user", response_model=User)

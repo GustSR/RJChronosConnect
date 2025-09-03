@@ -1,25 +1,17 @@
 from fastapi import APIRouter
 from typing import List
 from datetime import datetime
+
+from ..schemas.alert import Alert
+from ..services.genieacs_client import get_genieacs_client
+from ..services.genieacs_transformers import transform_genieacs_fault_to_alert, calculate_dashboard_metrics
+from ..schemas.device import CPE, ONU, OLT # For mock data
+from ..services.genieacs_transformers import transform_genieacs_to_cpe
+
 import logging
-
-# Import schemas and services
-from app.schemas.alert import Alert
-from app.schemas.device import CPE, ONU, OLT # Needed for mock data fallback
-from app.services.genieacs_client import get_genieacs_client
-from app.services.genieacs_transformers import (
-    transform_genieacs_fault_to_alert,
-    calculate_dashboard_metrics,
-    transform_genieacs_to_cpe
-)
-
-# Logger
 logger = logging.getLogger(__name__)
 
-# APIRouter
-router = APIRouter()
-
-# Mock data (dependencies for fallback logic)
+# Mock data (temporarily here)
 mock_alerts = [
     Alert(
         id=f"alert-{i:03d}",
@@ -32,10 +24,11 @@ mock_alerts = [
     ) for i in range(1, 16)
 ]
 
-# Mock data required for dashboard metrics fallback
-mock_cpes_len = 50
-mock_onus_len = 20
-mock_olts_len = 5
+mock_cpes = [CPE(id=f'cpe-{i:03d}', serial_number=f'CPE{i:06d}', model='ModelX', status='online', created_at=datetime.now()) for i in range(50)]
+mock_onus = [ONU(id=f'onu-{i:03d}', serial_number=f'ONU{i:06d}', model='ModelY', status='online', olt_id='olt-001', pon_port='1/1', created_at=datetime.now()) for i in range(20)]
+mock_olts = [OLT(id=f'olt-{i:03d}', serial_number=f'OLT{i:06d}', model='ModelZ', status='online', location='Central', created_at=datetime.now()) for i in range(5)]
+
+router = APIRouter()
 
 @router.get("/alerts", response_model=List[Alert])
 async def get_alerts():
@@ -89,9 +82,9 @@ async def get_dashboard_metrics():
         if not devices:
             logger.warning("Nenhum dispositivo encontrado, usando métricas mock")
             return {
-                "total_devices": mock_cpes_len + mock_onus_len + mock_olts_len,
-                "online_devices": 150, # Simplified mock value
-                "offline_devices": 25, # Simplified mock value
+                "total_devices": len(mock_cpes) + len(mock_onus) + len(mock_olts),
+                "online_devices": len([d for d in mock_cpes + mock_onus + mock_olts if d.status == "online"]),
+                "offline_devices": len([d for d in mock_cpes + mock_onus + mock_olts if d.status == "offline"]),
                 "critical_alerts": len([a for a in mock_alerts if a.severity == "critical"]),
                 "uptime_percentage": 95.0,
                 "avg_signal_strength": -42.5,
@@ -104,9 +97,9 @@ async def get_dashboard_metrics():
     except Exception as e:
         logger.error(f"Erro ao calcular métricas do GenieACS: {e}")
         return {
-            "total_devices": mock_cpes_len + mock_onus_len + mock_olts_len,
-            "online_devices": 150, # Simplified mock value
-            "offline_devices": 25, # Simplified mock value
+            "total_devices": len(mock_cpes) + len(mock_onus) + len(mock_olts),
+            "online_devices": len([d for d in mock_cpes + mock_onus + mock_olts if d.status == "online"]),
+            "offline_devices": len([d for d in mock_cpes + mock_onus + mock_olts if d.status == "offline"]),
             "critical_alerts": len([a for a in mock_alerts if a.severity == "critical"]),
             "uptime_percentage": 95.0,
             "avg_signal_strength": -42.5,
