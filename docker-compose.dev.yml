@@ -4,8 +4,9 @@ version: '3.8'
 
 services:
   frontend:
+    container_name: rjchronos_frontend_dev
     ports:
-      - "3000:80"
+      - "3000:3000"
     build:
       dockerfile: Dockerfile.dev
     volumes:
@@ -19,6 +20,7 @@ services:
       start_period: 30s
 
   backend:
+    container_name: rjchronos_backend_dev
     build:
       dockerfile: Dockerfile.dev
     volumes:
@@ -80,11 +82,38 @@ services:
       - ./services/olts-managers/olt-manager-huawei/src:/app/src
     networks:
       - rjchronos-net
-    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload
+
+  genieacs-sim:
+    image: drumsergio/genieacs-sim:latest
+    container_name: "rjchronos_genieacs-sim_dev"
+    networks:
+      - rjchronos-net
+    depends_on:
+      - genieacs
+
+  genieacs-mcp:
+    image: drumsergio/genieacs-mcp:latest
+    container_name: "rjchronos_genieacs-mcp_dev"
+    environment:
+      - ACS_URL=http://genieacs:7557
+      - ACS_USER=admin
+      - ACS_PASS=admin
+    ports:
+      - "8081:8080"
+    networks:
+      - rjchronos-net
+    depends_on:
+      - genieacs
 
   # --- Nomes e Volumes Específicos para DEV ---
+  genieacs:
+    container_name: rjchronos_genieacs_dev
+
   reverse-proxy:
     container_name: rjchronos_proxy_dev
+    volumes:
+      - ./infrastructure/nginx/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
   
   db-app:
     container_name: rjchronos_db_app_dev

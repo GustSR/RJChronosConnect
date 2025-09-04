@@ -94,6 +94,7 @@ services:
       retries: 5
 
   genieacs:
+    container_name: rjchronos_genieacs_prod
     restart: always
     networks:
       - rjchronos-net
