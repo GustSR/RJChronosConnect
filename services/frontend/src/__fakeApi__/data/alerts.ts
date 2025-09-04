@@ -1,0 +1,55 @@
+// Network Alerts Mock Data
+import { Alert } from '../../services/types';
+
+export const mockAlerts: Alert[] = [
+  {
+    id: '1',
+    device_id: '1',
+    severity: 'warning',
+    title: 'Sinal Baixo',
+    description: 'ONU com sinal abaixo do ideal (-25 dBm)',
+    acknowledged: false,
+    created_at: '2024-01-15T10:30:00Z',
+    fault_code: 'LOW_SIGNAL',
+  },
+  {
+    id: '2',
+    device_id: '3',
+    severity: 'critical',
+    title: 'Dispositivo Offline',
+    description: 'ONU não responde há mais de 30 minutos',
+    acknowledged: false,
+    created_at: '2024-01-15T09:45:00Z',
+    fault_code: 'DEVICE_OFFLINE',
+  },
+  {
+    id: '3',
+    device_id: 'olt-004',
+    severity: 'critical',
+    title: 'OLT Offline',
+    description: 'OLT-004 não está respondendo - 16 ONUs afetadas',
+    acknowledged: true,
+    created_at: '2024-01-15T08:20:00Z',
+    fault_code: 'OLT_DOWN',
+  },
+  {
+    id: '4',
+    device_id: '2',
+    severity: 'info',
+    title: 'Configuração Aplicada',
+    description: 'Nova configuração WiFi foi aplicada com sucesso',
+    acknowledged: true,
+    created_at: '2024-01-15T07:15:00Z',
+    fault_code: 'CONFIG_APPLIED',
+  },
+  {
+    id: '5',
+    device_id: 'olt-002',
+    severity: 'warning',
+    title: 'CPU Alto',
+    description: 'Uso de CPU da OLT-002 está em 89% há mais de 10 minutos',
+    acknowledged: false,
+    created_at: '2024-01-15T06:30:00Z',
+    fault_code: 'HIGH_CPU_USAGE',
+  },
+];

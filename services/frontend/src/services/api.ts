@@ -213,7 +213,19 @@ export const httpClient = new HttpClient();
 // Config específica para desenvolvimento (fallback)
 export const devConfig = {
   useMockData:
-    process.env.NODE_ENV === 'development' && !process.env.REACT_APP_API_URL,
+    process.env.NODE_ENV === 'development' || 
+    process.env.REACT_APP_USE_MOCK === 'true' || 
+    !process.env.REACT_APP_API_URL,
   genieacsUrl: GENIEACS_URL,
   apiUrl: API_BASE_URL,
 };
+
+// Log da configuração para debug
+if (process.env.NODE_ENV === 'development') {
+  console.log('🔧 DevConfig:', {
+    useMockData: devConfig.useMockData,
+    nodeEnv: process.env.NODE_ENV,
+    apiUrl: process.env.REACT_APP_API_URL,
+    useMockEnv: process.env.REACT_APP_USE_MOCK,
+  });
+}
