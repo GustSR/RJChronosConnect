@@ -1262,3 +1262,129 @@ O roadmap de desenvolvimento estruturado em fases permite uma entrega incrementa
 
 Com esta especificação detalhada, a equipe de desenvolvimento possui todas as informações necessárias para implementar uma solução robusta, moderna e competitiva que estabelecerá o RJChronos como líder no mercado de sistemas de gerenciamento de telecomunicações.
 
+### 5.4 Arquitetura de Tarefas Assíncronas (RabbitMQ)
+
+Para operações demoradas, em massa ou que não necessitam de uma resposta imediata, o RJChronos utiliza uma arquitetura de fila de tarefas. Isso desacopla o trabalho pesado da interação principal com o usuário, garantindo que a plataforma permaneça rápida e responsiva.
+
+**Fluxo da Arquitetura:**
+
+1.  **Publicador (`backend-api`):** Um endpoint na API principal recebe uma solicitação para uma tarefa longa (ex: reiniciar 100 dispositivos). Em vez de executar a tarefa, ele a formata como uma mensagem e a publica em uma fila no RabbitMQ.
+2.  **Fila (RabbitMQ):** A mensagem aguarda em uma fila (`task_queue`) de forma segura e persistente.
+3.  **Consumidor (`works`):** Um ou mais workers do serviço `works` monitoram a fila, pegam a mensagem e executam a tarefa real (ex: conectar no GenieACS e enviar os comandos).
+4.  **Armazenamento de Resultado (Redis):** Após a conclusão, o worker salva o resultado da tarefa em uma lista no Redis (`task_results`).
+5.  **Consulta:** O frontend pode consultar os resultados periodicamente através de um endpoint no `backend-api` que lê os dados do Redis.
+
+**Diagrama Simplificado:**
+`API (POST /tasks) -> RabbitMQ (task_queue) -> Works Service -> Redis (task_results) <- API (GET /results)`
+
+---
+
+#### **Guia Prático: Como Adicionar e Usar uma Nova Tarefa Assíncrona**
+
+Siga estes passos para integrar uma nova operação demorada ao fluxo assíncrono.
+
+**1. Defina a Ação e os Parâmetros**
+
+Primeiro, decida sobre um nome de `action` para sua tarefa e quais `parameters` ela precisará.
+
+**Exemplo:** Você quer criar uma tarefa que busca os logs de um dispositivo.
+*   `action`: `"fetch_device_logs"`
+*   `parameters`: `{"device_id": "cpe-123", "log_level": "error"}`
+
+**2. Publique a Tarefa a Partir do `backend-api`**
+
+No `backend-api`, faça uma requisição `POST` para o endpoint `/api/v1/tasks` com o payload que você definiu.
+
+```http
+POST /api/v1/tasks
+Content-Type: application/json
+
+{
+  "action": "fetch_device_logs",
+  "parameters": {
+    "device_id": "cpe-123",
+    "log_level": "error"
+  }
+}
+```
+A API responderá imediatamente com um `task_id`, confirmando que a tarefa foi enfileirada.
+
+**3. Implemente a Lógica no Serviço `works`**
+
+Agora, o "trabalhador" precisa saber o que fazer quando receber a ação `"fetch_device_logs"`.
+
+Abra o arquivo `services/works/main.py` e adicione a lógica para a sua nova ação dentro da função `callback`.
+
+```python
+# Em services/works/main.py, dentro da função callback(ch, method, properties, body):
+
+def callback(ch, method, properties, body):
+    try:
+        task = json.loads(body)
+        action = task.get('action')
+        parameters = task.get('parameters')
+        device_id = task.get('device_id')
+        
+        print(f" [x] Recebido: {task}")
+        
+        result_data = None
+
+        # --- ADICIONE SUA LÓGICA AQUI ---
+        if action == 'reboot_and_update':
+            # Lógica existente...
+            pass
+        elif action == 'fetch_device_logs':
+            print(f"Buscando logs para o dispositivo {device_id}...")
+            # Aqui você colocaria sua lógica real para buscar os logs.
+            # Ex: logs = genieacs_client.get_logs(device_id, parameters.get('log_level'))
+            time.sleep(5) # Simula uma operação demorada
+            result_data = {"log_file_path": f"/logs/{device_id}.log", "lines_found": 521}
+            print("Busca de logs concluída.")
+        # --- FIM DA SUA LÓGICA ---
+
+        # Cria um resultado padrão
+        result = {
+            'task_id': task.get('task_id', 'N/A'),
+            'device_id': device_id,
+            'action': action,
+            'status': 'completed',
+            'result_data': result_data
+        }
+        print(f" [x] Processamento concluído. Resultado: {result}")
+
+        # Salva o resultado no Redis
+        redis_client.lpush('task_results', json.dumps(result))
+        redis_client.ltrim('task_results', 0, 999)
+        print(" [x] Resultado salvo no Redis.")
+
+        # Confirma que a mensagem foi processada
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+
+    except Exception as e:
+        # ... (tratamento de erro)
+```
+
+**4. Consulte o Resultado**
+
+Após alguns instantes, você pode consultar o endpoint de resultados para ver o que foi salvo pelo `works`.
+
+```http
+GET /api/v1/tasks/results
+```
+
+**Resposta Esperada:**
+```json
+[
+    {
+        "task_id": "...",
+        "device_id": "cpe-123",
+        "action": "fetch_device_logs",
+        "status": "completed",
+        "result_data": {
+            "log_file_path": "/logs/cpe-123.log",
+            "lines_found": 521
+        }
+    },
+    ...
+]
+```

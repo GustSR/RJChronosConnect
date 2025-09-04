@@ -6,14 +6,18 @@ services:
   reverse-proxy:
     container_name: rjchronos_proxy_prod
     restart: always
+    networks:
+      - rjchronos-net
 
   frontend:
     container_name: rjchronos_frontend_prod
     build:
       dockerfile: Dockerfile
     restart: always
+    networks:
+      - rjchronos-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,15 +28,76 @@ services:
     build:
       dockerfile: Dockerfile
     restart: always
+    networks:
+      - rjchronos-net
+    depends_on:
+      db-app:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
 
-  genieacs:
+  works:
+    container_name: rjchronos_works_prod
+    build:
+      context: ./services/works
+      dockerfile: Dockerfile
     restart: always
+    networks:
+      - rjchronos-net
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+
+  olt-manager-huawei:
+    build:
+      context: ./services/olts-managers/olt-manager-huawei
+      dockerfile: Dockerfile
+    container_name: rjchronos_olt_manager_huawei_prod
+    restart: always
+    networks:
+      - rjchronos-net
+
+  rabbitmq:
+    container_name: rjchronos_rabbitmq_prod
+    image: rabbitmq:3-management-alpine
+    restart: always
+    networks:
+      - rjchronos-net
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+    volumes:
+      - ./infrastructure/config/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - rabbitmq_data_prod:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running", "-q"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  genieacs:
+    container_name: rjchronos_genieacs_prod
+    restart: always
+    networks:
+      - rjchronos-net
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001"]
       interval: 10s
@@ -42,20 +107,40 @@ services:
 
   db-app:
     container_name: rjchronos_db_app_prod
+    restart: always
+    networks:
+      - rjchronos-net
     volumes:
       - postgres_app_data_prod:/var/lib/postgresql/data
-    restart: always
 
   db-acs:
     container_name: rjchronos_db_acs_prod
+    restart: always
+    networks:
+      - rjchronos-net
     volumes:
       - mongo_acs_data_prod:/data/db
-    restart: always
 
   redis:
     container_name: rjchronos_redis_prod
     restart: always
+    networks:
+      - rjchronos-net
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data_prod:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_app_data_prod:
   mongo_acs_data_prod:
+  rabbitmq_data_prod:
+  redis_data_prod:
+
+networks:
+  rjchronos-net:
+    driver: bridge

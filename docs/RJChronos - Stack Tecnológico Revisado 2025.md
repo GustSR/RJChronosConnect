@@ -50,9 +50,9 @@ rjchronos-backend/
 **Framework Principal**: FastAPI 0.104+ com Python 3.11+
 **ORM**: SQLAlchemy 2.0+ com Alembic para migrações
 **Banco de Dados**: PostgreSQL 15+ para dados transacionais
-**Cache**: Redis 7+ para sessões e cache de aplicação
-**Time Series**: InfluxDB 2.7+ para métricas de monitoramento
-**Message Broker**: RabbitMQ 3.12+ para comunicação assíncrona
+**Cache e Armazenamento de Estado**: Redis 7+. Além de cache de sessão, é utilizado como um armazenamento de dados temporário de alta velocidade para os resultados de tarefas assíncronas processadas pelos workers.
+
+**Message Broker (Fila de Tarefas)**: RabbitMQ 3.12+. Peça central da nossa arquitetura de processamento assíncrono. Garante a entrega confiável de tarefas do `backend-api` para os serviços `works`, permitindo que o sistema processe operações demoradas e em massa sem impactar a performance da interface do usuário.
 **Autenticação**: JWT com refresh tokens e OAuth2
 **Validação**: Pydantic v2 para validação de dados
 **Testes**: pytest com coverage
