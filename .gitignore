@@ -5,7 +5,10 @@
 # Ignorar diretórios de dependências
 .venv/
 node_modules/
-backend/__pycache__/
+
+# Python artifacts
+**/__pycache__/
+**/*.pyc
 
 # Ignorar diretórios de build e logs
 /build
