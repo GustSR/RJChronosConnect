@@ -62,7 +62,7 @@ export class GenieACSApiService {
   async getPendingONUs(): Promise<Record<string, unknown>[]> {
     try {
       const data = await httpClient.get<Record<string, unknown>[]>(
-        '/api/provisioning/pending'
+        '/provisioning/pending'
       );
       return data;
     } catch (error) {
@@ -94,7 +94,7 @@ export class GenieACSApiService {
   ): Promise<Record<string, unknown>> {
     try {
       const data = await httpClient.post(
-        `/api/provisioning/${onuId}/authorize`,
+        `/provisioning/${onuId}/authorize`,
         provisionData
       );
       return data as Record<string, unknown>;
@@ -113,10 +113,10 @@ export class GenieACSApiService {
   ): Promise<Record<string, unknown>> {
     try {
       const endpoint = reason
-        ? `/api/provisioning/${onuId}/reject?reason=${encodeURIComponent(
+        ? `/provisioning/${onuId}/reject?reason=${encodeURIComponent(
             reason
           )}`
-        : `/api/provisioning/${onuId}/reject`;
+        : `/provisioning/${onuId}/reject`;
       const data = await httpClient.delete(endpoint);
       return data as Record<string, unknown>;
     } catch (error) {
@@ -132,7 +132,7 @@ export class GenieACSApiService {
     onuId: string
   ): Promise<Record<string, unknown>> {
     try {
-      const data = await httpClient.get(`/api/clients/${onuId}`);
+      const data = await httpClient.get(`/clients/${onuId}`);
       return data as Record<string, unknown>;
     } catch (error) {
       console.error(`Erro ao buscar configuração do cliente ${onuId}:`, error);
@@ -155,7 +155,7 @@ export class GenieACSApiService {
     }
   ): Promise<Record<string, unknown>> {
     try {
-      const data = await httpClient.put(`/api/clients/${onuId}`, updates);
+      const data = await httpClient.put(`/clients/${onuId}`, updates);
       return data as Record<string, unknown>;
     } catch (error) {
       console.error(
@@ -172,7 +172,7 @@ export class GenieACSApiService {
   async getCPEs(query?: DeviceQuery): Promise<CPE[]> {
     try {
       const data = await httpClient.get<CPE[]>(
-        '/api/devices/cpes',
+        '/devices/cpes',
         query as Record<string, unknown>
       );
       return data;
@@ -196,7 +196,7 @@ export class GenieACSApiService {
     try {
       // Usar endpoint que preserva dados salvos dos clientes
       const data = await httpClient.get<ONU[]>(
-        '/api/provisioning/clients',
+        '/provisioning/clients',
         query as Record<string, unknown>
       );
       return data;
@@ -218,7 +218,7 @@ export class GenieACSApiService {
    */
   async getONUById(id: string): Promise<ONU> {
     try {
-      const data = await httpClient.get<ONU>(`/api/devices/onus/${id}`);
+      const data = await httpClient.get<ONU>(`/devices/onus/${id}`);
       return data;
     } catch (error) {
       console.error(`Erro ao buscar ONU ${id}:`, error);
@@ -240,7 +240,7 @@ export class GenieACSApiService {
   async getOLTs(query?: DeviceQuery): Promise<OLT[]> {
     try {
       const data = await httpClient.get<OLT[]>(
-        '/api/devices/olts',
+        '/devices/olts',
         query as Record<string, unknown>
       );
       return data;
@@ -268,7 +268,7 @@ export class GenieACSApiService {
         total: number;
         online: number;
         offline: number;
-      }>(`/api/devices/olts/${oltId}/stats`);
+      }>(`/devices/olts/${oltId}/stats`);
       return data;
     } catch (error) {
       console.error('Erro ao buscar estatísticas da OLT:', error);
@@ -290,7 +290,7 @@ export class GenieACSApiService {
   async getAlerts(query?: AlertQuery): Promise<Alert[]> {
     try {
       const data = await httpClient.get<Alert[]>(
-        '/api/alerts',
+        '/alerts',
         query as Record<string, unknown>
       );
       return data;
@@ -312,7 +312,7 @@ export class GenieACSApiService {
    */
   async acknowledgeAlert(alertId: string): Promise<void> {
     try {
-      await httpClient.put(`/api/alerts/${alertId}/acknowledge`);
+      await httpClient.put(`/alerts/${alertId}/acknowledge`);
     } catch (error) {
       console.error(`Erro ao reconhecer alerta ${alertId}:`, error);
       throw error;
@@ -330,7 +330,7 @@ export class GenieACSApiService {
   }): Promise<ActivityLog[]> {
     try {
       const data = await httpClient.get<ActivityLog[]>(
-        '/api/activity/logs',
+        '/activity/logs',
         query as Record<string, unknown>
       );
       return data;
@@ -357,7 +357,7 @@ export class GenieACSApiService {
   ): Promise<BandwidthStats> {
     try {
       const data = await httpClient.get<BandwidthStats>(
-        `/api/analytics/bandwidth`,
+        `/analytics/bandwidth`,
         { period } as Record<string, unknown>
       );
       return data;
@@ -382,7 +382,7 @@ export class GenieACSApiService {
   async getDashboardMetrics(): Promise<DashboardMetrics> {
     try {
       const data = await httpClient.get<DashboardMetrics>(
-        '/api/dashboard/metrics'
+        '/dashboard/metrics'
       );
       return data;
     } catch (error) {
@@ -405,7 +405,7 @@ export class GenieACSApiService {
    */
   async getWiFiConfigs(): Promise<WiFiConfig[]> {
     try {
-      const data = await httpClient.get<WiFiConfig[]>('/api/wifi/configs');
+      const data = await httpClient.get<WiFiConfig[]>('/wifi/configs');
       return data;
     } catch (error) {
       console.error('Erro ao buscar configurações WiFi:', error);
@@ -422,7 +422,7 @@ export class GenieACSApiService {
   ): Promise<WiFiConfig> {
     try {
       const data = await httpClient.get<WiFiConfig>(
-        `/api/wifi/configs/${deviceId}?band=${encodeURIComponent(band)}`
+        `/wifi/configs/${deviceId}?band=${encodeURIComponent(band)}`
       );
       return data;
     } catch (error) {
@@ -451,7 +451,7 @@ export class GenieACSApiService {
     config: WiFiConfigUpdate
   ): Promise<WiFiConfig> {
     try {
-      const url = `/api/wifi/configs/${deviceId}?band=${encodeURIComponent(
+      const url = `/wifi/configs/${deviceId}?band=${encodeURIComponent(
         band
       )}`;
       console.log(`CHAMANDO ENDPOINT WiFi: PUT ${url}`);
@@ -485,7 +485,7 @@ export class GenieACSApiService {
   async refreshWiFi(deviceId: string): Promise<void> {
     try {
       console.log('Fazendo refresh WiFi para dispositivo:', deviceId);
-      await httpClient.post(`/api/device/refresh-wifi?device_id=${deviceId}`);
+      await httpClient.post(`/device/refresh-wifi?device_id=${deviceId}`);
       console.log('Refresh WiFi realizado com sucesso');
     } catch (error) {
       console.error(
@@ -501,7 +501,7 @@ export class GenieACSApiService {
    */
   async refreshIP(deviceId: string): Promise<void> {
     try {
-      await httpClient.post(`/api/wifi/refresh-ip/${deviceId}`);
+      await httpClient.post(`/wifi/refresh-ip/${deviceId}`);
     } catch (error) {
       console.error(
         `Erro ao fazer refresh IP do dispositivo ${deviceId}:`,
@@ -519,7 +519,7 @@ export class GenieACSApiService {
   async executeConnectionRequest(deviceId: string): Promise<ConnectionRequest> {
     try {
       const data = await httpClient.post<ConnectionRequest>(
-        `/api/tr069/connection-request/${deviceId}`
+        `/tr069/connection-request/${deviceId}`
       );
       return data;
     } catch (error) {
@@ -540,7 +540,7 @@ export class GenieACSApiService {
   ): Promise<DeviceParameter[]> {
     try {
       const data = await httpClient.post<DeviceParameter[]>(
-        `/api/tr069/get-parameters/${deviceId}`,
+        `/tr069/get-parameters/${deviceId}`,
         { parameters }
       );
       return data;
@@ -562,7 +562,7 @@ export class GenieACSApiService {
   ): Promise<GenieACSTask> {
     try {
       const data = await httpClient.post<GenieACSTask>(
-        `/api/tr069/set-parameters/${deviceId}`,
+        `/tr069/set-parameters/${deviceId}`,
         { parameters }
       );
       return data;
@@ -581,7 +581,7 @@ export class GenieACSApiService {
   async factoryReset(deviceId: string): Promise<GenieACSTask> {
     try {
       const data = await httpClient.post<GenieACSTask>(
-        `/api/tr069/factory-reset/${deviceId}`
+        `/tr069/factory-reset/${deviceId}`
       );
       return data;
     } catch (error) {
@@ -599,7 +599,7 @@ export class GenieACSApiService {
   async rebootDevice(deviceId: string): Promise<GenieACSTask> {
     try {
       const data = await httpClient.post<GenieACSTask>(
-        `/api/tr069/reboot/${deviceId}`
+        `/tr069/reboot/${deviceId}`
       );
       return data;
     } catch (error) {
@@ -623,7 +623,7 @@ export class GenieACSApiService {
   }): Promise<ActivityLog[]> {
     try {
       const data = await httpClient.get<ActivityLog[]>(
-        '/api/activity-history',
+        '/activity-history',
         params as Record<string, unknown>
       );
       return data;
@@ -639,7 +639,7 @@ export class GenieACSApiService {
   async getActivityById(activityId: string): Promise<ActivityLog> {
     try {
       const data = await httpClient.get<ActivityLog>(
-        `/api/activity-history/${activityId}`
+        `/activity-history/${activityId}`
       );
       return data;
     } catch (error) {
@@ -654,7 +654,7 @@ export class GenieACSApiService {
   async getActivityByDevice(deviceId: string): Promise<ActivityLog[]> {
     try {
       const data = await httpClient.get<ActivityLog[]>(
-        `/api/activity-history/device/${deviceId}`
+        `/activity-history/device/${deviceId}`
       );
       return data;
     } catch (error) {
@@ -679,7 +679,7 @@ export class GenieACSApiService {
   }): Promise<ActivityLog> {
     try {
       const data = await httpClient.post<ActivityLog>(
-        '/api/activity-history',
+        '/activity-history',
         activity
       );
       return data;
@@ -704,7 +704,7 @@ export class GenieACSApiService {
         success_rate: number;
         recent_activities: number;
         top_actions: Array<{ action: string; count: number }>;
-      }>('/api/activity-history/stats');
+      }>('/activity-history/stats');
       return data;
     } catch (error) {
       console.error('Erro ao buscar estatísticas de atividades:', error);
@@ -719,7 +719,7 @@ export class GenieACSApiService {
    */
   async checkHealth(): Promise<{ status: string; message: string }> {
     try {
-      const data = await httpClient.get<{ status: string; message: string }>(
+      const data = await httpClient.get<{ status: string; message:string }>(
         '/'
       );
       return data;
@@ -800,7 +800,7 @@ export class GenieACSApiService {
   private getMockOLTs(): OLT[] {
     return [
       {
-        id: '1',
+        id: 'olt-001',
         serial_number: 'OLT12345678',
         model: 'Huawei MA5608T',
         status: 'online',
@@ -814,7 +814,7 @@ export class GenieACSApiService {
         temperature: 42.1,
       },
       {
-        id: '2',
+        id: 'olt-002',
         serial_number: 'OLT87654321',
         model: 'Fiberhome AN5516-06',
         status: 'online',
@@ -828,7 +828,7 @@ export class GenieACSApiService {
         temperature: 38.9,
       },
       {
-        id: '3',
+        id: 'olt-003',
         serial_number: 'OLT11223344',
         model: 'ZTE C320',
         status: 'online',
@@ -842,7 +842,7 @@ export class GenieACSApiService {
         temperature: 44.7,
       },
       {
-        id: '4',
+        id: 'olt-004',
         serial_number: 'OLT99887766',
         model: 'Huawei MA5800-X7',
         status: 'offline',

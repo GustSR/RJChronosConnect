@@ -1,5 +1,5 @@
 // Configuração base da API - Considerando ambiente Docker com Nginx
-const API_BASE_URL = process.env.REACT_APP_API_URL || '/';
+const API_BASE_URL = '/api';
 const GENIEACS_URL =
   process.env.REACT_APP_GENIEACS_URL || 'http://localhost:7557';
 

@@ -9,6 +9,7 @@ services:
       - "3000:3000"
     build:
       dockerfile: Dockerfile.dev
+    command: npm run dev
     volumes:
       - ./services/frontend:/app
       - /app/node_modules # Impede que o node_modules local sobrescreva o do contêiner
