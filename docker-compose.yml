@@ -30,6 +30,9 @@ services:
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
       - GENIACS_API_URL=http://genieacs:7557/
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     networks:
       - rjchronos-net
     depends_on:
