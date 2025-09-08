@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Optional, Dict
 from datetime import datetime, timedelta
+from sqlalchemy.orm import Session
 
 from ..schemas.provisioning import (
     PendingONUModel, 
@@ -9,8 +10,14 @@ from ..schemas.provisioning import (
     ClientConfigurationUpdate
 )
 from ..services.genieacs_client import get_genieacs_client
-from ..crud.activity import log_activity
-from ..crud.provisioning import provisioned_devices_db
+# from ..crud.activity import log_activity
+from ..crud import device as crud_device
+from ..crud import subscriber as crud_subscriber
+from ..crud import olt as crud_olt
+from ..database.database import get_db
+from ..models.subscriber import Subscriber
+from ..models.olt import Olt
+from ..models.olt_port import OltPort
 
 import logging
 logger = logging.getLogger(__name__)
@@ -18,7 +25,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.get("/pending", response_model=List[PendingONUModel])
-async def get_pending_onus():
+async def get_pending_onus(db: Session = Depends(get_db)):
     """
     Retorna ONUs descobertas mas não autorizadas (pendentes de provisionamento)
     """
@@ -36,7 +43,9 @@ async def get_pending_onus():
             onu_indicators = ["HG8310", "F601", "F670", "AN5506", "G-140W"]
             is_onu = any(indicator in product_class for indicator in onu_indicators)
             
-            if is_onu and device_id not in provisioned_devices_db:
+            db_device = crud_device.get_device_by_serial_number(db, serial_number)
+
+            if is_onu and not db_device:
                 pending_onu = PendingONUModel(
                     id=device_id,
                     serial_number=serial_number,
@@ -74,7 +83,7 @@ async def get_pending_onus():
         return []
 
 @router.post("/{onu_id}/authorize")
-async def authorize_onu(onu_id: str, provision_data: ONUProvisionRequest):
+async def authorize_onu(onu_id: str, provision_data: ONUProvisionRequest, db: Session = Depends(get_db)):
     """
     Autoriza uma ONU pendente e provisiona na rede
     """
@@ -86,37 +95,45 @@ async def authorize_onu(onu_id: str, provision_data: ONUProvisionRequest):
         
         logger.info(f"Autorizando ONU {onu_id} para cliente {provision_data.client_name}")
         
-        params = {
-            "InternetGatewayDevice.DeviceInfo.X_BROADCOM_COM_EnableStatus": True,
-            "InternetGatewayDevice.LANDevice.1.LANEthernetInterfaceConfig.1.X_BROADCOM_COM_VLANID": provision_data.vlan_id,
-            "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ConnectionType": provision_data.wan_mode.upper(),
-        }
-        if provision_data.wan_mode == "pppoe":
-            params.update({
-                "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Enable": True,
-                "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Username": provision_data.pppoe_username,
-                "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Password": provision_data.pppoe_password,
-            })
-        
-        success_count = 0
-        for name, value in params.items():
-            if value is not None and await client.set_parameter(onu_id, name, value):
-                success_count += 1
-        
+        # Create Subscriber if it doesn't exist
+        subscriber = crud_subscriber.get_subscriber_by_cpf_cnpj(db, provision_data.client_cpf_cnpj)
+        if not subscriber:
+            subscriber = Subscriber(full_name=provision_data.client_name, cpf_cnpj=provision_data.client_cpf_cnpj)
+            db.add(subscriber)
+            db.commit()
+            db.refresh(subscriber)
+
+        # Create OLT and OLT Port if they don't exist
+        olt = crud_olt.get_olt_by_name(db, provision_data.olt_name)
+        if not olt:
+            olt = Olt(name=provision_data.olt_name, ip_address="127.0.0.1") # Dummy IP
+            db.add(olt)
+            db.commit()
+            db.refresh(olt)
+
+        olt_port = crud_olt.get_olt_port(db, olt.id, provision_data.board, provision_data.port)
+        if not olt_port:
+            olt_port = OltPort(olt_id=olt.id, slot=provision_data.board, port_number=provision_data.port)
+            db.add(olt_port)
+            db.commit()
+            db.refresh(olt_port)
+
         serial_number = device_data.get('_deviceId', {}).get('_SerialNumber', f'SN_{onu_id}')
-        provisioned_device = ProvisionedDevice(
-            device_id=onu_id, serial_number=serial_number, **provision_data.dict(),
-            provisioned_at=datetime.now(), status="active"
-        )
-        provisioned_devices_db[onu_id] = provisioned_device
-        
-        await log_activity(
-            device_id=onu_id, device_name=f"ONU {serial_number}", action="onu_authorization",
-            description=f"ONU autorizada para cliente {provision_data.client_name}",
-            status="success" if success_count > 0 else "partial",
-            result=f"Aplicadas {success_count}/{len(params)} configurações",
-            metadata=provision_data.dict()
-        )
+        device = crud_device.create_device(db, device=DeviceCreate(
+            serial_number=serial_number,
+            genieacs_id=onu_id,
+            subscriber_id=subscriber.id,
+            olt_port_id=olt_port.id,
+            status_id=1 # Online
+        ))
+
+        # await log_activity(
+        #     device_id=onu_id, device_name=f"ONU {serial_number}", action="onu_authorization",
+        #     description=f"ONU autorizada para cliente {provision_data.client_name}",
+        #     status="success",
+        #     result=f"Aplicadas configurações",
+        #     metadata=provision_data.dict()
+        # )
         
         return {"success": True, "message": f"ONU {onu_id} autorizada com sucesso"}
         
@@ -129,62 +146,53 @@ async def reject_onu(onu_id: str, reason: str = "Rejected by administrator"):
     """
     Rejeita uma ONU pendente
     """
-    await log_activity(
-        device_id=onu_id, device_name=f"ONU {onu_id}", action="onu_rejection",
-        description=f"ONU rejeitada: {reason}", status="success",
-        result="ONU removida da lista de pendentes", metadata={"rejection_reason": reason}
-    )
+    # await log_activity(
+    #     device_id=onu_id, device_name=f"ONU {onu_id}", action="onu_rejection",
+    #     description=f"ONU rejeitada: {reason}", status="success",
+    #     result="ONU removida da lista de pendentes", metadata={"rejection_reason": reason}
+    # )
     logger.info(f"ONU {onu_id} rejeitada: {reason}")
     return {"success": True, "message": f"ONU {onu_id} rejeitada com sucesso"}
 
 @router.get("/clients")
-async def get_provisioned_clients():
+async def get_provisioned_clients(db: Session = Depends(get_db)):
     """
     Retorna lista de todos os clientes provisionados
     """
-    if not provisioned_devices_db: return []
-    client = await get_genieacs_client()
-    clients = []
-    for onu_id, p_device in provisioned_devices_db.items():
-        device_data = await client.get_device_by_id(onu_id)
-        response = p_device.dict()
-        response.update({
-            "id": onu_id,
-            "model": device_data.get("_deviceId", {}).get("_ProductClass", "Unknown") if device_data else "Unknown",
-            "status": "online" if (device_data and device_data.get("_lastInform")) else "offline",
-            "last_inform": device_data.get("_lastInform") if device_data else None,
-        })
-        clients.append(response)
-    return clients
+    devices = crud_device.get_devices(db)
+    return devices
 
 @router.get("/clients/{onu_id}")
-async def get_client_configuration(onu_id: str):
+async def get_client_configuration(onu_id: int, db: Session = Depends(get_db)):
     """
     Retorna configuração de um cliente provisionado específico
     """
-    if onu_id not in provisioned_devices_db:
+    device = crud_device.get_device(db, onu_id)
+    if not device:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
-    return provisioned_devices_db[onu_id]
+    return device
 
 @router.put("/clients/{onu_id}")
-async def update_client_configuration(onu_id: str, updates: ClientConfigurationUpdate):
+async def update_client_configuration(onu_id: int, updates: ClientConfigurationUpdate, db: Session = Depends(get_db)):
     """
     Atualiza configuração de um cliente provisionado
     """
-    if onu_id not in provisioned_devices_db:
+    device = crud_device.get_device(db, onu_id)
+    if not device:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
     
-    p_device = provisioned_devices_db[onu_id]
     update_data = updates.dict(exclude_unset=True)
     for key, value in update_data.items():
-        setattr(p_device, key, value)
+        setattr(device, key, value)
     
-    provisioned_devices_db[onu_id] = p_device
+    db.add(device)
+    db.commit()
+    db.refresh(device)
     
-    await log_activity(
-        device_id=onu_id, device_name=f"Cliente {p_device.client_name}",
-        action="client_configuration_update", description=f"Configuração atualizada",
-        status="success", metadata=updates.dict(exclude_none=True)
-    )
+    # await log_activity(
+    #     device_id=onu_id, device_name=f"Cliente {device.subscriber.full_name}",
+    #     action="client_configuration_update", description=f"Configuração atualizada",
+    #     status="success", metadata=updates.dict(exclude_none=True)
+    # )
     
     return {"success": True, "message": "Configuração atualizada com sucesso"}
