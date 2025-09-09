@@ -22,7 +22,8 @@ import {
   DeviceHub,
   Thermostat,
 } from '@mui/icons-material';
-import { PendingONU, getSignalStatus } from '../../lib/provisioningData';
+import { PendingONU } from 'types/provisioning';
+import { getSignalStatus } from 'utils/provisioning';
 
 interface PendingOnuCardProps {
   onu: PendingONU;

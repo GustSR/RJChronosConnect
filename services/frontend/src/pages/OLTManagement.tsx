@@ -25,8 +25,8 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { H3, H6 } from 'components/Typography';
-import { genieacsApi } from 'services/genieacsApi';
-import { OLT } from 'services/types';
+import { genieacsApi } from 'api/genieacsApi';
+import { OLT } from 'api/types';
 import FlexBox from 'components/FlexBox';
 import useTitle from 'hooks/useTitle';
 import AnimatedCard from 'components/common/AnimatedCard';

@@ -10,8 +10,8 @@ import { H5, Small } from 'components/Typography';
 import { FC, useEffect, useState } from 'react';
 import AnimatedCard from 'components/common/AnimatedCard';
 import { Thermostat, AccessTime, LocationOn } from '@mui/icons-material';
-import { genieacsApi } from '../../services/genieacsApi';
-import { OLT } from '../../services/types';
+import { genieacsApi } from '../../api/genieacsApi';
+import { OLT } from '../../api/types';
 
 const OLTMonitoring: FC = () => {
   const [olts, setOLTs] = useState<OLT[]>([]);

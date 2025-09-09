@@ -15,8 +15,8 @@ import { FC, useEffect, useState } from 'react';
 import ScrollBar from 'simplebar-react';
 import AnimatedCard from 'components/common/AnimatedCard';
 import { DeviceHub } from '@mui/icons-material';
-import { genieacsApi } from '../../services/genieacsApi';
-import { OLT } from '../../services/types';
+import { genieacsApi } from '../../api/genieacsApi';
+import { OLT } from '../../api/types';
 
 const commonCSS = {
   minWidth: 120,

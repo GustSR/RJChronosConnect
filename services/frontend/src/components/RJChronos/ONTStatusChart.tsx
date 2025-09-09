@@ -3,7 +3,7 @@ import { H5 } from 'components/Typography';
 import { FC, useEffect, useState } from 'react';
 import Chart from 'react-apexcharts';
 import AnimatedCard from 'components/common/AnimatedCard';
-import { genieacsApi } from '../../services/genieacsApi';
+import { genieacsApi } from '../../api/genieacsApi';
 
 interface ONTStatusData {
   online: number;

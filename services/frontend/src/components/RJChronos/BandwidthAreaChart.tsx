@@ -4,8 +4,8 @@ import { FC, useEffect, useState } from 'react';
 import Chart from 'react-apexcharts';
 import { ApexOptions } from 'apexcharts';
 import AnimatedCard from 'components/common/AnimatedCard';
-import { genieacsApi } from '../../services/genieacsApi';
-import { BandwidthStats } from '../../services/types';
+import { genieacsApi } from '../../api/genieacsApi';
+import { BandwidthStats } from '../../api/types';
 
 const BandwidthAreaChart: FC = () => {
   const [bandwidthStats, setBandwidthStats] = useState<BandwidthStats | null>(

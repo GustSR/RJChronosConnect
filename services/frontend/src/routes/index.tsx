@@ -1,6 +1,6 @@
 import AuthGuard from 'components/authentication/AuthGuard';
 import GuestGuard from 'components/authentication/GuestGuard';
-import DashboardLayout from 'components/Layouts/DashboardLayout';
+import DashboardLayout from 'layouts/dashboard/DashboardLayout';
 import LoadingScreen from 'components/LoadingScreen';
 import { FC, lazy, LazyExoticComponent, Suspense } from 'react';
 import { Navigate } from 'react-router-dom';

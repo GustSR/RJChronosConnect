@@ -32,7 +32,7 @@ import {
   AlertQuery,
   WiFiConfig,
   WiFiConfigUpdate,
-} from '../services/types';
+} from '../api/types';
 
 // Simulate realistic network delays
 const simulateNetworkDelay = async <T>(data: T, minDelay = 300, maxDelay = 800): Promise<T> => {
@@ -76,7 +76,7 @@ const applyAlertQuery = (data: Alert[], query?: AlertQuery): Alert[] => {
 };
 
 // Centralized Fake API with realistic behavior
-export const fakeApi = {
+export const fakeDataService = {
   // ===== DASHBOARD =====
   getDashboardMetrics: async (): Promise<DashboardMetrics> => {
     return simulateNetworkDelay(mockDashboardMetrics);
@@ -369,7 +369,7 @@ export const fakeApi = {
   updateWiFiConfig: async (deviceId: string, config: WiFiConfigUpdate): Promise<WiFiConfig> => {
     // Default to 2.4GHz for compatibility
     const band = (config.band as '2.4GHz' | '5GHz') || '2.4GHz';
-    return fakeApi.updateWiFiConfigByBand(deviceId, band, config);
+    return fakeDataService.updateWiFiConfigByBand(deviceId, band, config);
   },
 
   refreshWiFi: async (deviceId: string): Promise<void> => {

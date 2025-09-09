@@ -1,5 +1,5 @@
 // Network Performance Analytics Mock Data
-import { TrafficSourcesStats, OLTPerformanceStats } from '../../services/types';
+import { TrafficSourcesStats, OLTPerformanceStats } from '../../api/types';
 
 export const mockTrafficSources: TrafficSourcesStats = {
   sources: [

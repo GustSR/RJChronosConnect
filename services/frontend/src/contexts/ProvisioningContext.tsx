@@ -5,9 +5,9 @@ import React, {
   useEffect,
   ReactNode,
 } from 'react';
-import { PendingONU, ProvisionedONU } from '../lib/provisioningData';
-import { mockPendingONUs, mockProvisionedONUs } from '../lib/provisioningData';
-import { genieacsApi } from '../services/genieacsApi';
+import { PendingONU, ProvisionedONU } from 'types/provisioning';
+import { mockPendingONUs, mockProvisionedONUs } from '__fakeData__/provisioning';
+import { genieacsApi } from '../api/genieacsApi';
 
 interface ProvisioningContextType {
   pendingONUs: PendingONU[];
