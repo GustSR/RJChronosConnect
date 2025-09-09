@@ -31,8 +31,9 @@ const Kanban = Loadable(lazy(() => import('./pages/Kanban')));
 // Provisioning page
 const Provisioning = Loadable(lazy(() => import('./pages/Provisioning')));
 
-// Clientes page
+// Clientes pages
 const Clientes = Loadable(lazy(() => import('./pages/Clientes')));
+const ClienteDetalhes = Loadable(lazy(() => import('./pages/ClienteDetalhes')));
 
 // ONU Configuration pages
 const ONUConfiguration = Loadable(
@@ -163,6 +164,10 @@ const routes = [
       {
         path: '',
         element: <Clientes />,
+      },
+      {
+        path: ':id',
+        element: <ClienteDetalhes />,
       },
       {
         path: ':id/configurar',

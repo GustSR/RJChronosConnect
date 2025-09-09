@@ -205,7 +205,7 @@ const Clientes: React.FC = () => {
   };
 
   const handleViewClient = (clienteId: string) => {
-    navigate(`/provisionar/${clienteId}`);
+    navigate(`/clientes/${clienteId}`);
   };
 
   const getStatusChip = (status: string) => {
@@ -827,7 +827,7 @@ const Clientes: React.FC = () => {
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Tooltip title="Visualizar Configurações">
+                          <Tooltip title="Visualizar Detalhes do Cliente">
                             <IconButton
                               onClick={() => handleViewClient(cliente.id)}
                               color="primary"
