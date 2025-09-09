@@ -43,7 +43,7 @@ import { useNavigate } from 'react-router-dom';
 import useTitle from '../hooks/useTitle';
 import AnimatedCard from '../components/common/AnimatedCard';
 import { useProvisioning } from '../contexts/ProvisioningContext';
-import { ProvisionedONU } from '../lib/provisioningData';
+import { ProvisionedONU } from 'types/provisioning';
 
 // Interfaces
 interface Cliente {

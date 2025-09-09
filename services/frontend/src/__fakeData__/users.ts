@@ -1,4 +1,4 @@
-import Mock from '__fakeApi__/mock';
+import Mock from '__fakeData__/mock';
 
 // Simulação simples de JWT sem biblioteca Node.js
 const createFakeToken = (userId: number) => {

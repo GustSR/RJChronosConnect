@@ -2,7 +2,7 @@
 export { fakeApi } from './fakeApiSimulator';
 
 // Keep legacy mock setup for compatibility
-import Mock from '__fakeApi__/mock';
+import Mock from '__fakeData__/mock';
 import './dataTable';
 import './users';
 

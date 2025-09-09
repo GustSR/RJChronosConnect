@@ -32,7 +32,7 @@ import useTitle from 'hooks/useTitle';
 import AnimatedCard from '../components/common/AnimatedCard';
 import PendingOnuCard from '../components/common/PendingOnuCard';
 import { useProvisioning } from '../contexts/ProvisioningContext';
-// import { PendingONU } from '../lib/provisioningData';
+// import { PendingONU } from 'types/provisioning';
 
 const Provisioning: React.FC = () => {
   useTitle('Provisionamento - RJ Chronos');
