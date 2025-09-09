@@ -1,0 +1,58 @@
+{
+    // Configurações para o projeto RJChronosConnect
+    
+    // Frontend (TypeScript/React)
+    "typescript.preferences.importModuleSpecifier": "relative",
+    "typescript.suggest.autoImports": true,
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    
+    // Formatação e Linting
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true,
+        "source.organizeImports": true
+    },
+    
+    // Configurações específicas por linguagem
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    
+    // Exclusões para melhor performance
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/build": true,
+        "**/.git": true,
+        "**/coverage": true,
+        "**/.vscode/chrome-debug": true
+    },
+    
+    "files.exclude": {
+        "**/node_modules": false,
+        "**/.git": true,
+        "**/dist": true,
+        "**/build": true
+    },
+    
+    // Configurações do Explorer
+    "explorer.fileNesting.enabled": true,
+    "explorer.fileNesting.patterns": {
+        "*.ts": "${capture}.js",
+        "*.tsx": "${capture}.js",
+        "package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml"
+    },
+    
+    // Debug configurations
+    "debug.javascript.usePreview": true,
+    "debug.javascript.codelens.npmScripts": "never"
+}
