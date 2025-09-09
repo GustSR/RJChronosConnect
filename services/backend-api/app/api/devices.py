@@ -14,25 +14,6 @@ from ..crud import device as crud_device
 import logging
 logger = logging.getLogger(__name__)
 
-# Mock data (temporarily here, will be moved)
-mock_cpes = [
-    CPE(
-        id=f"cpe-{i:03d}",
-        serial_number=f"CPE{i:06d}",
-        model="Intelbras IWR 3000N" if i % 2 == 0 else "TP-Link Archer C6",
-        status="online" if i % 3 != 0 else "offline",
-        ip_address=f"192.168.1.{i+100}",
-        wifi_enabled=True,
-        wifi_ssid=f"RJChronos_{i:03d}",
-        signal_strength=-45.5 + (i % 20),
-        customer_name=f"Cliente {i:03d}",
-        last_seen=datetime.now(),
-        created_at=datetime.now()
-    ) for i in range(1, 51)
-]
-
-from ..crud.provisioning import provisioned_devices_db
-
 router = APIRouter()
 
 @router.get("/cpes", response_model=List[CPE])
@@ -52,15 +33,11 @@ async def get_cpes():
         
         logger.info(f"Retornando {len(cpes)} CPEs do GenieACS")
         
-        if not cpes:
-            logger.warning("Nenhum dispositivo encontrado no GenieACS, usando dados mock")
-            return mock_cpes[:10]
-            
         return cpes
             
     except Exception as e:
         logger.error(f"Erro ao buscar CPEs do GenieACS: {e}")
-        return mock_cpes
+        return []
 
 @router.get("/onus", response_model=List[ONU])
 async def get_onus(db: Session = Depends(get_db)):
