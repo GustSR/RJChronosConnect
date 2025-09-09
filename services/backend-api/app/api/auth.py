@@ -1,27 +1,29 @@
-from fastapi import APIRouter, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
 
-from ..schemas.user import User
+from app import schemas
+from app.crud import user as crud_user
+from app.core import security
+from app.database.database import get_db
 
 router = APIRouter()
-security = HTTPBearer(auto_error=False)
 
-# Mock user and auth
-mock_user = User(
-    id="user-001",
-    email="admin@rjchronos.com",
-    first_name="Admin",
-    last_name="RJChronos",
-    role="admin",
-    created_at=datetime.now()
-)
+@router.post("/token", response_model=schemas.token.Token)
+async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
+    user = crud_user.get_user_by_email(db, email=form_data.username)
+    if not user or not security.verify_password(form_data.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = security.create_access_token(
+        data={"sub": user.email}
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    # In a real app, you'd validate the token here
-    # For now, we just return the mock user
-    return mock_user
 
-@router.get("/user", response_model=User)
-async def get_user(current_user: User = Depends(get_current_user)):
+@router.get("/me", response_model=schemas.user.User)
+async def read_users_me(current_user: schemas.user.User = Depends(security.get_current_user)):
     return current_user

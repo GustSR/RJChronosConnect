@@ -1,32 +1,20 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from typing import List
 from datetime import datetime
+from sqlalchemy.orm import Session
 
 from ..schemas.alert import Alert
 from ..services.genieacs_client import get_genieacs_client
 from ..services.genieacs_transformers import transform_genieacs_fault_to_alert, calculate_dashboard_metrics
 from ..schemas.device import CPE, ONU, OLT # For mock data
 from ..services.genieacs_transformers import transform_genieacs_to_cpe
+from ..database.database import get_db
+from ..crud import olt as crud_olt
+from ..crud import device as crud_device
+from ..crud import alert as crud_alert
 
 import logging
 logger = logging.getLogger(__name__)
-
-# Mock data (temporarily here)
-mock_alerts = [
-    Alert(
-        id=f"alert-{i:03d}",
-        device_id=f"cpe-{i:03d}" if i % 2 == 0 else f"onu-{i:03d}",
-        severity="critical" if i % 5 == 0 else "warning" if i % 3 == 0 else "info",
-        title=f"Alerta {i:03d}",
-        description=f"Descrição do alerta {i:03d}",
-        acknowledged=i % 4 == 0,
-        created_at=datetime.now()
-    ) for i in range(1, 16)
-]
-
-mock_cpes = [CPE(id=f'cpe-{i:03d}', serial_number=f'CPE{i:06d}', model='ModelX', status='online', created_at=datetime.now()) for i in range(50)]
-mock_onus = [ONU(id=f'onu-{i:03d}', serial_number=f'ONU{i:06d}', model='ModelY', status='online', olt_id='olt-001', pon_port='1/1', created_at=datetime.now()) for i in range(20)]
-mock_olts = [OLT(id=f'olt-{i:03d}', serial_number=f'OLT{i:06d}', model='ModelZ', status='online', location='Central', created_at=datetime.now()) for i in range(5)]
 
 router = APIRouter()
 
@@ -47,17 +35,14 @@ async def get_alerts():
         
         logger.info(f"Retornando {len(alerts)} alertas do GenieACS")
         
-        if not alerts:
-            return mock_alerts[:3]
-            
         return alerts
             
     except Exception as e:
         logger.error(f"Erro ao buscar alertas do GenieACS: {e}")
-        return mock_alerts[:3]
+        return []
 
 @router.get("/dashboard/metrics")
-async def get_dashboard_metrics():
+async def get_dashboard_metrics(db: Session = Depends(get_db)):
     """
     Retorna métricas do dashboard baseadas em dados reais do GenieACS
     """
@@ -80,12 +65,15 @@ async def get_dashboard_metrics():
         logger.info(f"Métricas calculadas para {len(devices)} dispositivos do GenieACS")
         
         if not devices:
-            logger.warning("Nenhum dispositivo encontrado, usando métricas mock")
+            logger.warning("Nenhum dispositivo encontrado, usando métricas do banco de dados")
+            total_devices = len(crud_device.get_devices(db)) + len(crud_olt.get_olts(db))
+            online_devices = len([d for d in crud_device.get_devices(db) if d.status_id == 1]) + len([o for o in crud_olt.get_olts(db) if o.status_id == 1])
+            offline_devices = total_devices - online_devices
             return {
-                "total_devices": len(mock_cpes) + len(mock_onus) + len(mock_olts),
-                "online_devices": len([d for d in mock_cpes + mock_onus + mock_olts if d.status == "online"]),
-                "offline_devices": len([d for d in mock_cpes + mock_onus + mock_olts if d.status == "offline"]),
-                "critical_alerts": len([a for a in mock_alerts if a.severity == "critical"]),
+                "total_devices": total_devices,
+                "online_devices": online_devices,
+                "offline_devices": offline_devices,
+                "critical_alerts": crud_alert.get_critical_alerts_count(db),
                 "uptime_percentage": 95.0,
                 "avg_signal_strength": -42.5,
                 "avg_latency": 15.2,
@@ -96,11 +84,14 @@ async def get_dashboard_metrics():
             
     except Exception as e:
         logger.error(f"Erro ao calcular métricas do GenieACS: {e}")
+        total_devices = len(crud_device.get_devices(db)) + len(crud_olt.get_olts(db))
+        online_devices = len([d for d in crud_device.get_devices(db) if d.status_id == 1]) + len([o for o in crud_olt.get_olts(db) if o.status_id == 1])
+        offline_devices = total_devices - online_devices
         return {
-            "total_devices": len(mock_cpes) + len(mock_onus) + len(mock_olts),
-            "online_devices": len([d for d in mock_cpes + mock_onus + mock_olts if d.status == "online"]),
-            "offline_devices": len([d for d in mock_cpes + mock_onus + mock_olts if d.status == "offline"]),
-            "critical_alerts": len([a for a in mock_alerts if a.severity == "critical"]),
+            "total_devices": total_devices,
+            "online_devices": online_devices,
+            "offline_devices": offline_devices,
+            "critical_alerts": crud_alert.get_critical_alerts_count(db),
             "uptime_percentage": 95.0,
             "avg_signal_strength": -42.5,
             "avg_latency": 15.2,

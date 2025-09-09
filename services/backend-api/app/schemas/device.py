@@ -2,6 +2,32 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
+# Schemas for Database Interaction
+
+class DeviceBase(BaseModel):
+    serial_number: str
+    mac_address: Optional[str] = None
+    genieacs_id: Optional[str] = None
+    subscriber_id: int
+    olt_port_id: int
+    status_id: int
+
+class DeviceCreate(DeviceBase):
+    pass
+
+class DeviceUpdate(DeviceBase):
+    pass
+
+class Device(DeviceBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
+# Schemas for API Responses (Legacy, to be updated)
+
 class Device(BaseModel):
     id: str
     serial_number: str
