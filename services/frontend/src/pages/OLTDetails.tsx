@@ -31,8 +31,8 @@ import { H3, H5, H6 } from 'components/Typography';
 import FlexBox from 'components/FlexBox';
 import useTitle from 'hooks/useTitle';
 import AnimatedCard from 'components/common/AnimatedCard';
-import { genieacsApi } from 'services/genieacsApi';
-import { OLT } from 'services/types';
+import { genieacsApi } from 'api/genieacsApi';
+import { OLT } from 'api/types';
 
 interface TabPanelProps {
   children?: React.ReactNode;

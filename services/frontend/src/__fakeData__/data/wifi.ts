@@ -1,5 +1,5 @@
 // WiFi Configuration Mock Data
-import { WiFiConfig } from '../../services/types';
+import { WiFiConfig } from '../../api/types';
 
 export const mockWiFiConfigs: Record<string, WiFiConfig[]> = {
   // Mock WiFi configs por device ID

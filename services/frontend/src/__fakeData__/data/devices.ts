@@ -1,5 +1,5 @@
 // Network Devices Mock Data
-import { ONU, CPE, OLT } from '../../services/types';
+import { ONU, CPE, OLT } from '../../api/types';
 
 export const mockONUs: ONU[] = [
   {

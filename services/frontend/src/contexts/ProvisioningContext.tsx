@@ -7,7 +7,7 @@ import React, {
 } from 'react';
 import { PendingONU, ProvisionedONU } from 'types/provisioning';
 import { mockPendingONUs, mockProvisionedONUs } from '__fakeData__/provisioning';
-import { genieacsApi } from '../services/genieacsApi';
+import { genieacsApi } from '../api/genieacsApi';
 
 interface ProvisioningContextType {
   pendingONUs: PendingONU[];

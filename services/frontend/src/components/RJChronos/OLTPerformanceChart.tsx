@@ -4,8 +4,8 @@ import { FC, useEffect, useState } from 'react';
 import Chart from 'react-apexcharts';
 import { ApexOptions } from 'apexcharts';
 import AnimatedCard from 'components/common/AnimatedCard';
-import { genieacsApi } from '../../services/genieacsApi';
-import { OLTPerformanceStats } from '../../services/types';
+import { genieacsApi } from '../../api/genieacsApi';
+import { OLTPerformanceStats } from '../../api/types';
 
 const OLTPerformanceChart: FC = () => {
   const [performanceStats, setPerformanceStats] =

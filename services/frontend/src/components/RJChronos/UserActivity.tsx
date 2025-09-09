@@ -22,8 +22,8 @@ import {
   Assignment,
   Person,
 } from '@mui/icons-material';
-import { genieacsApi } from '../../services/genieacsApi';
-import { ActivityLog } from '../../services/types';
+import { genieacsApi } from '../../api/genieacsApi';
+import { ActivityLog } from '../../api/types';
 
 const commonCSS = {
   minWidth: 120,

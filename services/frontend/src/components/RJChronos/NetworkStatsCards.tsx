@@ -10,8 +10,8 @@ import {
   SignalWifi4Bar,
 } from '@mui/icons-material';
 import AnimatedCard from 'components/common/AnimatedCard';
-import { genieacsApi } from '../../services/genieacsApi';
-import { DashboardMetrics } from '../../services/types';
+import { genieacsApi } from '../../api/genieacsApi';
+import { DashboardMetrics } from '../../api/types';
 
 interface StatCardData {
   id: number;

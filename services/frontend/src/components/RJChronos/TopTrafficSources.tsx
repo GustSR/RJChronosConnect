@@ -24,8 +24,8 @@ import {
   Settings,
   Hub,
 } from '@mui/icons-material';
-import { genieacsApi } from '../../services/genieacsApi';
-import { TrafficSourcesStats } from '../../services/types';
+import { genieacsApi } from '../../api/genieacsApi';
+import { TrafficSourcesStats } from '../../api/types';
 
 const TopTrafficSources: FC = () => {
   const [trafficStats, setTrafficStats] = useState<TrafficSourcesStats | null>(

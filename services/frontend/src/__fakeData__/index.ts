@@ -1,5 +1,5 @@
 // Export the centralized Fake API
-export { fakeApi } from './fakeApiSimulator';
+export { fakeDataService } from './fakeApiSimulator';
 
 // Keep legacy mock setup for compatibility
 import Mock from '__fakeData__/mock';

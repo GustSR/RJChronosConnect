@@ -1,5 +1,5 @@
 import { httpClient, devConfig } from './api';
-import { fakeApi } from '../__fakeData__';
+import { fakeDataService } from '../__fakeData__';
 import {
   ONU,
   OLT,
@@ -28,7 +28,7 @@ export class GenieACSApiService {
    */
   async getPendingONUs(): Promise<Record<string, unknown>[]> {
     if (devConfig.useMockData) {
-      return fakeApi.getPendingONUs();
+      return fakeDataService.getPendingONUs();
     }
     return httpClient.get<Record<string, unknown>[]>('/provisioning/pending');
   }
@@ -48,7 +48,7 @@ export class GenieACSApiService {
     }
   ): Promise<Record<string, unknown>> {
     if (devConfig.useMockData) {
-      return fakeApi.authorizeONU(onuId, provisionData);
+      return fakeDataService.authorizeONU(onuId, provisionData);
     }
     return httpClient.post(`/provisioning/${onuId}/authorize`, provisionData) as Promise<Record<string, unknown>>;
   }
@@ -61,7 +61,7 @@ export class GenieACSApiService {
     reason?: string
   ): Promise<Record<string, unknown>> {
     if (devConfig.useMockData) {
-      return fakeApi.rejectONU(onuId, reason);
+      return fakeDataService.rejectONU(onuId, reason);
     }
     const endpoint = reason
       ? `/provisioning/${onuId}/reject?reason=${encodeURIComponent(reason)}`
@@ -76,7 +76,7 @@ export class GenieACSApiService {
     onuId: string
   ): Promise<Record<string, unknown>> {
     if (devConfig.useMockData) {
-      return fakeApi.getClientConfiguration(onuId);
+      return fakeDataService.getClientConfiguration(onuId);
     }
     return httpClient.get(`/clients/${onuId}`) as Promise<Record<string, unknown>>;
   }
@@ -96,7 +96,7 @@ export class GenieACSApiService {
     }
   ): Promise<Record<string, unknown>> {
     if (devConfig.useMockData) {
-      return fakeApi.updateClientConfiguration(onuId, updates);
+      return fakeDataService.updateClientConfiguration(onuId, updates);
     }
     return httpClient.put(`/clients/${onuId}`, updates) as Promise<Record<string, unknown>>;
   }
@@ -106,7 +106,7 @@ export class GenieACSApiService {
    */
   async getCPEs(query?: DeviceQuery): Promise<CPE[]> {
     if (devConfig.useMockData) {
-      return fakeApi.getCPEs(query);
+      return fakeDataService.getCPEs(query);
     }
     return httpClient.get<CPE[]>('/devices/cpes', query as Record<string, unknown>);
   }
@@ -116,7 +116,7 @@ export class GenieACSApiService {
    */
   async getONUs(query?: DeviceQuery): Promise<ONU[]> {
     if (devConfig.useMockData) {
-      return fakeApi.getONUs(query);
+      return fakeDataService.getONUs(query);
     }
     return httpClient.get<ONU[]>('/provisioning/clients', query as Record<string, unknown>);
   }
@@ -126,7 +126,7 @@ export class GenieACSApiService {
    */
   async getONUById(id: string): Promise<ONU> {
     if (devConfig.useMockData) {
-      return fakeApi.getONUById(id);
+      return fakeDataService.getONUById(id);
     }
     return httpClient.get<ONU>(`/devices/onus/${id}`);
   }
@@ -136,7 +136,7 @@ export class GenieACSApiService {
    */
   async getOLTs(query?: DeviceQuery): Promise<OLT[]> {
     if (devConfig.useMockData) {
-      return fakeApi.getOLTs(query);
+      return fakeDataService.getOLTs(query);
     }
     return httpClient.get<OLT[]>('/devices/olts', query as Record<string, unknown>);
   }
@@ -148,7 +148,7 @@ export class GenieACSApiService {
     oltId: string
   ): Promise<{ total: number; online: number; offline: number }> {
     if (devConfig.useMockData) {
-      return fakeApi.getOLTStats(oltId);
+      return fakeDataService.getOLTStats(oltId);
     }
     return httpClient.get<{
       total: number;
@@ -164,7 +164,7 @@ export class GenieACSApiService {
    */
   async getAlerts(query?: AlertQuery): Promise<Alert[]> {
     if (devConfig.useMockData) {
-      return fakeApi.getAlerts(query);
+      return fakeDataService.getAlerts(query);
     }
     return httpClient.get<Alert[]>('/alerts', query as Record<string, unknown>);
   }
@@ -174,7 +174,7 @@ export class GenieACSApiService {
    */
   async acknowledgeAlert(alertId: string): Promise<void> {
     if (devConfig.useMockData) {
-      return fakeApi.acknowledgeAlert(alertId);
+      return fakeDataService.acknowledgeAlert(alertId);
     }
     return httpClient.put(`/alerts/${alertId}/acknowledge`);
   }
@@ -189,7 +189,7 @@ export class GenieACSApiService {
     page?: number;
   }): Promise<ActivityLog[]> {
     if (devConfig.useMockData) {
-      return fakeApi.getActivityLogs(query);
+      return fakeDataService.getActivityLogs(query);
     }
     return httpClient.get<ActivityLog[]>('/activity/logs', query as Record<string, unknown>);
   }
@@ -203,7 +203,7 @@ export class GenieACSApiService {
     period: '24h' | '7d' | '30d' = '24h'
   ): Promise<BandwidthStats> {
     if (devConfig.useMockData) {
-      return fakeApi.getBandwidthStats(period);
+      return fakeDataService.getBandwidthStats(period);
     }
     return httpClient.get<BandwidthStats>(`/analytics/bandwidth`, { period } as Record<string, unknown>);
   }
@@ -215,7 +215,7 @@ export class GenieACSApiService {
    */
   async getDashboardMetrics(): Promise<DashboardMetrics> {
     if (devConfig.useMockData) {
-      return fakeApi.getDashboardMetrics();
+      return fakeDataService.getDashboardMetrics();
     }
     return httpClient.get<DashboardMetrics>('/dashboard/metrics');
   }
@@ -227,7 +227,7 @@ export class GenieACSApiService {
    */
   async getWiFiConfigs(): Promise<WiFiConfig[]> {
     if (devConfig.useMockData) {
-      return fakeApi.getWiFiConfigs();
+      return fakeDataService.getWiFiConfigs();
     }
     return httpClient.get<WiFiConfig[]>('/wifi/configs');
   }
@@ -240,7 +240,7 @@ export class GenieACSApiService {
     band: '2.4GHz' | '5GHz'
   ): Promise<WiFiConfig> {
     if (devConfig.useMockData) {
-      return fakeApi.getWiFiConfigByBand(deviceId, band);
+      return fakeDataService.getWiFiConfigByBand(deviceId, band);
     }
     return httpClient.get<WiFiConfig>(`/wifi/configs/${deviceId}?band=${encodeURIComponent(band)}`);
   }
@@ -250,7 +250,7 @@ export class GenieACSApiService {
    */
   async getWiFiConfig(deviceId: string): Promise<WiFiConfig> {
     if (devConfig.useMockData) {
-      return fakeApi.getWiFiConfig(deviceId);
+      return fakeDataService.getWiFiConfig(deviceId);
     }
     // Por padrão retorna a configuração 2.4GHz para compatibilidade
     return this.getWiFiConfigByBand(deviceId, '2.4GHz');
@@ -266,7 +266,7 @@ export class GenieACSApiService {
   ): Promise<WiFiConfig> {
     if (devConfig.useMockData) {
       console.log(`[MOCK] Atualizando WiFi ${band} do dispositivo ${deviceId}:`, config);
-      return fakeApi.updateWiFiConfigByBand(deviceId, band, config);
+      return fakeDataService.updateWiFiConfigByBand(deviceId, band, config);
     }
     
     const url = `/wifi/configs/${deviceId}?band=${encodeURIComponent(band)}`;
@@ -286,7 +286,7 @@ export class GenieACSApiService {
     config: WiFiConfigUpdate
   ): Promise<WiFiConfig> {
     if (devConfig.useMockData) {
-      return fakeApi.updateWiFiConfig(deviceId, config);
+      return fakeDataService.updateWiFiConfig(deviceId, config);
     }
     // Por padrão atualiza a configuração 2.4GHz para compatibilidade
     const band = (config.band as '2.4GHz' | '5GHz') || '2.4GHz';
@@ -299,7 +299,7 @@ export class GenieACSApiService {
   async refreshWiFi(deviceId: string): Promise<void> {
     if (devConfig.useMockData) {
       console.log('[MOCK] Fazendo refresh WiFi para dispositivo:', deviceId);
-      return fakeApi.refreshWiFi(deviceId);
+      return fakeDataService.refreshWiFi(deviceId);
     }
     console.log('Fazendo refresh WiFi para dispositivo:', deviceId);
     await httpClient.post(`/device/refresh-wifi?device_id=${deviceId}`);
@@ -312,7 +312,7 @@ export class GenieACSApiService {
   async refreshIP(deviceId: string): Promise<void> {
     if (devConfig.useMockData) {
       console.log('[MOCK] Fazendo refresh IP para dispositivo:', deviceId);
-      return fakeApi.refreshIP(deviceId);
+      return fakeDataService.refreshIP(deviceId);
     }
     return httpClient.post(`/wifi/refresh-ip/${deviceId}`);
   }
@@ -428,7 +428,7 @@ export class GenieACSApiService {
     offset?: number;
   }): Promise<ActivityLog[]> {
     if (devConfig.useMockData) {
-      return fakeApi.getActivityHistory(params);
+      return fakeDataService.getActivityHistory(params);
     }
     return httpClient.get<ActivityLog[]>('/activity-history', params as Record<string, unknown>);
   }
@@ -438,7 +438,7 @@ export class GenieACSApiService {
    */
   async getActivityById(activityId: string): Promise<ActivityLog> {
     if (devConfig.useMockData) {
-      return fakeApi.getActivityById(activityId);
+      return fakeDataService.getActivityById(activityId);
     }
     return httpClient.get<ActivityLog>(`/activity-history/${activityId}`);
   }
@@ -448,7 +448,7 @@ export class GenieACSApiService {
    */
   async getActivityByDevice(deviceId: string): Promise<ActivityLog[]> {
     if (devConfig.useMockData) {
-      return fakeApi.getActivityByDevice(deviceId);
+      return fakeDataService.getActivityByDevice(deviceId);
     }
     return httpClient.get<ActivityLog[]>(`/activity-history/device/${deviceId}`);
   }
@@ -465,7 +465,7 @@ export class GenieACSApiService {
     details?: Record<string, unknown>;
   }): Promise<ActivityLog> {
     if (devConfig.useMockData) {
-      return fakeApi.createActivity(activity);
+      return fakeDataService.createActivity(activity);
     }
     return httpClient.post<ActivityLog>('/activity-history', activity);
   }
@@ -480,7 +480,7 @@ export class GenieACSApiService {
     top_actions: Array<{ action: string; count: number }>;
   }> {
     if (devConfig.useMockData) {
-      return fakeApi.getActivityStats();
+      return fakeDataService.getActivityStats();
     }
     return httpClient.get<{
       total_activities: number;
@@ -497,7 +497,7 @@ export class GenieACSApiService {
    */
   async checkHealth(): Promise<{ status: string; message: string }> {
     if (devConfig.useMockData) {
-      return fakeApi.checkHealth();
+      return fakeDataService.checkHealth();
     }
     return httpClient.get<{ status: string; message: string }>('/');
   }
@@ -540,10 +540,10 @@ export class GenieACSApiService {
    */
   async getTrafficSources(): Promise<TrafficSourcesStats> {
     if (devConfig.useMockData) {
-      return fakeApi.getTrafficSources();
+      return fakeDataService.getTrafficSources();
     }
     // TODO: Implementar endpoint real no backend
-    return fakeApi.getTrafficSources();
+    return fakeDataService.getTrafficSources();
   }
 
 
@@ -552,10 +552,10 @@ export class GenieACSApiService {
    */
   async getOLTPerformanceStats(): Promise<OLTPerformanceStats> {
     if (devConfig.useMockData) {
-      return fakeApi.getOLTPerformanceStats();
+      return fakeDataService.getOLTPerformanceStats();
     }
     // TODO: Implementar endpoint real no backend
-    return fakeApi.getOLTPerformanceStats();
+    return fakeDataService.getOLTPerformanceStats();
   }
 
 

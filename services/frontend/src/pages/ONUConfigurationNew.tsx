@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProvisioning } from '../contexts/ProvisioningContext';
-import { genieacsApi } from '../services/genieacsApi';
+import { genieacsApi } from '../api/genieacsApi';
 import {
   Box,
   Container,
