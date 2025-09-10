@@ -1,5 +1,5 @@
 // Network Devices Mock Data
-import { ONU, CPE, OLT } from '../../api/types';
+import { ONU, CPE, OLT } from '@shared/api/types';
 
 export const mockONUs: ONU[] = [
   {
@@ -145,7 +145,10 @@ export const mockOLTs: OLT[] = [
 ];
 
 // OLT Stats Mock Data
-export const mockOLTStats: Record<string, { total: number; online: number; offline: number }> = {
+export const mockOLTStats: Record<
+  string,
+  { total: number; online: number; offline: number }
+> = {
   '1': { total: 324, online: 298, offline: 26 },
   '2': { total: 256, online: 231, offline: 25 },
   '3': { total: 189, online: 175, offline: 14 },

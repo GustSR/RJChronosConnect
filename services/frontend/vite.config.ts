@@ -16,13 +16,22 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
-      '@components': resolve(__dirname, './src/components'),
+      
+      // FSD Layers
+      '@app': resolve(__dirname, './src/app'),
       '@pages': resolve(__dirname, './src/pages'),
+      '@features': resolve(__dirname, './src/features'),
+      '@entities': resolve(__dirname, './src/entities'),
+      '@shared': resolve(__dirname, './src/shared'),
+      
+      // Legacy paths (manter durante transição)
+      '@components': resolve(__dirname, './src/components'),
       '@hooks': resolve(__dirname, './src/hooks'),
       '@services': resolve(__dirname, './src/services'),
       '@utils': resolve(__dirname, './src/utils'),
       '@types': resolve(__dirname, './src/types'),
       '@assets': resolve(__dirname, './src/assets'),
+      
       // Polyfills COMPLETOS para jsonwebtoken
       buffer: 'buffer',
       process: 'process/browser',

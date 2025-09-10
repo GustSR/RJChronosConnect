@@ -22,10 +22,10 @@ import {
   NetworkCheck as TestIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { H3, H5 } from 'components/Typography';
-import FlexBox from 'components/FlexBox';
-import useTitle from 'hooks/useTitle';
-import AnimatedCard from 'components/common/AnimatedCard';
+import { H3, H5 } from '@shared/ui/components/Typography';
+import FlexBox from '@shared/ui/components/FlexBox';
+import { useTitle } from '@shared/lib/hooks';
+import { AnimatedCard } from '@shared/ui/components';
 
 interface OLTFormData {
   name: string;

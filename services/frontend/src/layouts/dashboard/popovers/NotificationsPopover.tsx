@@ -1,8 +1,6 @@
 import { TabContext, TabList, TabPanel } from '@mui/lab';
 import { Badge, Box, IconButton, styled, Tab, useTheme } from '@mui/material';
-import FlexBox from 'components/FlexBox';
-import { H6, Paragraph, Tiny } from 'components/Typography';
-import UkoAvatar from 'components/UkoAvatar';
+import { FlexBox, H6, Paragraph, Tiny, UkoAvatar } from '@shared/ui/components';
 import NotificationsIcon from 'icons/NotificationsIcon';
 import { FC, Fragment, SyntheticEvent, useRef, useState } from 'react';
 import PopoverLayout from './PopoverLayout';

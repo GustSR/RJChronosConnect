@@ -1,5 +1,5 @@
 // Dashboard Metrics Mock Data
-import { DashboardMetrics } from '../../api/types';
+import { DashboardMetrics } from '@shared/api/types';
 
 export const mockDashboardMetrics: DashboardMetrics = {
   total_devices: 156,

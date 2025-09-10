@@ -9,10 +9,10 @@ import {
   styled,
   Switch,
 } from '@mui/material';
-import LightTextField from 'components/LightTextField';
-import { Small, Tiny } from 'components/Typography';
+import LightTextField from '@shared/ui/components/LightTextField';
+import { Small, Tiny } from '@shared/ui/components/Typography';
 import { useFormik } from 'formik';
-import useTitle from 'hooks/useTitle';
+import useTitle from '@shared/lib/hooks/useTitle';
 import { FC } from 'react';
 import * as Yup from 'yup';
 

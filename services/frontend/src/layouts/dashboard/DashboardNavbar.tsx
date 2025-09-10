@@ -8,8 +8,8 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { Menu as MenuIcon } from '@mui/icons-material';
-import { H2 } from 'components/Typography';
-import { TitleContext } from 'contexts/TitleContext';
+import { H2 } from '@shared/ui/components';
+import { TitleContext } from '@shared/lib/contexts';
 import { FC, useContext } from 'react';
 import LanguagePopover from './popovers/LanguagePopover';
 import NotificationsPopover from './popovers/NotificationsPopover';

@@ -1,5 +1,5 @@
 import { Box, ButtonBase, Divider, Popover } from '@mui/material';
-import { H4 } from 'components/Typography';
+import { H4 } from '@shared/ui/components';
 import React, { FC } from 'react';
 
 // component props interface

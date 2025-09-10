@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { ExpandLess, KeyboardArrowRight } from '@mui/icons-material';
 import ScrollBar from 'simplebar-react';
-import { H6 } from 'components/Typography';
+import { H6 } from '@shared/ui/components';
 import navigations from './topMenuList';
 
 // root component interface

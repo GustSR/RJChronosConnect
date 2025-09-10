@@ -1,6 +1,8 @@
-import { AuthProvider } from 'contexts/JWTAuthContext';
-import SettingsProvider from 'contexts/SettingsContext';
-import TitleContextProvider from 'contexts/TitleContext';
+import {
+  AuthProvider,
+  SettingsProvider,
+  TitleContextProvider,
+} from '@shared/lib/contexts';
 import 'nprogress/nprogress.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

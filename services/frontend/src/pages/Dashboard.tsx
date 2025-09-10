@@ -1,16 +1,18 @@
 import { Box, Grid } from '@mui/material';
-import useTitle from 'hooks/useTitle';
+import { useTitle } from '@shared/lib/hooks';
 import { FC } from 'react';
 
 // Componentes RJ Chronos
-import OLTGrid from '../components/RJChronos/OLTGrid';
-import OLTMonitoring from '../components/RJChronos/OLTMonitoring';
-import UserActivity from '../components/RJChronos/UserActivity';
-import ONTStatusChart from '../components/RJChronos/ONTStatusChart';
-import BandwidthAreaChart from '../components/RJChronos/BandwidthAreaChart';
-import TopTrafficSources from '../components/RJChronos/TopTrafficSources';
-import OLTPerformanceChart from '../components/RJChronos/OLTPerformanceChart';
-import NetworkStatsCards from '../components/RJChronos/NetworkStatsCards';
+import {
+  OLTGrid,
+  OLTMonitoring,
+  UserActivity,
+  ONTStatusChart,
+  BandwidthAreaChart,
+  TopTrafficSources,
+  OLTPerformanceChart,
+} from '@features/monitoring/ui';
+import { NetworkStatsCards } from '@features/monitoring/ui';
 
 const Dashboard: FC = () => {
   // change navbar title

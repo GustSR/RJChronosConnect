@@ -1,5 +1,5 @@
 // Network Alerts Mock Data
-import { Alert } from '../../api/types';
+import { Alert } from '@shared/api/types';
 
 export const mockAlerts: Alert[] = [
   {

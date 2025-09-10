@@ -1,8 +1,6 @@
 import { LoadingButton } from '@mui/lab';
 import { Box, Button, Card, FormHelperText } from '@mui/material';
-import FlexBox from 'components/FlexBox';
-import LightTextField from 'components/LightTextField';
-import { H1, Small } from 'components/Typography';
+import { FlexBox, LightTextField, H1, Small } from '@shared/ui/components';
 import { useFormik } from 'formik';
 import { FC, useState } from 'react';
 import toast from 'react-hot-toast';

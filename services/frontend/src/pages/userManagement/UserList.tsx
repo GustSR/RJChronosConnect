@@ -1,10 +1,10 @@
 import { Box, Button, styled } from '@mui/material';
-import FlexBox from 'components/FlexBox';
-import SearchInput from 'components/SearchInput';
-import UserListColumnShape from 'components/userManagement/columnShape';
-import CustomTable from 'components/userManagement/CustomTable';
-import { userListFakeData } from 'components/userManagement/fakeData';
-import useTitle from 'hooks/useTitle';
+import FlexBox from '@shared/ui/components/FlexBox';
+import SearchInput from '@shared/ui/components/SearchInput';
+import UserListColumnShape from '@shared/ui/components/userManagement/columnShape';
+import CustomTable from '@shared/ui/components/userManagement/CustomTable';
+import { userListFakeData } from '@shared/ui/components/userManagement/fakeData';
+import useTitle from '@shared/lib/hooks/useTitle';
 import { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 

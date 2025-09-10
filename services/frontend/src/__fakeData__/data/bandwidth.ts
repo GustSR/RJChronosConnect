@@ -1,7 +1,9 @@
 // Bandwidth Analytics Mock Data
-import { BandwidthStats } from '../../api/types';
+import { BandwidthStats } from '@shared/api/types';
 
-export const generateMockBandwidthStats = (period: '24h' | '7d' | '30d'): BandwidthStats => {
+export const generateMockBandwidthStats = (
+  period: '24h' | '7d' | '30d'
+): BandwidthStats => {
   // Gerar dados mock baseados no período
   const dataPoints = [];
   const now = new Date();

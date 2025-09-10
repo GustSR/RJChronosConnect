@@ -29,5 +29,4 @@ Thumbs.db
 
 # Ignorar arquivos do Gemini/Claude
 GEMINI.md
-CLAUDE.md
 .claude

@@ -1,5 +1,5 @@
 // WiFi Configuration Mock Data
-import { WiFiConfig } from '../../api/types';
+import { WiFiConfig } from '@shared/api/types';
 
 export const mockWiFiConfigs: Record<string, WiFiConfig[]> = {
   // Mock WiFi configs por device ID
@@ -17,7 +17,7 @@ export const mockWiFiConfigs: Record<string, WiFiConfig[]> = {
     },
     {
       device_id: 'pending-demo-1',
-      band: '5GHz', 
+      band: '5GHz',
       ssid: 'RJChronos_DEMO1_5G',
       enabled: true,
       security_mode: 'WPA2-PSK',
@@ -83,11 +83,14 @@ export const getAllMockWiFiConfigs = (): WiFiConfig[] => {
 };
 
 // Get WiFi config by device and band
-export const getMockWiFiConfigByBand = (deviceId: string, band: '2.4GHz' | '5GHz'): WiFiConfig | null => {
+export const getMockWiFiConfigByBand = (
+  deviceId: string,
+  band: '2.4GHz' | '5GHz'
+): WiFiConfig | null => {
   const deviceConfigs = mockWiFiConfigs[deviceId];
   if (!deviceConfigs) return null;
-  
-  return deviceConfigs.find(config => config.band === band) || null;
+
+  return deviceConfigs.find((config) => config.band === band) || null;
 };
 
 // Get all WiFi configs for a device
