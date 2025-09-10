@@ -1,5 +1,5 @@
 // Activity History Mock Data
-import { ActivityLog } from '../../api/types';
+import { ActivityLog } from '@shared/api/types';
 
 export const mockActivityLogs: ActivityLog[] = [
   {

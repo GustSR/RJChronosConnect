@@ -16,7 +16,6 @@ import {
   mockPendingONUs,
   getAllMockWiFiConfigs,
   getMockWiFiConfigByBand,
-  getMockWiFiConfigsForDevice,
 } from './data';
 import {
   ONU,
@@ -32,10 +31,14 @@ import {
   AlertQuery,
   WiFiConfig,
   WiFiConfigUpdate,
-} from '../api/types';
+} from '@shared/api/types';
 
 // Simulate realistic network delays
-const simulateNetworkDelay = async <T>(data: T, minDelay = 300, maxDelay = 800): Promise<T> => {
+const simulateNetworkDelay = async <T>(
+  data: T,
+  minDelay = 300,
+  maxDelay = 800
+): Promise<T> => {
   const delay = Math.random() * (maxDelay - minDelay) + minDelay;
   await new Promise((resolve) => setTimeout(resolve, delay));
   // Return a deep clone to prevent mutations
@@ -43,35 +46,42 @@ const simulateNetworkDelay = async <T>(data: T, minDelay = 300, maxDelay = 800):
 };
 
 // Apply query filters to mock data
-const applyDeviceQuery = <T extends { status?: string; model?: string }>(data: T[], query?: DeviceQuery): T[] => {
+const applyDeviceQuery = <T extends { status?: string; model?: string }>(
+  data: T[],
+  query?: DeviceQuery
+): T[] => {
   if (!query) return data;
-  
+
   let filtered = [...data];
-  
+
   if (query.status) {
-    filtered = filtered.filter(item => item.status === query.status);
+    filtered = filtered.filter((item) => item.status === query.status);
   }
-  
+
   if (query.model) {
-    filtered = filtered.filter(item => item.model?.toLowerCase().includes(query.model!.toLowerCase()));
+    filtered = filtered.filter((item) =>
+      item.model?.toLowerCase().includes(query.model!.toLowerCase())
+    );
   }
-  
+
   return filtered;
 };
 
 const applyAlertQuery = (data: Alert[], query?: AlertQuery): Alert[] => {
   if (!query) return data;
-  
+
   let filtered = [...data];
-  
+
   if (query.severity) {
-    filtered = filtered.filter(item => item.severity === query.severity);
+    filtered = filtered.filter((item) => item.severity === query.severity);
   }
-  
+
   if (query.acknowledged !== undefined) {
-    filtered = filtered.filter(item => item.acknowledged === query.acknowledged);
+    filtered = filtered.filter(
+      (item) => item.acknowledged === query.acknowledged
+    );
   }
-  
+
   return filtered;
 };
 
@@ -89,7 +99,7 @@ export const fakeDataService = {
   },
 
   getONUById: async (id: string): Promise<ONU> => {
-    const found = mockONUs.find(onu => onu.id === id);
+    const found = mockONUs.find((onu) => onu.id === id);
     if (!found) {
       throw new Error(`ONU with id ${id} not found`);
     }
@@ -106,7 +116,9 @@ export const fakeDataService = {
     return simulateNetworkDelay(filtered);
   },
 
-  getOLTStats: async (oltId: string): Promise<{ total: number; online: number; offline: number }> => {
+  getOLTStats: async (
+    oltId: string
+  ): Promise<{ total: number; online: number; offline: number }> => {
     const stats = mockOLTStats[oltId] || { total: 0, online: 0, offline: 0 };
     return simulateNetworkDelay(stats);
   },
@@ -119,7 +131,7 @@ export const fakeDataService = {
 
   acknowledgeAlert: async (alertId: string): Promise<void> => {
     // Simulate acknowledgment
-    const alert = mockAlerts.find(a => a.id === alertId);
+    const alert = mockAlerts.find((a) => a.id === alertId);
     if (alert) {
       alert.acknowledged = true;
     }
@@ -127,14 +139,17 @@ export const fakeDataService = {
   },
 
   // ===== ACTIVITIES =====
-  getActivityLogs: async (query?: { limit?: number; page?: number }): Promise<ActivityLog[]> => {
+  getActivityLogs: async (query?: {
+    limit?: number;
+    page?: number;
+  }): Promise<ActivityLog[]> => {
     let result = [...mockActivityLogs];
-    
+
     if (query?.limit) {
       const offset = (query.page || 0) * query.limit;
       result = result.slice(offset, offset + query.limit);
     }
-    
+
     return simulateNetworkDelay(result);
   },
 
@@ -147,29 +162,31 @@ export const fakeDataService = {
     offset?: number;
   }): Promise<ActivityLog[]> => {
     let filtered = [...mockActivityLogs];
-    
+
     if (params?.device_id) {
-      filtered = filtered.filter(log => log.device_id === params.device_id);
+      filtered = filtered.filter((log) => log.device_id === params.device_id);
     }
-    
+
     if (params?.action) {
-      filtered = filtered.filter(log => log.action.toLowerCase().includes(params.action!.toLowerCase()));
+      filtered = filtered.filter((log) =>
+        log.action.toLowerCase().includes(params.action!.toLowerCase())
+      );
     }
-    
+
     if (params?.status) {
-      filtered = filtered.filter(log => log.status === params.status);
+      filtered = filtered.filter((log) => log.status === params.status);
     }
-    
+
     if (params?.limit) {
       const offset = params.offset || 0;
       filtered = filtered.slice(offset, offset + params.limit);
     }
-    
+
     return simulateNetworkDelay(filtered);
   },
 
   getActivityById: async (activityId: string): Promise<ActivityLog> => {
-    const found = mockActivityLogs.find(log => log.id === activityId);
+    const found = mockActivityLogs.find((log) => log.id === activityId);
     if (!found) {
       throw new Error(`Activity with id ${activityId} not found`);
     }
@@ -177,7 +194,9 @@ export const fakeDataService = {
   },
 
   getActivityByDevice: async (deviceId: string): Promise<ActivityLog[]> => {
-    const filtered = mockActivityLogs.filter(log => log.device_id === deviceId);
+    const filtered = mockActivityLogs.filter(
+      (log) => log.device_id === deviceId
+    );
     return simulateNetworkDelay(filtered);
   },
 
@@ -196,7 +215,7 @@ export const fakeDataService = {
       created_at: new Date().toISOString(),
       task_name: activity.action.toLowerCase().replace(/\s+/g, '_'),
     };
-    
+
     mockActivityLogs.unshift(newActivity);
     return simulateNetworkDelay(newActivity);
   },
@@ -209,10 +228,13 @@ export const fakeDataService = {
   }> => {
     const stats = {
       total_activities: mockActivityLogs.length,
-      success_rate: (mockActivityLogs.filter(log => log.status === 'success').length / mockActivityLogs.length) * 100,
-      recent_activities: mockActivityLogs.filter(log => {
+      success_rate:
+        (mockActivityLogs.filter((log) => log.status === 'success').length /
+          mockActivityLogs.length) *
+        100,
+      recent_activities: mockActivityLogs.filter((log) => {
         const logTime = new Date(log.created_at).getTime();
-        const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+        const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
         return logTime > oneDayAgo;
       }).length,
       top_actions: [
@@ -223,18 +245,21 @@ export const fakeDataService = {
         { action: 'create_customer', count: 4 },
       ],
     };
-    
+
     return simulateNetworkDelay(stats);
   },
 
   // ===== BANDWIDTH ANALYTICS =====
-  getBandwidthStats: async (period: '24h' | '7d' | '30d' = '24h'): Promise<BandwidthStats> => {
-    const stats = {
-      '24h': mockBandwidthStats24h,
-      '7d': mockBandwidthStats7d,
-      '30d': mockBandwidthStats30d,
-    }[period] || generateMockBandwidthStats(period);
-    
+  getBandwidthStats: async (
+    period: '24h' | '7d' | '30d' = '24h'
+  ): Promise<BandwidthStats> => {
+    const stats =
+      {
+        '24h': mockBandwidthStats24h,
+        '7d': mockBandwidthStats7d,
+        '30d': mockBandwidthStats30d,
+      }[period] || generateMockBandwidthStats(period);
+
     return simulateNetworkDelay(stats);
   },
 
@@ -270,34 +295,39 @@ export const fakeDataService = {
       onu_id: onuId,
       authorized_at: new Date().toISOString(),
     };
-    
+
     // Remove from pending list
-    const pendingIndex = mockPendingONUs.findIndex(onu => onu.id === onuId);
+    const pendingIndex = mockPendingONUs.findIndex((onu) => onu.id === onuId);
     if (pendingIndex !== -1) {
       mockPendingONUs.splice(pendingIndex, 1);
     }
-    
+
     return simulateNetworkDelay(result, 1000, 2000); // Longer delay for provision operations
   },
 
-  rejectONU: async (onuId: string, reason?: string): Promise<Record<string, unknown>> => {
+  rejectONU: async (
+    onuId: string,
+    reason?: string
+  ): Promise<Record<string, unknown>> => {
     const result = {
       success: true,
       message: `ONU ${onuId} rejeitada`,
       reason: reason || 'Não autorizada pelo administrador',
       rejected_at: new Date().toISOString(),
     };
-    
+
     // Remove from pending list
-    const pendingIndex = mockPendingONUs.findIndex(onu => onu.id === onuId);
+    const pendingIndex = mockPendingONUs.findIndex((onu) => onu.id === onuId);
     if (pendingIndex !== -1) {
       mockPendingONUs.splice(pendingIndex, 1);
     }
-    
+
     return simulateNetworkDelay(result, 500, 1000);
   },
 
-  getClientConfiguration: async (onuId: string): Promise<Record<string, unknown>> => {
+  getClientConfiguration: async (
+    onuId: string
+  ): Promise<Record<string, unknown>> => {
     const config = {
       onu_id: onuId,
       client_name: 'Cliente Mock',
@@ -308,7 +338,7 @@ export const fakeDataService = {
       comment: 'Configuração de teste',
       last_updated: new Date().toISOString(),
     };
-    
+
     return simulateNetworkDelay(config);
   },
 
@@ -322,7 +352,7 @@ export const fakeDataService = {
       updates,
       updated_at: new Date().toISOString(),
     };
-    
+
     return simulateNetworkDelay(result, 800, 1500);
   },
 
@@ -331,17 +361,22 @@ export const fakeDataService = {
     return simulateNetworkDelay(getAllMockWiFiConfigs());
   },
 
-  getWiFiConfigByBand: async (deviceId: string, band: '2.4GHz' | '5GHz'): Promise<WiFiConfig> => {
+  getWiFiConfigByBand: async (
+    deviceId: string,
+    band: '2.4GHz' | '5GHz'
+  ): Promise<WiFiConfig> => {
     const config = getMockWiFiConfigByBand(deviceId, band);
     if (!config) {
-      throw new Error(`WiFi config not found for device ${deviceId} band ${band}`);
+      throw new Error(
+        `WiFi config not found for device ${deviceId} band ${band}`
+      );
     }
     return simulateNetworkDelay(config);
   },
 
   getWiFiConfig: async (deviceId: string): Promise<WiFiConfig> => {
     // Default to 2.4GHz for compatibility
-    return fakeApi.getWiFiConfigByBand(deviceId, '2.4GHz');
+    return fakeDataService.getWiFiConfigByBand(deviceId, '2.4GHz');
   },
 
   updateWiFiConfigByBand: async (
@@ -352,7 +387,9 @@ export const fakeDataService = {
     // Simulate updating the config
     const currentConfig = getMockWiFiConfigByBand(deviceId, band);
     if (!currentConfig) {
-      throw new Error(`WiFi config not found for device ${deviceId} band ${band}`);
+      throw new Error(
+        `WiFi config not found for device ${deviceId} band ${band}`
+      );
     }
 
     const updatedConfig: WiFiConfig = {
@@ -366,7 +403,10 @@ export const fakeDataService = {
     return simulateNetworkDelay(updatedConfig, 1000, 2000);
   },
 
-  updateWiFiConfig: async (deviceId: string, config: WiFiConfigUpdate): Promise<WiFiConfig> => {
+  updateWiFiConfig: async (
+    deviceId: string,
+    config: WiFiConfigUpdate
+  ): Promise<WiFiConfig> => {
     // Default to 2.4GHz for compatibility
     const band = (config.band as '2.4GHz' | '5GHz') || '2.4GHz';
     return fakeDataService.updateWiFiConfigByBand(deviceId, band, config);

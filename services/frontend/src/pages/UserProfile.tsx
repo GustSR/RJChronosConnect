@@ -1,15 +1,19 @@
 import { TabContext, TabList, TabPanel } from '@mui/lab';
 import { Box, Card, Grid, styled, Tab } from '@mui/material';
-import FlexBox from 'components/FlexBox';
-import SearchInput from 'components/SearchInput';
-import { H3, Small } from 'components/Typography';
-import UkoAvatar from 'components/UkoAvatar';
-import FollowerCard from 'components/userProfile/FollowerCard';
-import FriendCard from 'components/userProfile/FriendCard';
-import Gallery from 'components/userProfile/Gallery';
-import Profile from 'components/userProfile/Profile';
-import useAuth from 'hooks/useAuth';
-import useTitle from 'hooks/useTitle';
+import {
+  FlexBox,
+  SearchInput,
+  H3,
+  Small,
+  UkoAvatar,
+} from '@shared/ui/components';
+import {
+  FollowerCard,
+  FriendCard,
+  Gallery,
+  Profile,
+} from '@features/user-profile/ui';
+import { useAuth, useTitle } from '@shared/lib/hooks';
 import { FC, SyntheticEvent, useState } from 'react';
 
 // styled components

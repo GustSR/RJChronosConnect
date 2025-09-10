@@ -3,7 +3,6 @@ import {
   Box,
   Container,
   Button,
-  Card,
   Table,
   TableBody,
   TableCell,
@@ -24,12 +23,11 @@ import {
   DeviceHub as DeviceHubIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { H3, H6 } from 'components/Typography';
-import { genieacsApi } from 'api/genieacsApi';
-import { OLT } from 'api/types';
-import FlexBox from 'components/FlexBox';
-import useTitle from 'hooks/useTitle';
-import AnimatedCard from 'components/common/AnimatedCard';
+import { H6 } from '@shared/ui/components/Typography';
+import { genieacsApi } from '@shared/api/genieacsApi';
+import { OLT } from '@shared/api/types';
+import { useTitle } from '@shared/lib/hooks';
+import { AnimatedCard } from '@shared/ui/components';
 
 const OLTManagement: React.FC = () => {
   const navigate = useNavigate();
@@ -41,14 +39,6 @@ const OLTManagement: React.FC = () => {
 
   useEffect(() => {
     loadOLTs();
-  }, []);
-
-  // Simular loading inicial para evitar blink
-  const [initialLoad, setInitialLoad] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setInitialLoad(false), 50);
-    return () => clearTimeout(timer);
   }, []);
 
   const loadOLTs = async () => {

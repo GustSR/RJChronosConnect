@@ -8,15 +8,17 @@ import {
   FormHelperText,
   Switch,
 } from '@mui/material';
+import { SocialIconButton, TextFieldWrapper } from '@shared/ui/authentication';
 import {
-  SocialIconButton,
-  TextFieldWrapper,
-} from 'components/authentication/StyledComponents';
-import FlexBox from 'components/FlexBox';
-import LightTextField from 'components/LightTextField';
-import { H1, H3, Paragraph, Small } from 'components/Typography';
+  FlexBox,
+  LightTextField,
+  H1,
+  H3,
+  Paragraph,
+  Small,
+} from '@shared/ui/components';
 import { useFormik } from 'formik';
-import useAuth from 'hooks/useAuth';
+import { useAuth } from '@shared/lib/hooks';
 import FacebookIcon from 'icons/FacebookIcon';
 import GoogleIcon from 'icons/GoogleIcon';
 import { FC, useState } from 'react';

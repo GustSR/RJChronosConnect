@@ -40,10 +40,10 @@ import {
   Circle,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import useTitle from '../hooks/useTitle';
-import AnimatedCard from '../components/common/AnimatedCard';
-import { useProvisioning } from '../contexts/ProvisioningContext';
-import { ProvisionedONU } from 'types/provisioning';
+import { useTitle } from '@shared/lib/hooks';
+import { AnimatedCard } from '@shared/ui/components';
+import { useProvisioning } from '@features/onu-provisioning';
+import { ProvisionedONU } from '@features/onu-provisioning/provisioning';
 
 // Interfaces
 interface Cliente {

@@ -6,7 +6,6 @@ import {
   Typography,
   Grid,
   Button,
-  Card,
   CardContent,
   IconButton,
   Stack,
@@ -30,11 +29,11 @@ import {
   Edit,
   Schedule,
 } from '@mui/icons-material';
-import useTitle from '../hooks/useTitle';
-import AnimatedCard from '../components/common/AnimatedCard';
-import ONUInventoryCard from '../components/common/ONUInventoryCard';
-import AddOnuModal from '../components/common/AddOnuModal';
-import { useProvisioning } from '../contexts/ProvisioningContext';
+import { useTitle } from '@shared/lib/hooks';
+import { AnimatedCard } from '@shared/ui/components';
+import ONUInventoryCard from '@entities/onu/ui/ONUInventoryCard';
+import AddOnuModal from '@features/onu-provisioning/ui/AddOnuModal';
+import { useProvisioning } from '@features/onu-provisioning';
 
 interface Cliente {
   id: string;
@@ -89,7 +88,7 @@ const ClienteDetalhes: React.FC = () => {
 
       // Encontrar a ONU provisionada correspondente
       const onuProvisionada = provisionedONUs.find((onu) => onu.id === id);
-      
+
       if (onuProvisionada) {
         // Criar dados mock do cliente baseados na ONU
         const clienteMock: Cliente = {
@@ -97,7 +96,9 @@ const ClienteDetalhes: React.FC = () => {
           nome: onuProvisionada.clientName,
           endereco: onuProvisionada.clientAddress,
           telefone: '(21) 99999-9999',
-          email: `${onuProvisionada.clientName.toLowerCase().replace(/\s+/g, '.')}@email.com`,
+          email: `${onuProvisionada.clientName
+            .toLowerCase()
+            .replace(/\s+/g, '.')}@email.com`,
           documento: '123.456.789-00',
           observacoes: 'Cliente residencial',
           status: 'ativo',
@@ -273,7 +274,12 @@ const ClienteDetalhes: React.FC = () => {
               </Typography>
               <Chip
                 label={cliente.status}
-                color={getStatusColor(cliente.status) as any}
+                color={
+                  getStatusColor(cliente.status) as
+                    | 'success'
+                    | 'warning'
+                    | 'error'
+                }
                 size="small"
                 variant="filled"
                 sx={{ textTransform: 'capitalize' }}
@@ -331,7 +337,10 @@ const ClienteDetalhes: React.FC = () => {
                   label="Documento"
                   value={dadosEdicao.documento || ''}
                   onChange={(e) =>
-                    setDadosEdicao({ ...dadosEdicao, documento: e.target.value })
+                    setDadosEdicao({
+                      ...dadosEdicao,
+                      documento: e.target.value,
+                    })
                   }
                   size="small"
                 />
@@ -354,7 +363,13 @@ const ClienteDetalhes: React.FC = () => {
                     value={dadosEdicao.status || 'ativo'}
                     label="Status"
                     onChange={(e) =>
-                      setDadosEdicao({ ...dadosEdicao, status: e.target.value as any })
+                      setDadosEdicao({
+                        ...dadosEdicao,
+                        status: e.target.value as
+                          | 'ativo'
+                          | 'inativo'
+                          | 'suspenso',
+                      })
                     }
                   >
                     <MenuItem value="ativo">Ativo</MenuItem>
@@ -369,7 +384,10 @@ const ClienteDetalhes: React.FC = () => {
                   label="Observações"
                   value={dadosEdicao.observacoes || ''}
                   onChange={(e) =>
-                    setDadosEdicao({ ...dadosEdicao, observacoes: e.target.value })
+                    setDadosEdicao({
+                      ...dadosEdicao,
+                      observacoes: e.target.value,
+                    })
                   }
                   size="small"
                   multiline
@@ -377,17 +395,13 @@ const ClienteDetalhes: React.FC = () => {
                 />
               </Grid>
               <Grid item xs={12}>
-                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                  <Button
-                    variant="outlined"
-                    onClick={handleCancelarEdicao}
-                  >
+                <Box
+                  sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}
+                >
+                  <Button variant="outlined" onClick={handleCancelarEdicao}>
                     Cancelar
                   </Button>
-                  <Button
-                    variant="contained"
-                    onClick={handleSalvarEdicao}
-                  >
+                  <Button variant="contained" onClick={handleSalvarEdicao}>
                     Salvar
                   </Button>
                 </Box>
@@ -478,7 +492,11 @@ const ClienteDetalhes: React.FC = () => {
               {cliente.observacoes && (
                 <Grid item xs={12}>
                   <Box>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      gutterBottom
+                    >
                       Observações
                     </Typography>
                     <Typography variant="body1" fontWeight="500">
@@ -500,7 +518,9 @@ const ClienteDetalhes: React.FC = () => {
               Inventário de ONUs/ONTs
             </Typography>
             <Chip
-              label={`${onusDoCliente.length} equipamento${onusDoCliente.length !== 1 ? 's' : ''}`}
+              label={`${onusDoCliente.length} equipamento${
+                onusDoCliente.length !== 1 ? 's' : ''
+              }`}
               size="small"
               sx={{ ml: 2 }}
             />
@@ -510,8 +530,8 @@ const ClienteDetalhes: React.FC = () => {
             <Alert severity="info" sx={{ textAlign: 'center', py: 4 }}>
               Nenhuma ONU/ONT encontrada para este cliente.
               <Box sx={{ mt: 2 }}>
-                <Button 
-                  variant="contained" 
+                <Button
+                  variant="contained"
                   startIcon={<Add />}
                   onClick={() => setModalAddOnuOpen(true)}
                 >
@@ -525,7 +545,9 @@ const ClienteDetalhes: React.FC = () => {
                 <Grid item xs={12} md={6} lg={4} key={onu.id}>
                   <ONUInventoryCard
                     onu={onu}
-                    onConfigure={() => navigate(`/clientes/${onu.id}/configurar`)}
+                    onConfigure={() =>
+                      navigate(`/clientes/${onu.id}/configurar`)
+                    }
                   />
                 </Grid>
               ))}

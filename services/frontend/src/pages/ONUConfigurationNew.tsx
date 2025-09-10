@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useProvisioning } from '../contexts/ProvisioningContext';
-import { genieacsApi } from '../api/genieacsApi';
+import { useProvisioning } from '@features/onu-provisioning';
+import { genieacsApi } from '@shared/api/genieacsApi';
 import {
   Box,
   Container,
@@ -56,8 +56,8 @@ import {
   History,
   Close,
 } from '@mui/icons-material';
-import useTitle from '../hooks/useTitle';
-import AnimatedCard from '../components/common/AnimatedCard';
+import { useTitle } from '@shared/lib/hooks';
+import { AnimatedCard } from '@shared/ui/components';
 
 // Interfaces
 interface ONUDetails {

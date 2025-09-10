@@ -27,13 +27,13 @@
     "baseUrl": "./src",
     "paths": {
       "@/*": ["./*"],
-      "@components/*": ["./components/*"],
+      
+      /* FSD Layers */
+      "@app/*": ["./app/*"],
       "@pages/*": ["./pages/*"],
-      "@hooks/*": ["./hooks/*"],
-      "@services/*": ["./services/*"],
-      "@utils/*": ["./utils/*"],
-      "@types/*": ["./types/*"],
-      "@assets/*": ["./assets/*"]
+      "@features/*": ["./features/*"],
+      "@entities/*": ["./entities/*"],
+      "@shared/*": ["./shared/*"]
     }
   },
   "include": ["src"],

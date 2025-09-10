@@ -1,7 +1,6 @@
 import { Apps } from '@mui/icons-material';
 import { Avatar, Badge, Box, IconButton, useTheme } from '@mui/material';
-import FlexBox from 'components/FlexBox';
-import { H6, Tiny } from 'components/Typography';
+import { FlexBox, H6, Tiny } from '@shared/ui/components';
 import { FC, Fragment, useRef, useState } from 'react';
 import PopoverLayout from './PopoverLayout';
 

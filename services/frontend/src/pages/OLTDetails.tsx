@@ -3,7 +3,6 @@ import {
   Box,
   Container,
   Button,
-  Card,
   Typography,
   Grid,
   Chip,
@@ -27,12 +26,12 @@ import {
   Schedule as ScheduleIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { H3, H5, H6 } from 'components/Typography';
-import FlexBox from 'components/FlexBox';
-import useTitle from 'hooks/useTitle';
-import AnimatedCard from 'components/common/AnimatedCard';
-import { genieacsApi } from 'api/genieacsApi';
-import { OLT } from 'api/types';
+import { H3, H5, H6 } from '@shared/ui/components/Typography';
+import FlexBox from '@shared/ui/components/FlexBox';
+import { useTitle } from '@shared/lib/hooks';
+import { AnimatedCard } from '@shared/ui/components';
+import { genieacsApi } from '@shared/api/genieacsApi';
+import { OLT } from '@shared/api/types';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -72,14 +71,6 @@ const OLTDetails: React.FC = () => {
       loadOLTDetails(id);
     }
   }, [id]);
-
-  // Evitar blink inicial
-  const [initialLoad, setInitialLoad] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setInitialLoad(false), 50);
-    return () => clearTimeout(timer);
-  }, []);
 
   const loadOLTDetails = async (oltId: string) => {
     try {

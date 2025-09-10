@@ -28,10 +28,10 @@ import {
   CheckCircle,
   Warning,
 } from '@mui/icons-material';
-import useTitle from 'hooks/useTitle';
-import AnimatedCard from '../components/common/AnimatedCard';
-import PendingOnuCard from '../components/common/PendingOnuCard';
-import { useProvisioning } from '../contexts/ProvisioningContext';
+import { useTitle } from '@shared/lib/hooks';
+import { AnimatedCard } from '@shared/ui/components';
+import PendingOnuCard from '@entities/onu/ui/PendingOnuCard';
+import { useProvisioning } from '@features/onu-provisioning';
 // import { PendingONU } from 'types/provisioning';
 
 const Provisioning: React.FC = () => {

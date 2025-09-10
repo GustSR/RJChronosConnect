@@ -1,4 +1,7 @@
-import { PendingONU, ProvisionedONU } from 'types/provisioning';
+import {
+  PendingONU,
+  ProvisionedONU,
+} from '@features/onu-provisioning/provisioning';
 
 // Dados mockados para ONUs pendentes
 export const mockPendingONUs: PendingONU[] = [
