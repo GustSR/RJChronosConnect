@@ -186,6 +186,11 @@ def get_mac_addresses(olt_id: int, port: str, ont_id_on_port: int):
 def get_autofind_onts(olt_id: int, port: str):
     return olt_service.get_autofind_onts(olt_id, port)
 
+@app.get("/api/v1/olts/{olt_id}/autofind-onts/all", response_model=List[ont_autofind_schema.OntAutofindInfo], summary="Get all autofind ONTs from entire OLT", tags=["ONTs"])
+def get_all_autofind_onts(olt_id: int):
+    validate_olt_id(olt_id)
+    return olt_service.get_all_autofind_onts(olt_id)
+
 @app.post("/api/v1/olts/{olt_id}/ports/{port}/onts/{ont_id_on_port}/confirm", response_model=command_response_schema.CommandResponse, summary="Confirm an autofind ONT", tags=["ONTs"])
 def confirm_ont(olt_id: int, port: str, ont_id_on_port: int, confirm_request: ont_confirm_schema.OntConfirmRequest):
     return olt_service.confirm_ont(olt_id, port, ont_id_on_port, confirm_request)

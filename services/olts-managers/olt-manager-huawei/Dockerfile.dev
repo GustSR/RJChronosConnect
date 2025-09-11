@@ -1,12 +1,12 @@
 # =================================================================
-# Dockerfile de PRODUÇÃO para OLT Manager Huawei (Python + FastAPI)
+# Dockerfile de DESENVOLVIMENTO para OLT Manager Huawei (Python + FastAPI)
 # =================================================================
 
 # Usar uma imagem base do Python moderna e leve
 FROM python:3.11-slim
 
-# Configurar variáveis de ambiente para produção
-# 1. Impede o Python de criar arquivos .pyc (otimização)
+# Configurar variáveis de ambiente para desenvolvimento
+# 1. Impede o Python de criar arquivos .pyc
 # 2. Garante que os logs apareçam em tempo real
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -14,37 +14,32 @@ ENV PYTHONUNBUFFERED=1
 # Instalar dependências do sistema necessárias para SSH/SNMP
 # openssh-client: Para conexões SSH com OLTs
 # net-tools: Utilitários de rede
+# procps: Para comandos como ps, top (úteis para debug)
 RUN apt-get update && apt-get install -y \
     openssh-client \
     net-tools \
+    procps \
     && rm -rf /var/lib/apt/lists/*
-
-# Criar usuário não-root para segurança
-RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 # Definir o diretório de trabalho
 WORKDIR /app
 
 # Copiar o arquivo de dependências e instalar PRIMEIRO
 # Otimização de cache: as dependências só serão reinstaladas
-# se o arquivo requirements.txt for alterado
+# se o arquivo requirements.txt for alterado.
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copiar o código-fonte da aplicação
-COPY ./src /app/src
+# Copiar o restante do código-fonte da aplicação
+COPY . .
 
-# Alterar propriedade dos arquivos para o usuário não-root
-RUN chown -R appuser:appuser /app
-
-# Mudar para o usuário não-root
-USER appuser
-
-# Expor a porta em que o serviço irá rodar
+# Expor a porta em que o Uvicorn irá rodar
 EXPOSE 8000
 
-# Configurações de produção do Uvicorn:
-# --workers: Múltiplos workers para melhor performance
-# --access-log: Logs de acesso habilitados
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--access-log"]
+# Comando para iniciar o servidor FastAPI com auto-reload
+# Ideal para desenvolvimento:
+# --reload: Reinicia o servidor a cada mudança no código
+# --log-level debug: Logs mais verbosos para desenvolvimento
+# --access-log: Habilita logs de acesso para debug
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--log-level", "debug", "--access-log"]

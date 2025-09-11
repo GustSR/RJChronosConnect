@@ -17,6 +17,7 @@ from ..commands.get_ont_port_state_snmp import GetOntPortStateSnmpCommand
 # GetMacAddressSnmpCommand - usando CLI version
 from ..commands.pon_port_control import PonPortControlCommand
 from ..commands.get_ont_autofind_cli import GetOntAutofindCliCommand
+from ..commands.get_all_autofind_onts import GetAllAutofindOntsCommand
 from ..commands.ont_confirm import OntConfirmCommand
 # GetOntRegisterInfoSnmpCommand - usando CLI version
 from ..commands.get_ont_port_attribute_snmp import GetOntPortAttributeSnmpCommand
@@ -262,6 +263,13 @@ def enable_pon_port(olt_id: int, port: str) -> Dict[str, Any]:
 
 def get_autofind_onts(olt_id: int, port: str) -> List[Dict[str, Any]]:
     return _execute_cli_command(olt_id, GetOntAutofindCliCommand, port=port)
+
+def get_all_autofind_onts(olt_id: int) -> List[Dict[str, Any]]:
+    """
+    Obtém todas as ONUs em autofind de todos os slots/portas PON de uma OLT.
+    Orquestra as chamadas para listar boards GPON e buscar autofind em cada porta.
+    """
+    return _execute_cli_command(olt_id, GetAllAutofindOntsCommand)
 
 def confirm_ont(olt_id: int, port: str, ont_id: int, confirm_data: ont_confirm_request.OntConfirmRequest) -> Dict[str, Any]:
     return _execute_cli_command(
