@@ -2,7 +2,7 @@ import re
 from typing import Dict, Any
 from .base_command import OLTCommand
 
-class DisplayStatisticsOntEthCommand(OLTCommand):
+class GetOntEthStatsCliCommand(OLTCommand):
     """Command to execute 'display statistics ont-eth' and parse its output."""
 
     def __init__(self, port: str, ont_id: int, eth_port_id: int):

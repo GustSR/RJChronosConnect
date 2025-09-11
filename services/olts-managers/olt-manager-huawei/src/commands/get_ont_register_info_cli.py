@@ -2,7 +2,7 @@ import re
 from typing import List, Dict, Any
 from .base_command import OLTCommand
 
-class DisplayOntRegisterInfoCommand(OLTCommand):
+class GetOntRegisterInfoCliCommand(OLTCommand):
     """Command to execute 'display ont register-info' and parse its output."""
 
     def __init__(self, port: str):

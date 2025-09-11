@@ -1,4 +1,8 @@
 from netmiko import ConnectHandler
+from ..core.config import settings
+from ..core.logging import get_logger
+
+logger = get_logger(__name__)
 
 class ConnectionManager:
     def __init__(self, host, username, password, device_type='huawei'):
@@ -17,42 +21,42 @@ class ConnectionManager:
             'username': username,
             'password': password,
             'port': 22,  # Default SSH port
-            'session_log': f'netmiko_session_{host}.log'
         }
+        if settings.netmiko_session_log:
+            self.device_params['session_log'] = f'netmiko_session_{host}.log'
 
     def connect(self):
         """Establishes an SSH connection to the OLT."""
         if self.connection and self.connection.is_alive():
-            # print("Connection already established.")
+            logger.debug(f"Conexão com {self.device_params['host']} já estabelecida.")
             return
         
         try:
-            # print(f"Connecting to {self.device_params['host']}...")
+            logger.info(f"Conectando a {self.device_params['host']}...")
             self.connection = ConnectHandler(**self.device_params)
-            # print("Connection successful.")
+            logger.info(f"Conexão com {self.device_params['host']} bem-sucedida.")
         except Exception as e:
-            # print(f"Failed to connect to {self.device_params['host']}: {e}")
+            logger.error(f"Falha ao conectar a {self.device_params['host']}: {e}")
             self.connection = None
-            raise  # Re-raise the exception to be handled by the caller
+            raise
 
     def disconnect(self):
         """Disconnects from the OLT."""
         if self.connection:
             self.connection.disconnect()
-            # print(f"Connection to {self.device_params['host']} disconnected.")
+            logger.info(f"Conexão com {self.device_params['host']} desconectada.")
             self.connection = None
 
     def send_command(self, command_string):
         """Sends a command to the OLT and returns the output."""
         if not self.connection or not self.connection.is_alive():
-            # This check is good, but the caller should manage the connection state.
-            raise ConnectionError(f"Not connected to the OLT {self.device_params['host']}.")
+            raise ConnectionError(f"Não conectado à OLT {self.device_params['host']}.")
         
         try:
             output = self.connection.send_command(command_string)
             return output
         except Exception as e:
-            # print(f"Failed to send command '{command_string}' to {self.device_params['host']}: {e}")
+            logger.error(f"Falha ao enviar comando '{command_string}' para {self.device_params['host']}: {e}")
             raise
 
     # Context manager support for automatic connection handling

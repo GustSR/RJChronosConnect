@@ -3,7 +3,7 @@ from typing import List, Dict, Any
 
 from .base_command import OLTCommand
 
-class DisplayOntAutofindCommand(OLTCommand):
+class GetOntAutofindCliCommand(OLTCommand):
     """Command to execute 'display ont autofind' and parse its output."""
 
     def __init__(self, port: str):

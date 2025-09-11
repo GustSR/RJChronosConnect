@@ -3,6 +3,11 @@ from pysnmp.hlapi import (
 )
 from .base_command import OLTCommand
 from typing import Dict, Any
+from ..core.parsers import snmp_converter
+from ..core.oid_mappings import oid_manager
+from ..core.logging import get_logger
+
+logger = get_logger(__name__)
 
 class GetOntOpticalInfoSnmpCommand(OLTCommand):
     """Command to get ONT optical info via SNMP."""
@@ -18,17 +23,22 @@ class GetOntOpticalInfoSnmpCommand(OLTCommand):
         Executes the SNMP GET command.
         Note: connection_manager and olt_version are not used for SNMP commands.
         """
-        # In a real MIB, the index would likely be a combination of port/ont_id.
-        # This is a placeholder for the real OID indexing logic.
-        # For example, ifIndex could be calculated based on port and ont_id.
-        if_index = f"1.3.6.1.4.1.2011.6.128.1.1.2.43.1.1.{self.ont_id}" # Example OID structure
-
-        # OIDs for optical info (These are examples and must be verified with the device MIB)
-        oids = {
-            'rx_power': f'1.3.6.1.4.1.2011.6.128.1.1.2.43.1.9.{self.ont_id}', # hwGponOntOpticalRxPower
-            'tx_power': f'1.3.6.1.4.1.2011.6.128.1.1.2.43.1.10.{self.ont_id}', # hwGponOntOpticalTxPower
-            'temperature': f'1.3.6.1.4.1.2011.6.128.1.1.2.43.1.3.{self.ont_id}' # hwGponOntOpticalTemperature
-        }
+        # Detecta modelo da OLT baseado no host ou usa padrão
+        olt_model = self._detect_olt_model()
+        
+        # Calcula índice baseado na porta e ONT ID
+        ont_index = self._calculate_ont_index(self.port_str, self.ont_id)
+        
+        # Obtém OIDs do gerenciador centralizado
+        oids = {}
+        for metric in ['rx_power', 'tx_power', 'temperature', 'voltage']:
+            oid = oid_manager.get_oid(olt_model, 'ont_optical', metric, ont_index)
+            if oid:
+                oids[metric] = oid
+            else:
+                logger.warning(f"OID não encontrado para {metric} no modelo {olt_model}")
+        
+        logger.debug(f"Consultando informações ópticas para ONT {self.ont_id} na porta {self.port_str}")
 
         results = {}
         for key, oid in oids.items():
@@ -43,19 +53,83 @@ class GetOntOpticalInfoSnmpCommand(OLTCommand):
             )
 
             if error_indication:
-                print(f"[SNMP Error] {error_indication}")
+                logger.error(f"Erro SNMP para {key}: {error_indication}")
                 results[key] = None
             elif error_status:
-                print(f"[SNMP Error] {error_status.prettyPrint()} at {error_index and var_binds[int(error_index) - 1][0] or '??'}")
+                logger.error(f"Erro SNMP para {key}: {error_status.prettyPrint()} at {error_index and var_binds[int(error_index) - 1][0] or '??'}")
                 results[key] = None
             else:
-                # The value is in var_binds[0][1]. It needs to be converted to a float.
-                # The value might need scaling (e.g., dividing by 100).
-                val = var_binds[0][1]
-                results[key] = float(val) / 100.0 # Assuming a scaling factor of 100
+                # Usa conversores robustos com metadados do OID
+                raw_val = var_binds[0][1]
+                mapping = oid_manager.get_oid_mapping(olt_model, 'ont_optical', key)
+                
+                if key in ['rx_power', 'tx_power']:
+                    scaling = mapping.scaling_factor if mapping else 100.0
+                    results[key] = snmp_converter.convert_optical_power(raw_val, scaling_factor=scaling)
+                elif key == 'temperature':
+                    scaling = mapping.scaling_factor if mapping else 1.0
+                    results[key] = snmp_converter.convert_temperature(raw_val, scaling_factor=scaling)
+                elif key == 'voltage':
+                    scaling = mapping.scaling_factor if mapping else 100.0
+                    try:
+                        results[key] = round(float(raw_val) / scaling, 2)
+                    except (ValueError, TypeError):
+                        results[key] = None
+                else:
+                    # Valor genérico
+                    try:
+                        results[key] = float(raw_val)
+                    except (ValueError, TypeError):
+                        results[key] = str(raw_val)
+                
+                logger.debug(f"Valor SNMP convertido para {key}: {results[key]} {mapping.unit if mapping else ''}")
 
         return results
 
+    def _detect_olt_model(self) -> str:
+        """
+        Detecta o modelo da OLT baseado no host ou outras informações.
+        
+        Returns:
+            Modelo detectado da OLT
+        """
+        # Por enquanto retorna padrão, mas pode ser expandido para:
+        # - Consultar SNMP sysDescr
+        # - Usar mapeamento de IPs para modelos
+        # - Buscar em banco de dados de configuração
+        return "MA5600T"
+    
+    def _calculate_ont_index(self, port_str: str, ont_id: int) -> str:
+        """
+        Calcula o índice SNMP baseado na porta e ONT ID.
+        
+        Args:
+            port_str: String da porta (frame/slot/port)
+            ont_id: ID da ONT
+            
+        Returns:
+            Índice calculado para uso em OIDs
+        """
+        try:
+            # Parse da string da porta
+            parts = port_str.split('/')
+            if len(parts) != 3:
+                logger.warning(f"Formato de porta inválido: {port_str}")
+                return str(ont_id)  # Fallback simples
+            
+            frame, slot, port = map(int, parts)
+            
+            # Fórmula baseada na documentação Huawei
+            # Precisa ser validada com equipamentos reais
+            calculated_index = (frame * 1000000) + (slot * 10000) + (port * 100) + ont_id
+            
+            logger.debug(f"Calculado índice SNMP: {calculated_index} para {port_str}/{ont_id}")
+            return str(calculated_index)
+            
+        except (ValueError, IndexError) as e:
+            logger.error(f"Erro ao calcular índice SNMP: {e}")
+            return str(ont_id)  # Fallback
+    
     def _parse_output(self, raw_output: str, olt_version: str) -> Dict[str, Any]:
-        # Not used for SNMP commands as parsing happens directly in execute.
+        # Não usado para comandos SNMP pois o parsing acontece diretamente no execute.
         pass

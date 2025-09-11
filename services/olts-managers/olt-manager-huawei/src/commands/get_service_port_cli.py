@@ -3,7 +3,7 @@ from typing import List, Dict, Any
 
 from .base_command import OLTCommand
 
-class DisplayServicePortCommand(OLTCommand):
+class GetServicePortCliCommand(OLTCommand):
     """Command to execute 'display service-port' for a specific ONT."""
 
     def __init__(self, port: str, ont_id: int):

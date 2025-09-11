@@ -2,7 +2,7 @@ import re
 from typing import List, Dict, Any
 from .base_command import OLTCommand
 
-class DisplayOntFailedCommand(OLTCommand):
+class GetOntFailedCliCommand(OLTCommand):
     """Command to execute 'display ont failed' and parse its output."""
 
     def execute(self, connection_manager, olt_version: str) -> List[Dict[str, Any]]:

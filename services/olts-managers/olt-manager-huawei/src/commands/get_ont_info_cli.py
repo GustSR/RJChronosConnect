@@ -3,8 +3,8 @@ from typing import List, Dict, Any
 
 from .base_command import OLTCommand
 
-class DisplayOntInfoCommand(OLTCommand):
-    """Command to execute 'display ont info' and parse its output."""
+class GetOntInfoCliCommand(OLTCommand):
+    """Command to execute 'display ont info' and parse its output via CLI."""
 
     def __init__(self, port: str = None, ont_id: int = None, serial_number: str = None):
         if not any([port, serial_number]):

@@ -3,7 +3,7 @@ from typing import List, Dict, Any
 
 from .base_command import OLTCommand
 
-class DisplayMacAddressCommand(OLTCommand):
+class GetMacAddressCliCommand(OLTCommand):
     """Command to execute 'display mac-address' and parse its output."""
 
     def __init__(self, port: str, ont_id: int):

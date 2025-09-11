@@ -4,3 +4,5 @@ netmiko
 pysnmp
 pika
 requests
+pydantic
+PyYAML

@@ -1,100 +1,33 @@
-# CLAUDE.md
+# Diretrizes para Gemini neste Projeto
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## 1. Adesão ao Stack Tecnológico
 
-## Project Overview
+Ao realizar modificações, adições ou qualquer outra tarefa no código, a preferência principal e obrigatória é a utilização exclusiva das ferramentas, bibliotecas, padrões e versões já estabelecidos no projeto.
 
-RJChronosConnect is a network equipment management and monitoring platform for TR-069 devices (CPEs, ONUs) using GenieACS as the auto-configuration server (ACS). The system provides a modern web interface for real-time diagnostics, remote configuration, and alert management.
+## 2. Solicitação para Novas Ferramentas
 
-## Architecture
+Caso seja estritamente necessário ou altamente recomendável o uso de uma nova ferramenta, biblioteca, módulo ou qualquer outro recurso que não faça parte do padrão atual, é obrigatório:
+1.  Informar claramente a necessidade e a recomendação.
+2.  Justificar o motivo da saída do padrão.
+3.  *Pedir autorização explícita* antes de implementar a nova tecnologia.
 
-The platform uses a microservices architecture with Docker containerization:
+## 3. Idioma de Comunicação
 
-- **Frontend**: React application with Vite, TypeScript, Material-UI, and React Router
-- **Backend**: FastAPI (Python) API serving as the core system
-- **GenieACS**: TR-069 auto-configuration server for device communication
-- **Databases**: PostgreSQL (application data) and MongoDB (GenieACS data)
-- **Additional Services**: Nginx reverse proxy, Redis caching
+Todas as interações, respostas, explicações e comentários devem ser realizadas exclusivamente em *Português (Brasil)*.
 
-## Development Commands
+## 4. Qualidade de Código e Boas Práticas
 
-### Environment Setup
-```bash
-# Start development environment (with live reload)
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+Ao escrever ou modificar código, siga sempre as melhores práticas de desenvolvimento de software. Isso inclui, mas não se limita a:
+- *Princípios SOLID*: Garanta que o código seja coeso, desacoplado e fácil de manter.
+- *Código Limpo (Clean Code)*: Escreva código legível, simples e direto. Use nomes de variáveis e funções significativos.
+- *Padrões de Mercado*: Adote os padrões de projeto e arquitetura mais consolidados e adequados ao contexto da aplicação.
 
-# Stop development environment
-docker compose -f docker-compose.yml -f docker-compose.dev.yml down
+## 5. Outros Princípios Fundamentais de Design
 
-# Start production environment
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
-```
-
-### Frontend (React + Vite)
-```bash
-# Development server (inside container or locally)
-npm run dev
-
-# Build for production
-npm run build
-
-# Type checking
-npm run check
-
-# Linting
-npm run lint
-
-# Testing
-npm test
-npm run test:ui
-npm run coverage
-```
-
-### Backend (FastAPI)
-The backend uses FastAPI with the following structure:
-- `services/backend-api/app/main.py`: Main FastAPI application
-- `services/backend-api/app/services/`: Service layer (GenieACS client, transformers)
-
-Key dependencies: FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, Celery
-
-## Service Access Points
-
-- **Main Application**: http://localhost:8081
-- **Backend API**: http://localhost:8081/api
-- **GenieACS UI**: http://localhost:8081/ui
-- **GenieACS MCP Panel**: http://localhost:8080
-- **PostgreSQL**: localhost:5432
-- **GenieACS TR-069**: localhost:7547
-- **GenieACS API**: localhost:7557
-
-## Docker Services
-
-All services run in the `rjchronos-net` network:
-
-- `frontend`: React app (port 8081 via nginx)
-- `backend`: FastAPI app (internal)
-- `genieacs`: TR-069 server (ports 7547, 7557, 7567, 3001)
-- `reverse-proxy`: Nginx (port 8081)
-- `db-app`: PostgreSQL (port 5432)
-- `db-acs`: MongoDB (internal)
-- `redis`: Redis cache (internal)
-
-## Key Integration Points
-
-- **GenieACS Integration**: Backend communicates with GenieACS via HTTP API at `http://genieacs:7557/`
-- **Device Transformation**: The `genieacs_transformers.py` module handles conversion between GenieACS data format and application models
-- **TR-069 Communication**: GenieACS handles all TR-069 protocol communication with network devices
-
-## Environment Variables
-
-Create `.env` file from `.env.example` with:
-- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`: Database credentials
-- `UI_JWT_SECRET`: GenieACS UI authentication secret
-
-## CI/CD
-
-GitHub Actions workflow (`.github/workflows/ci.yml`) runs different tests based on branch:
-- `dev` branch: Tests development environment
-- `main` branch: Tests production environment with healthchecks
-
-The workflow uses `docker compose` commands to build and verify services are running correctly.
+Além do SOLID e Clean Code, os seguintes princípios devem ser considerados:
+- *DRY (Don't Repeat Yourself):* Evite a repetição de código, abstraindo lógicas comuns para um único ponto.
+- *KISS (Keep It Simple, Stupid):* Prefira soluções simples e diretas em vez de complexidade desnecessária.
+- *YAGNI (You Ain't Gonna Need It):* Não implemente funcionalidades que não sejam estritamente necessárias para os requisitos atuais.
+- *SoC (Separation of Concerns):* Separe o código em seções distintas, cada uma com uma responsabilidade clara e isolada.
+- *Law of Demeter:* Reduza o acoplamento entre objetos, evitando cadeias longas de chamadas. Um objeto deve interagir apenas com seus "vizinhos" imediatos.
+- *Alta Coesão e Baixo Acoplamento:* Garanta que os componentes de um módulo tenham responsabilidades relacionadas (alta coesão) e que sejam o mais independentes possível de outros módulos (baixo acoplamento).

@@ -8,7 +8,7 @@ from typing import List, Dict, Any
 
 from .base_command import OLTCommand
 
-class DisplayOntTrafficCommand(OLTCommand):
+class GetOntTrafficCliCommand(OLTCommand):
     """Executa 'display ont traffic' e faz o parsing do resultado."""
 
     def __init__(self, port: str, ont_id: int):
