@@ -19,6 +19,7 @@ const ONTStatusChart: FC = () => {
   const [statusData, setStatusData] = useState<ONTStatusData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hoveredValue, setHoveredValue] = useState<string | null>(null);
 
   const fetchONTStatusData = async () => {
     try {
@@ -97,6 +98,15 @@ const ONTStatusChart: FC = () => {
       toolbar: {
         show: false,
       },
+      events: {
+        dataPointMouseEnter: function(event: any, chartContext: any, config: any) {
+          const percentages = [statusData!.onlinePercentage, statusData!.offlinePercentage, statusData!.toProvisionPercentage];
+          setHoveredValue(`${percentages[config.dataPointIndex]}%`);
+        },
+        dataPointMouseLeave: function(event: any, chartContext: any, config: any) {
+          setHoveredValue(null);
+        }
+      },
     },
     colors: ['#10b981', '#ef4444', '#f59e0b'],
     labels: ['ONTs Online', 'ONTs Offline', 'Provisionar'],
@@ -113,21 +123,25 @@ const ONTStatusChart: FC = () => {
           labels: {
             show: true,
             name: {
-              show: false,
+              show: true,
+              fontSize: '14px',
+              fontWeight: 500,
+              color: '#64748b',
             },
             value: {
               show: true,
               fontSize: '24px',
               fontWeight: 600,
               color: '#1e293b',
-              formatter: () => `${statusData.onlinePercentage}%`,
+              formatter: () => hoveredValue || `${statusData.onlinePercentage}%`,
             },
             total: {
               show: true,
-              label: 'Online',
+              label: 'Total ONTs',
               fontSize: '14px',
               fontWeight: 500,
               color: '#64748b',
+              formatter: () => statusData.total.toString(),
             },
           },
         },
@@ -135,6 +149,9 @@ const ONTStatusChart: FC = () => {
     },
     stroke: {
       show: false,
+    },
+    tooltip: {
+      enabled: true,
     },
     responsive: [
       {

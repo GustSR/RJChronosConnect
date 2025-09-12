@@ -7,7 +7,7 @@ import {
   CloudDownload,
   Router,
   Warning,
-  SignalWifi4Bar,
+  SignalWifiOff,
 } from '@mui/icons-material';
 import { AnimatedCard } from '@shared/ui';
 import { genieacsApi } from '@shared/api/genieacsApi';
@@ -79,12 +79,12 @@ const NetworkStatsCards: FC = () => {
         },
         {
           id: 2,
-          title: 'Tráfego Total',
+          title: 'ONUs Offline',
           value: '---',
-          trend: 'up',
+          trend: 'down',
           trendValue: '---%',
-          icon: <CloudDownload sx={{ fontSize: 24 }} />,
-          iconColor: '#10b981',
+          icon: <SignalWifiOff sx={{ fontSize: 24 }} />,
+          iconColor: '#ef4444',
         },
         {
           id: 3,
@@ -97,12 +97,12 @@ const NetworkStatsCards: FC = () => {
         },
         {
           id: 4,
-          title: 'WiFi Habilitado',
+          title: 'Tráfego Total',
           value: '---',
           trend: 'up',
           trendValue: '---%',
-          icon: <SignalWifi4Bar sx={{ fontSize: 24 }} />,
-          iconColor: '#8b5cf6',
+          icon: <CloudDownload sx={{ fontSize: 24 }} />,
+          iconColor: '#10b981',
         },
       ];
     }
@@ -115,8 +115,8 @@ const NetworkStatsCards: FC = () => {
       metrics.olt_stats?.online_onus || 0,
       metrics.olt_stats?.total_onus || 0
     );
-    const wifiTrend = calculateTrend(
-      metrics.wifi_stats?.total_wifi_enabled || 0,
+    const onuOfflineTrend = calculateTrend(
+      (metrics.olt_stats?.total_onus || 0) - (metrics.olt_stats?.online_onus || 0),
       metrics.olt_stats?.total_onus || 0
     );
 
@@ -132,16 +132,12 @@ const NetworkStatsCards: FC = () => {
       },
       {
         id: 2,
-        title: 'Tráfego Total',
-        value: `${(
-          (metrics.traffic_stats?.total_bandwidth || 0) / 1024
-        ).toFixed(1)} TB`,
-        trend: 'up',
-        trendValue: `↑${(metrics.traffic_stats?.upload || 0).toFixed(1)} ↓${(
-          metrics.traffic_stats?.download || 0
-        ).toFixed(1)}`,
-        icon: <CloudDownload sx={{ fontSize: 24 }} />,
-        iconColor: '#10b981',
+        title: 'ONUs Offline',
+        value: `${((metrics.olt_stats?.total_onus || 0) - (metrics.olt_stats?.online_onus || 0)).toLocaleString()}`,
+        trend: 'down',
+        trendValue: onuOfflineTrend.value,
+        icon: <SignalWifiOff sx={{ fontSize: 24 }} />,
+        iconColor: '#ef4444',
       },
       {
         id: 3,
@@ -156,14 +152,16 @@ const NetworkStatsCards: FC = () => {
       },
       {
         id: 4,
-        title: 'WiFi Habilitado',
+        title: 'Tráfego Total',
         value: `${(
-          metrics.wifi_stats?.total_wifi_enabled || 0
-        ).toLocaleString()}`,
-        trend: wifiTrend.trend,
-        trendValue: wifiTrend.value,
-        icon: <SignalWifi4Bar sx={{ fontSize: 24 }} />,
-        iconColor: '#8b5cf6',
+          (metrics.traffic_stats?.total_bandwidth || 0) / 1024
+        ).toFixed(1)} TB`,
+        trend: 'up',
+        trendValue: `↑${(metrics.traffic_stats?.upload || 0).toFixed(1)} ↓${(
+          metrics.traffic_stats?.download || 0
+        ).toFixed(1)}`,
+        icon: <CloudDownload sx={{ fontSize: 24 }} />,
+        iconColor: '#10b981',
       },
     ];
   };

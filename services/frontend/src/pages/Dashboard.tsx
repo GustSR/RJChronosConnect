@@ -42,9 +42,9 @@ const Dashboard: FC = () => {
               <OLTPerformanceChart />
             </Grid>
 
-            {/* Grid de OLTs - Largura Total */}
+            {/* Top Traffic Sources - Movido da sidebar para ter mais espaço */}
             <Grid item xs={12}>
-              <OLTGrid />
+              <TopTrafficSources />
             </Grid>
           </Grid>
         </Grid>
@@ -57,11 +57,6 @@ const Dashboard: FC = () => {
               <ONTStatusChart />
             </Grid>
 
-            {/* Top Traffic Sources */}
-            <Grid item xs={12}>
-              <TopTrafficSources />
-            </Grid>
-
             {/* OLT Monitoring */}
             <Grid item xs={12}>
               <OLTMonitoring />
@@ -72,6 +67,13 @@ const Dashboard: FC = () => {
               <UserActivity />
             </Grid>
           </Grid>
+        </Grid>
+      </Grid>
+
+      {/* Status das OLTs - Largura Total na parte inferior */}
+      <Grid container spacing={3} sx={{ mt: 3 }}>
+        <Grid item xs={12}>
+          <OLTGrid />
         </Grid>
       </Grid>
     </Box>

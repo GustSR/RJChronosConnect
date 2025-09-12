@@ -23,6 +23,8 @@ const ForgetPassword = Loadable(
 
 // Dashboard pages
 const Dashboard = Loadable(lazy(() => import('../pages/Dashboard')));
+const DashboardClientes = Loadable(lazy(() => import('../pages/DashboardClientes')));
+const DashboardOLTs = Loadable(lazy(() => import('../pages/DashboardOLTs')));
 
 // Kanban page
 const Kanban = Loadable(lazy(() => import('../pages/Kanban')));
@@ -107,6 +109,14 @@ const routes = [
       {
         path: '',
         element: <Dashboard />,
+      },
+      {
+        path: 'clientes',
+        element: <DashboardClientes />,
+      },
+      {
+        path: 'olts',
+        element: <DashboardOLTs />,
       },
       {
         path: 'kanban',

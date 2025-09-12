@@ -15,6 +15,14 @@ const navigations = [
         name: 'Análises Geral',
         path: '/dashboard',
       },
+      {
+        name: 'Dashboard de Clientes',
+        path: '/dashboard/clientes',
+      },
+      {
+        name: 'Dashboard de OLTs',
+        path: '/dashboard/olts',
+      },
     ],
   },
 
