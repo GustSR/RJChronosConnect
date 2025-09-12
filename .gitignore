@@ -30,3 +30,6 @@ Thumbs.db
 # Ignorar arquivos do Gemini/Claude
 GEMINI.md
 .claude
+
+.gemini/
+gha-creds-*.json

@@ -1,0 +1,6 @@
+olts:
+  - id: 1
+    host: 127.0.0.1
+    username: test
+    password: test
+    snmp_community: public

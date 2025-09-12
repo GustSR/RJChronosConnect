@@ -1,2 +1,8 @@
 fastapi
 uvicorn[standard]
+netmiko
+pysnmp
+pika
+requests
+pydantic
+PyYAML
