@@ -56,7 +56,11 @@ const ForgetPassword: FC = () => {
         </FlexBox>
 
         <FlexBox justifyContent="space-between" flexWrap="wrap" my={2}>
-          <form noValidate onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
+          <form
+            noValidate
+            onSubmit={handleSubmit(onSubmit)}
+            style={{ width: '100%' }}
+          >
             <LightTextField
               fullWidth
               type="email"
@@ -67,8 +71,8 @@ const ForgetPassword: FC = () => {
                 required: 'Email is required',
                 pattern: {
                   value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: 'Must be a valid email'
-                }
+                  message: 'Must be a valid email',
+                },
               })}
             />
 

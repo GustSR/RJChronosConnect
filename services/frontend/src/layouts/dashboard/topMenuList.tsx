@@ -1,40 +1,43 @@
-import { Analytics, DeviceHub, People, Router } from '@mui/icons-material';
+import { duotone } from '@shared/ui/icons/duotone';
 
-const index = [
-  // Dashboard Section
+// Navegação no formato Uko Template com ícones duotone
+const navigations = [
+  // Dashboard Section - Label
   {
-    title: 'Dashboard',
-    Icon: Analytics,
-    category: 'dashboard',
+    type: 'label',
+    name: 'DASHBOARD',
+  },
+  {
+    name: 'Dashboard',
+    icon: duotone.Analytics,
     children: [
       {
-        title: 'Análises Geral',
+        name: 'Análises Geral',
         path: '/dashboard',
       },
     ],
   },
 
-  // Management Section
+  // Management Section - Label
   {
-    title: 'Provisionamento',
-    Icon: Router,
-    category: 'management',
+    type: 'label',
+    name: 'MANAGEMENT',
+  },
+  {
+    name: 'Provisionamento',
+    icon: duotone.Router,
     path: '/provisionar',
   },
   {
-    title: 'Clientes',
-    Icon: People,
-    category: 'management',
+    name: 'Clientes',
+    icon: duotone.UserGroup,
     path: '/clientes',
   },
-
-  // OLT Management Section
   {
-    title: 'Gerenciar OLTs',
-    Icon: DeviceHub,
-    category: 'management',
+    name: 'Gerenciar OLTs',
+    icon: duotone.DeviceHub,
     path: '/olts',
   },
 ];
 
-export default index;
+export default navigations;

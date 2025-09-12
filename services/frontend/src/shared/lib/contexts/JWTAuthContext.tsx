@@ -51,7 +51,7 @@ const initialState: AuthState = {
 
 const isValidToken = (accessToken: string) => {
   if (!accessToken) return false;
-  
+
   // Simplified validation - just check if token exists
   // In production, you should implement proper JWT validation
   return true;
@@ -123,20 +123,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const login = async (email: string, password: string) => {
     console.log('Login called with:', { email, password });
-    
+
     try {
       const response = await axios.post('/api/auth/login', {
         email,
         password,
       });
-      
+
       console.log('Login response:', response);
       console.log('Login response.data:', response.data);
       console.log('Login response.status:', response.status);
-      
+
       //@ts-expect-error - response data typing
       const { accessToken, user } = response.data;
-      
+
       console.log('Extracted accessToken:', accessToken);
       console.log('Extracted user:', user);
 
@@ -147,7 +147,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           user,
         },
       });
-      
+
       console.log('Login successful, user set');
     } catch (error) {
       console.error('Login failed:', error);

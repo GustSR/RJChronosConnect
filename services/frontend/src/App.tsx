@@ -16,9 +16,7 @@ const App: FC = () => {
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={appTheme}>
         <CssBaseline />
-        <ProvisioningProvider>
-          {allPages}
-        </ProvisioningProvider>
+        <ProvisioningProvider>{allPages}</ProvisioningProvider>
       </ThemeProvider>
     </StyledEngineProvider>
   );

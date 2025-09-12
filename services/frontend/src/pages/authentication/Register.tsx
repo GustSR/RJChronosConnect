@@ -101,7 +101,11 @@ const Register: FC = () => {
             </H3>
           </Divider>
 
-          <form noValidate onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
+          <form
+            noValidate
+            onSubmit={handleSubmit(onSubmit)}
+            style={{ width: '100%' }}
+          >
             <FlexBox justifyContent="space-between" flexWrap="wrap">
               <TextFieldWrapper>
                 <LightTextField
@@ -111,7 +115,7 @@ const Register: FC = () => {
                   error={Boolean(errors.name)}
                   helperText={errors.name?.message}
                   {...register('name', {
-                    required: 'Name is required'
+                    required: 'Name is required',
                   })}
                 />
               </TextFieldWrapper>
@@ -127,8 +131,8 @@ const Register: FC = () => {
                     required: 'Email is required',
                     pattern: {
                       value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Must be a valid email'
-                    }
+                      message: 'Must be a valid email',
+                    },
                   })}
                 />
               </TextFieldWrapper>
@@ -145,8 +149,9 @@ const Register: FC = () => {
                   required: 'Password is required',
                   minLength: {
                     value: 6,
-                    message: 'Password should be of minimum 6 characters length'
-                  }
+                    message:
+                      'Password should be of minimum 6 characters length',
+                  },
                 })}
               />
             </TextFieldWrapper>

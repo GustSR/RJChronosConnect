@@ -47,10 +47,12 @@ const userColumns: ColumnDef<UserData>[] = [
     cell: ({ getValue }) => {
       const status = getValue<string>();
       return (
-        <span style={{ 
-          color: status === 'active' ? 'green' : 'red',
-          fontWeight: 'bold'
-        }}>
+        <span
+          style={{
+            color: status === 'active' ? 'green' : 'red',
+            fontWeight: 'bold',
+          }}
+        >
           {status}
         </span>
       );
@@ -60,8 +62,20 @@ const userColumns: ColumnDef<UserData>[] = [
 
 // 3. Dados de exemplo
 const userData: UserData[] = [
-  { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Admin', status: 'active' },
-  { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'User', status: 'inactive' },
+  {
+    id: 1,
+    name: 'John Doe',
+    email: 'john@example.com',
+    role: 'Admin',
+    status: 'active',
+  },
+  {
+    id: 2,
+    name: 'Jane Smith',
+    email: 'jane@example.com',
+    role: 'User',
+    status: 'inactive',
+  },
   // ... mais dados
 ];
 
@@ -83,13 +97,18 @@ export const UserTableExample = () => {
 };
 
 // 5. Helper para converter formato antigo para o novo (compatibilidade)
-export const convertLegacyColumns = (legacyColumns: any[]): ColumnDef<any>[] => {
+export const convertLegacyColumns = (
+  legacyColumns: any[]
+): ColumnDef<any>[] => {
   return legacyColumns.map((col) => ({
     id: col.accessor || col.id,
     header: col.Header || col.header,
     accessorKey: col.accessor,
     enableSorting: true,
-    cell: col.Cell ? ({ getValue, row }) => col.Cell({ value: getValue(), row: row.original }) : undefined,
+    cell: col.Cell
+      ? ({ getValue, row }) =>
+          col.Cell({ value: getValue(), row: row.original })
+      : undefined,
   }));
 };
 

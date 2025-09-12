@@ -35,7 +35,8 @@ const userList = [
 
 Mock.onPost('/api/auth/login').reply((config) => {
   try {
-    const data = typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
+    const data =
+      typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
     const { email } = data;
     const user = userList.find((user) => user.email === email);
     if (!user) {
@@ -63,7 +64,8 @@ Mock.onPost('/api/auth/login').reply((config) => {
 
 Mock.onPost('/api/auth/register').reply((config) => {
   try {
-    const data = typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
+    const data =
+      typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
     const { email, username } = data;
     const user = userList.find((user) => user.email === email);
     if (user) {

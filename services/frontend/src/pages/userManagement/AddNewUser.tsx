@@ -162,7 +162,7 @@ const AddNewUser: FC = () => {
                       error={Boolean(errors.fullName)}
                       helperText={errors.fullName?.message}
                       {...register('fullName', {
-                        required: 'Name is Required!'
+                        required: 'Name is Required!',
                       })}
                     />
                   </Grid>
@@ -177,8 +177,8 @@ const AddNewUser: FC = () => {
                         required: 'Email is Required!',
                         pattern: {
                           value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                          message: 'Must be a valid email'
-                        }
+                          message: 'Must be a valid email',
+                        },
                       })}
                     />
                   </Grid>
@@ -193,8 +193,8 @@ const AddNewUser: FC = () => {
                         required: 'Phone is Required!',
                         minLength: {
                           value: 8,
-                          message: 'Phone must be at least 8 characters'
-                        }
+                          message: 'Phone must be at least 8 characters',
+                        },
                       })}
                     />
                   </Grid>
@@ -206,7 +206,7 @@ const AddNewUser: FC = () => {
                       error={Boolean(errors.country)}
                       helperText={errors.country?.message}
                       {...register('country', {
-                        required: 'Country is Required!'
+                        required: 'Country is Required!',
                       })}
                     />
                   </Grid>
@@ -218,7 +218,7 @@ const AddNewUser: FC = () => {
                       error={Boolean(errors.state)}
                       helperText={errors.state?.message}
                       {...register('state', {
-                        required: 'State is Required!'
+                        required: 'State is Required!',
                       })}
                     />
                   </Grid>
@@ -230,7 +230,7 @@ const AddNewUser: FC = () => {
                       error={Boolean(errors.city)}
                       helperText={errors.city?.message}
                       {...register('city', {
-                        required: 'City is Required!'
+                        required: 'City is Required!',
                       })}
                     />
                   </Grid>
@@ -242,7 +242,7 @@ const AddNewUser: FC = () => {
                       error={Boolean(errors.address)}
                       helperText={errors.address?.message}
                       {...register('address', {
-                        required: 'Address is Required!'
+                        required: 'Address is Required!',
                       })}
                     />
                   </Grid>
@@ -254,7 +254,7 @@ const AddNewUser: FC = () => {
                       error={Boolean(errors.zip)}
                       helperText={errors.zip?.message}
                       {...register('zip', {
-                        required: 'Zip is Required!'
+                        required: 'Zip is Required!',
                       })}
                     />
                   </Grid>
@@ -271,7 +271,7 @@ const AddNewUser: FC = () => {
                         '& .MuiOutlinedInput-root textarea': { padding: 0 },
                       }}
                       {...register('about', {
-                        required: 'About is Required!'
+                        required: 'About is Required!',
                       })}
                     />
                   </Grid>

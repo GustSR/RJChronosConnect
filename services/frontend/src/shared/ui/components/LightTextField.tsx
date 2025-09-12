@@ -19,9 +19,11 @@ const StyledTextField = styled(TextField)<TextFieldProps>(({ theme }) => ({
   },
 }));
 
-const LightTextField = React.forwardRef<HTMLInputElement, TextFieldProps>((props, ref) => {
-  return <StyledTextField {...props} ref={ref} />;
-});
+const LightTextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
+  (props, ref) => {
+    return <StyledTextField {...props} ref={ref} />;
+  }
+);
 
 LightTextField.displayName = 'LightTextField';
 
