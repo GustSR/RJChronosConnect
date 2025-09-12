@@ -6,7 +6,6 @@ import {
 import 'nprogress/nprogress.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import 'react-image-lightbox/style.css';
 import { BrowserRouter } from 'react-router-dom';
 import 'simplebar/dist/simplebar.min.css';
 import App from './App';

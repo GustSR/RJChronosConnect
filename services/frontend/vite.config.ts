@@ -32,13 +32,6 @@ export default defineConfig({
       '@types': resolve(__dirname, './src/types'),
       '@assets': resolve(__dirname, './src/assets'),
       
-      // Polyfills COMPLETOS para jsonwebtoken
-      buffer: 'buffer',
-      process: 'process/browser',
-      crypto: 'crypto-browserify',
-      stream: 'stream-browserify',
-      util: 'util',
-      events: 'events'
     }
   },
   server: {
@@ -58,14 +51,12 @@ export default defineConfig({
     rollupOptions: {
       external: [],
       output: {
-        globals: {
-          buffer: 'Buffer'
-        },
+        globals: {},
         manualChunks: {
           vendor: ['react', 'react-dom'],
           mui: ['@mui/material', '@mui/icons-material'],
           charts: ['apexcharts', 'react-apexcharts'],
-          forms: ['formik', 'yup']
+          forms: ['react-hook-form', 'yup']
         }
       }
     }
@@ -78,9 +69,7 @@ export default defineConfig({
       '@emotion/react', 
       '@emotion/styled',
       'apexcharts',
-      'react-apexcharts',
-      'buffer',
-      'process'
+      'react-apexcharts'
     ]
   }
 })

@@ -2,7 +2,6 @@ import { Badge, Box, ButtonBase, Divider, styled } from '@mui/material';
 import { FlexBox, H6, Small, Tiny, UkoAvatar } from '@shared/ui/components';
 import { useAuth } from '@shared/lib/hooks';
 import { FC, Fragment, useRef, useState } from 'react';
-import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import PopoverLayout from './PopoverLayout';
 
@@ -97,7 +96,7 @@ const ProfilePopover: FC = () => {
           <StyledSmall
             onClick={() => {
               logout();
-              toast.error('You Logout Successfully');
+              console.log('You Logout Successfully');
             }}
           >
             Sign Out

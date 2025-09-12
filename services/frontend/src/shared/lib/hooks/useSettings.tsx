@@ -1,4 +1,4 @@
-import { SettingsContext } from '../contexts';
+import { SettingsContext } from '@shared/lib/contexts';
 import { useContext } from 'react';
 
 const useSettings = () => useContext(SettingsContext);

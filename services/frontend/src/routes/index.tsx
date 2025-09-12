@@ -1,5 +1,5 @@
 import { AuthGuard, GuestGuard } from '@shared/ui/authentication';
-import DashboardLayout from '../layouts/dashboard/DashboardLayout';
+import DashboardLayout from '@/layouts/dashboard/DashboardLayout';
 import { LoadingScreen } from '@shared/ui';
 import { FC, lazy, LazyExoticComponent, Suspense } from 'react';
 import { Navigate } from 'react-router-dom';

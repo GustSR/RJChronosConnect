@@ -10,62 +10,52 @@ import {
 } from '@mui/material';
 import { SocialIconButton, TextFieldWrapper } from '@shared/ui/authentication';
 import { FlexBox, LightTextField, H1, H3, Small } from '@shared/ui/components';
-import { useFormik } from 'formik';
+import { useForm } from 'react-hook-form';
 import { useAuth } from '@shared/lib/hooks';
 import FacebookIcon from 'icons/FacebookIcon';
 import GoogleIcon from 'icons/GoogleIcon';
 import { FC, useState } from 'react';
-import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
-import * as Yup from 'yup';
 
 const Register: FC = () => {
-  const { register } = useAuth();
+  const { register: registerUser } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const initialValues = {
-    name: '',
-    email: '',
-    password: '',
-    terms: true,
-    submit: null,
-  };
-  // form field value validation schema
-  const validationSchema = Yup.object().shape({
-    name: Yup.string().required('Name is required'),
-    email: Yup.string()
-      .email('Must be a valid email')
-      .max(255)
-      .required('Email is required'),
-    password: Yup.string()
-      .min(6, 'Password should be of minimum 6 characters length')
-      .required('Password is required'),
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    watch,
+  } = useForm({
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      terms: true,
+    },
   });
 
-  const { errors, values, touched, handleBlur, handleChange, handleSubmit } =
-    useFormik({
-      initialValues,
-      validationSchema,
-      onSubmit: async (values: {
-        email: string;
-        password: string;
-        name: string;
-      }) => {
-        setLoading(true);
-        try {
-          await register(values.email, values.password, values.name);
-          setLoading(false);
-          toast.success('You registered successfully');
-          navigate('/dashboard');
-        } catch (error: unknown) {
-          const err = error as { message?: string };
-          setError(err?.message);
-          setLoading(false);
-        }
-      },
-    });
+  const watchedValues = watch();
+
+  const onSubmit = async (values: {
+    email: string;
+    password: string;
+    name: string;
+  }) => {
+    setLoading(true);
+    try {
+      await registerUser(values.email, values.password, values.name);
+      setLoading(false);
+      console.log('You registered successfully');
+      navigate('/dashboard');
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      setError(err?.message);
+      setLoading(false);
+    }
+  };
 
   return (
     <FlexBox
@@ -111,33 +101,35 @@ const Register: FC = () => {
             </H3>
           </Divider>
 
-          <form noValidate onSubmit={handleSubmit} style={{ width: '100%' }}>
+          <form noValidate onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
             <FlexBox justifyContent="space-between" flexWrap="wrap">
               <TextFieldWrapper>
                 <LightTextField
                   fullWidth
-                  name="name"
                   type="text"
                   label="Name"
-                  onBlur={handleBlur}
-                  onChange={handleChange}
-                  value={values.name || ''}
-                  error={Boolean(touched.name && errors.name)}
-                  helperText={touched.name && errors.name}
+                  error={Boolean(errors.name)}
+                  helperText={errors.name?.message}
+                  {...register('name', {
+                    required: 'Name is required'
+                  })}
                 />
               </TextFieldWrapper>
 
               <TextFieldWrapper>
                 <LightTextField
                   fullWidth
-                  name="email"
                   type="email"
                   label="Email"
-                  onBlur={handleBlur}
-                  onChange={handleChange}
-                  value={values.email || ''}
-                  error={Boolean(touched.email && errors.email)}
-                  helperText={touched.email && errors.email}
+                  error={Boolean(errors.email)}
+                  helperText={errors.email?.message}
+                  {...register('email', {
+                    required: 'Email is required',
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: 'Must be a valid email'
+                    }
+                  })}
                 />
               </TextFieldWrapper>
             </FlexBox>
@@ -145,14 +137,17 @@ const Register: FC = () => {
             <TextFieldWrapper sx={{ mt: 2, width: '100%' }}>
               <LightTextField
                 fullWidth
-                name="password"
                 type="password"
                 label="Password"
-                onBlur={handleBlur}
-                onChange={handleChange}
-                value={values.password || ''}
-                error={Boolean(touched.password && errors.password)}
-                helperText={touched.password && errors.password}
+                error={Boolean(errors.password)}
+                helperText={errors.password?.message}
+                {...register('password', {
+                  required: 'Password is required',
+                  minLength: {
+                    value: 6,
+                    message: 'Password should be of minimum 6 characters length'
+                  }
+                })}
               />
             </TextFieldWrapper>
 
@@ -160,9 +155,8 @@ const Register: FC = () => {
               control={
                 <Checkbox
                   disableRipple
-                  checked={values.terms}
-                  onChange={handleChange}
-                  name="terms"
+                  checked={watchedValues.terms}
+                  {...register('terms')}
                 />
               }
               label="I agree to terms & conditions"

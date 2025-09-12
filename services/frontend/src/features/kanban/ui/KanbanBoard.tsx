@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DragDropContext, DropResult } from 'react-beautiful-dnd';
+import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 import { Box, Container, Typography } from '@mui/material';
 import KanbanColumn, { KanbanColumnData } from './KanbanColumn';
 import { mockKanbanData, generateNewCard } from '__fakeData__/kanbanData';

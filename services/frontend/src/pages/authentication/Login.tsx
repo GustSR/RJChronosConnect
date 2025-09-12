@@ -17,14 +17,13 @@ import {
   Paragraph,
   Small,
 } from '@shared/ui/components';
-import { useFormik } from 'formik';
+import { useForm } from 'react-hook-form';
 import { useAuth } from '@shared/lib/hooks';
 import FacebookIcon from 'icons/FacebookIcon';
 import GoogleIcon from 'icons/GoogleIcon';
 import { FC, useState } from 'react';
-import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
-import * as Yup from 'yup';
+// Validação nativa do react-hook-form, sem dependências extras
 
 const Login: FC = () => {
   const { login } = useAuth();
@@ -32,41 +31,38 @@ const Login: FC = () => {
   const [loading, setLoading] = useState(false);
   let navigate = useNavigate();
 
-  const initialValues = {
-    email: 'demo@example.com',
-    password: 'v&)3?2]:',
-    submit: null,
-    remember: true,
-  };
-  // form field value validation schema
-  const validationSchema = Yup.object().shape({
-    email: Yup.string()
-      .email('Must be a valid email')
-      .max(255)
-      .required('Email is required'),
-    password: Yup.string()
-      .min(6, 'Password should be of minimum 6 characters length')
-      .required('Password is required'),
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    watch,
+  } = useForm({
+    defaultValues: {
+      email: 'demo@example.com',
+      password: 'v&)3?2]:',
+      remember: true,
+    },
   });
 
-  const { errors, values, touched, handleBlur, handleChange, handleSubmit } =
-    useFormik({
-      initialValues,
-      validationSchema,
-      onSubmit: (values: { email: string; password: string }) => {
-        setLoading(true);
-        login(values.email, values.password)
-          .then(() => {
-            setLoading(false);
-            toast.success('You Logged In Successfully test');
-            navigate('/dashboard');
-          })
-          .catch((error) => {
-            setError(error.message);
-            setLoading(false);
-          });
-      },
-    });
+  const watchedValues = watch();
+
+  const onSubmit = (values: { email: string; password: string }) => {
+    console.log('Login form submitted:', values);
+    setLoading(true);
+    setError('');
+    
+    login(values.email, values.password)
+      .then(() => {
+        setLoading(false);
+        console.log('You Logged In Successfully test');
+        navigate('/dashboard');
+      })
+      .catch((error) => {
+        console.error('Login error:', error);
+        setError(error.message || error);
+        setLoading(false);
+      });
+  };
 
   return (
     <FlexBox
@@ -112,7 +108,7 @@ const Login: FC = () => {
             </H3>
           </Divider>
 
-          <form noValidate onSubmit={handleSubmit} style={{ width: '100%' }}>
+          <form noValidate onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
             <FlexBox justifyContent="space-between" flexWrap="wrap">
               <TextFieldWrapper>
                 <Paragraph fontWeight={600} mb={1}>
@@ -120,13 +116,16 @@ const Login: FC = () => {
                 </Paragraph>
                 <LightTextField
                   fullWidth
-                  name="email"
                   type="email"
-                  onBlur={handleBlur}
-                  onChange={handleChange}
-                  value={values.email || ''}
-                  error={Boolean(touched.email && errors.email)}
-                  helperText={touched.email && errors.email}
+                  error={Boolean(errors.email)}
+                  helperText={errors.email?.message}
+                  {...register('email', {
+                    required: 'Email is required',
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: 'Must be a valid email'
+                    }
+                  })}
                 />
               </TextFieldWrapper>
 
@@ -136,13 +135,16 @@ const Login: FC = () => {
                 </Paragraph>
                 <LightTextField
                   fullWidth
-                  name="password"
                   type="password"
-                  onBlur={handleBlur}
-                  onChange={handleChange}
-                  value={values.password || ''}
-                  error={Boolean(touched.password && errors.password)}
-                  helperText={touched.password && errors.password}
+                  error={Boolean(errors.password)}
+                  helperText={errors.password?.message}
+                  {...register('password', {
+                    required: 'Password is required',
+                    minLength: {
+                      value: 6,
+                      message: 'Password should be of minimum 6 characters length'
+                    }
+                  })}
                 />
               </TextFieldWrapper>
             </FlexBox>
@@ -151,9 +153,8 @@ const Login: FC = () => {
               <FormControlLabel
                 control={
                   <Switch
-                    name="remember"
-                    checked={values.remember}
-                    onChange={handleChange}
+                    checked={watchedValues.remember}
+                    {...register('remember')}
                   />
                 }
                 label="Remember Me"

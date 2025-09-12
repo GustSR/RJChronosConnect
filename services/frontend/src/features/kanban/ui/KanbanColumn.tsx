@@ -1,5 +1,5 @@
 import React from 'react';
-import { Droppable } from 'react-beautiful-dnd';
+import { Droppable } from '@hello-pangea/dnd';
 import { Box, Typography, Paper, Button } from '@mui/material';
 import { Add } from '@mui/icons-material';
 import KanbanCard, { KanbanCardData } from './KanbanCard';

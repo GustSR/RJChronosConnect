@@ -1,5 +1,5 @@
 import { httpClient, devConfig } from './api';
-import { fakeDataService } from '../../__fakeData__';
+import { fakeDataService } from '@/__fakeData__';
 import {
   ONU,
   OLT,

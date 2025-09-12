@@ -1,46 +1,37 @@
 import { LoadingButton } from '@mui/lab';
 import { Box, Button, Card, FormHelperText } from '@mui/material';
 import { FlexBox, LightTextField, H1, Small } from '@shared/ui/components';
-import { useFormik } from 'formik';
+import { useForm } from 'react-hook-form';
 import { FC, useState } from 'react';
-import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
-import * as Yup from 'yup';
 
 const ForgetPassword: FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const initialValues = {
-    email: 'demo@example.com',
-    submit: null,
-  };
-  // form field value validation schema
-  const validationSchema = Yup.object().shape({
-    email: Yup.string()
-      .email('Must be a valid email')
-      .max(255)
-      .required('Email is required'),
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      email: 'demo@example.com',
+    },
   });
 
-  const { errors, values, touched, handleBlur, handleChange, handleSubmit } =
-    useFormik({
-      initialValues,
-      validationSchema,
-      onSubmit: (_values) => {
-        setLoading(true);
+  const onSubmit = (_values: { email: string }) => {
+    setLoading(true);
 
-        setTimeout(() => {
-          setLoading(false);
-          toast.success('Reset link has been sent!');
-        }, 1000);
+    setTimeout(() => {
+      setLoading(false);
+      console.log('Reset link has been sent!');
+    }, 1000);
 
-        if (error) {
-          setError('Error!');
-          setLoading(false);
-        }
-      },
-    });
+    if (error) {
+      setError('Error!');
+      setLoading(false);
+    }
+  };
 
   return (
     <FlexBox
@@ -65,17 +56,20 @@ const ForgetPassword: FC = () => {
         </FlexBox>
 
         <FlexBox justifyContent="space-between" flexWrap="wrap" my={2}>
-          <form noValidate onSubmit={handleSubmit} style={{ width: '100%' }}>
+          <form noValidate onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
             <LightTextField
               fullWidth
-              name="email"
               type="email"
               label="Email"
-              onBlur={handleBlur}
-              onChange={handleChange}
-              value={values.email || ''}
-              error={Boolean(touched.email && errors.email)}
-              helperText={touched.email && errors.email}
+              error={Boolean(errors.email)}
+              helperText={errors.email?.message}
+              {...register('email', {
+                required: 'Email is required',
+                pattern: {
+                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                  message: 'Must be a valid email'
+                }
+              })}
             />
 
             {error && (

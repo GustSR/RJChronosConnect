@@ -29,7 +29,7 @@ import {
   DeviceHub,
   WifiTethering,
 } from '@mui/icons-material';
-import { PendingONU } from '../../lib/provisioningData';
+import { PendingONU } from '../provisioning';
 
 interface AddOnuModalProps {
   open: boolean;

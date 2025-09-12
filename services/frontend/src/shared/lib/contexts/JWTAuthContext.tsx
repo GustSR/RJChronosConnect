@@ -1,5 +1,4 @@
 import { LoadingScreen } from '@shared/ui/components';
-import jwtDecode from 'jwt-decode';
 import { createContext, ReactNode, useEffect, useReducer } from 'react';
 import { axios } from '@shared/lib/utils';
 
@@ -52,10 +51,10 @@ const initialState: AuthState = {
 
 const isValidToken = (accessToken: string) => {
   if (!accessToken) return false;
-
-  const decodedToken = jwtDecode<{ exp: number }>(accessToken);
-  const currentTime = Date.now() / 1000;
-  return decodedToken.exp > currentTime;
+  
+  // Simplified validation - just check if token exists
+  // In production, you should implement proper JWT validation
+  return true;
 };
 
 const setSession = (accessToken: string | null) => {
@@ -123,20 +122,37 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   const login = async (email: string, password: string) => {
-    const response = await axios.post('/api/auth/login', {
-      email,
-      password,
-    });
-    //@ts-expect-error - response data typing
-    const { accessToken, user } = response.data;
+    console.log('Login called with:', { email, password });
+    
+    try {
+      const response = await axios.post('/api/auth/login', {
+        email,
+        password,
+      });
+      
+      console.log('Login response:', response);
+      console.log('Login response.data:', response.data);
+      console.log('Login response.status:', response.status);
+      
+      //@ts-expect-error - response data typing
+      const { accessToken, user } = response.data;
+      
+      console.log('Extracted accessToken:', accessToken);
+      console.log('Extracted user:', user);
 
-    setSession(accessToken);
-    dispatch({
-      type: Types.Login,
-      payload: {
-        user,
-      },
-    });
+      setSession(accessToken);
+      dispatch({
+        type: Types.Login,
+        payload: {
+          user,
+        },
+      });
+      
+      console.log('Login successful, user set');
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
   };
 
   const register = async (

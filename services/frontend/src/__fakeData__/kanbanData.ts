@@ -1,4 +1,4 @@
-import { KanbanColumnData } from '../components/common/KanbanColumn';
+import { KanbanColumnData } from '@features/kanban/ui/KanbanColumn';
 
 export const mockKanbanData: KanbanColumnData[] = [
   {

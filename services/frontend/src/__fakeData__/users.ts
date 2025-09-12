@@ -33,11 +33,10 @@ const userList = [
   },
 ];
 
-Mock.onPost('/api/auth/login').reply(async (config) => {
+Mock.onPost('/api/auth/login').reply((config) => {
   try {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    const { email } = JSON.parse(config.data);
+    const data = typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
+    const { email } = data;
     const user = userList.find((user) => user.email === email);
     if (!user) {
       return [400, { message: 'Invalid email or password' }];
@@ -62,11 +61,10 @@ Mock.onPost('/api/auth/login').reply(async (config) => {
   }
 });
 
-Mock.onPost('/api/auth/register').reply(async (config) => {
+Mock.onPost('/api/auth/register').reply((config) => {
   try {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    const { email, username } = JSON.parse(config.data);
+    const data = typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
+    const { email, username } = data;
     const user = userList.find((user) => user.email === email);
     if (user) {
       return [400, { message: 'User already exists!' }];

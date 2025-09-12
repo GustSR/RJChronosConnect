@@ -106,7 +106,8 @@ Mock.onGet('/api/tableData1/all').reply((_config) => {
 });
 
 Mock.onPost('/api/tableData1/new').reply((config) => {
-  const { name, username, email, role } = JSON.parse(config.data);
+  const data = typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
+  const { name, username, email, role } = data;
 
   const newData = {
     role,
@@ -123,7 +124,8 @@ Mock.onPost('/api/tableData1/new').reply((config) => {
 });
 
 Mock.onPost('/api/tableData1/delete').reply((config) => {
-  const { ids } = JSON.parse(config.data);
+  const data = typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
+  const { ids } = data;
 
   const filterTable = tableData1.filter(
     (data, index) => data.id !== ids[index]
@@ -339,6 +341,7 @@ Mock.onGet('/api/tableData2/all').reply((_config) => {
 });
 
 Mock.onPost('/api/tableData2/new').reply((config) => {
+  const data = typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
   const {
     name,
     username,
@@ -349,7 +352,7 @@ Mock.onPost('/api/tableData2/new').reply((config) => {
     dateOfBirth,
     address,
     status,
-  } = JSON.parse(config.data);
+  } = data;
 
   const newObj: Record<string, unknown> = {
     name,
@@ -371,7 +374,8 @@ Mock.onPost('/api/tableData2/new').reply((config) => {
 });
 
 Mock.onPost('/api/tableData2/delete').reply((config) => {
-  const { ids } = JSON.parse(config.data);
+  const data = typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
+  const { ids } = data;
 
   const filterTable = tableData2.filter(
     (data, index) => data.id !== ids[index]

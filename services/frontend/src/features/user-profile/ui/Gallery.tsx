@@ -1,12 +1,12 @@
 import { TabContext, TabList } from '@mui/lab';
 import { Box, Card, Grid, Tab } from '@mui/material';
 import { FC, useState } from 'react';
-import LightBox from 'react-image-lightbox';
+// TODO: Implementar lightbox com biblioteca compatível do template Uko
 
 const Gallery: FC = () => {
   const [value, setValue] = useState('');
   const [photoIndex, setPhotoIndex] = useState(0);
-  const [openLightBox, setOpenLightBox] = useState(false);
+  // LightBox temporariamente desabilitado
 
   const filtered = itemData.filter((item) =>
     value ? item.category.includes(value) : item
@@ -15,9 +15,8 @@ const Gallery: FC = () => {
   const images = itemData.map((item) => item.img);
 
   const handleImageClick = (imgLink: string) => () => {
-    setOpenLightBox(true);
-    const index = images.findIndex((item) => item === imgLink);
-    setPhotoIndex(index);
+    // TODO: Implementar modal de imagem
+    console.log('Image clicked:', imgLink);
   };
 
   return (
@@ -53,21 +52,7 @@ const Gallery: FC = () => {
           </Grid>
         ))}
       </Grid>
-      {openLightBox && (
-        <LightBox
-          mainSrc={images[photoIndex]}
-          nextSrc={images[(photoIndex + 1) % images.length]}
-          prevSrc={images[(photoIndex + images.length - 1) % images.length]}
-          onCloseRequest={() => setOpenLightBox(false)}
-          onMovePrevRequest={() =>
-            setPhotoIndex((photoIndex + images.length - 1) % images.length)
-          }
-          onMoveNextRequest={() =>
-            setPhotoIndex((photoIndex + 1) % images.length)
-          }
-          reactModalStyle={{ overlay: { zIndex: 1213 } }}
-        />
-      )}
+      {/* TODO: Implementar lightbox com biblioteca compatível */}
     </Card>
   );
 };

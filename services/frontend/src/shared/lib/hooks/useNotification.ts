@@ -1,4 +1,4 @@
-import { useToast } from '../contexts/ToastContext';
+import { useToast } from '@shared/lib/contexts/ToastContext';
 
 export const useNotification = () => {
   const { showToast } = useToast();

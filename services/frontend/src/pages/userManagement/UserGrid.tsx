@@ -1,7 +1,7 @@
 import { Box, Button, Grid, styled } from '@mui/material';
 import FlexBox from '@shared/ui/components/FlexBox';
 import SearchInput from '@shared/ui/components/SearchInput';
-import UserCard from '@shared/ui/components/userManagement/UserCard';
+import UserCard from '@features/UserCard';
 import useTitle from '@shared/lib/hooks/useTitle';
 import { FC } from 'react';
 import { useNavigate } from 'react-router-dom';

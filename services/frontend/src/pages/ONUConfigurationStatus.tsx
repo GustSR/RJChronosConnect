@@ -23,8 +23,8 @@ import {
   Schedule,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
-import useTitle from '../hooks/useTitle';
-import AnimatedCard from '../components/common/AnimatedCard';
+import useTitle from '@shared/lib/hooks/useTitle';
+import AnimatedCard from '@shared/ui/components/AnimatedCard';
 
 interface ConfigurationStatus {
   step: string;

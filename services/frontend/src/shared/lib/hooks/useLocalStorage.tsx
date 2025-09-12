@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { themeSettingsProps } from '../theme';
+import { themeSettingsProps } from '@shared/lib/theme';
 
 const useLocalStorage = <T,>(key: string, initialValue: T) => {
   const [data, setData] = useState(initialValue);

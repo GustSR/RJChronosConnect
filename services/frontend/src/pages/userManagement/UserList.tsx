@@ -1,9 +1,9 @@
 import { Box, Button, styled } from '@mui/material';
 import FlexBox from '@shared/ui/components/FlexBox';
 import SearchInput from '@shared/ui/components/SearchInput';
-import UserListColumnShape from '@shared/ui/components/userManagement/columnShape';
-import CustomTable from '@shared/ui/components/userManagement/CustomTable';
-import { userListFakeData } from '@shared/ui/components/userManagement/fakeData';
+import UserListColumnShape from '@features/columnShape';
+import CustomTable from '@features/CustomTable';
+import { userListFakeData } from '@features/fakeData';
 import useTitle from '@shared/lib/hooks/useTitle';
 import { FC } from 'react';
 import { useNavigate } from 'react-router-dom';

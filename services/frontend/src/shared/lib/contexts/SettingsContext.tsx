@@ -1,7 +1,7 @@
 import { useLocalStorage } from '@shared/lib/hooks';
 import { createContext, ReactNode } from 'react';
-import { THEMES } from '../../config/constants';
-import { themeSettingsProps } from '../../config/theme';
+import { THEMES } from '@shared/config/constants';
+import { themeSettingsProps } from '@shared/config/theme';
 
 const initialSettings: themeSettingsProps = {
   direction: 'ltr',

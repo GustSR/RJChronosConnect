@@ -11,10 +11,9 @@ import {
 } from '@mui/material';
 import LightTextField from '@shared/ui/components/LightTextField';
 import { Small, Tiny } from '@shared/ui/components/Typography';
-import { useFormik } from 'formik';
+import { useForm } from 'react-hook-form';
 import useTitle from '@shared/lib/hooks/useTitle';
 import { FC } from 'react';
-import * as Yup from 'yup';
 
 // styled components
 const ButtonWrapper = styled(Box)(({ theme }) => ({
@@ -57,35 +56,27 @@ const AddNewUser: FC = () => {
   // change navbar title
   useTitle('Add New User');
 
-  const initialValues = {
-    fullName: '',
-    email: '',
-    phone: '',
-    country: '',
-    state: '',
-    city: '',
-    address: '',
-    zip: '',
-    about: '',
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      fullName: '',
+      email: '',
+      phone: '',
+      country: '',
+      state: '',
+      city: '',
+      address: '',
+      zip: '',
+      about: '',
+    },
+  });
+
+  const onSubmit = (data: any) => {
+    console.log('Form submitted:', data);
   };
-
-  const validationSchema = Yup.object().shape({
-    fullName: Yup.string().required('Name is Required!'),
-    email: Yup.string().email().required('Email is Required!'),
-    phone: Yup.number().min(8).required('Phone is Required!'),
-    country: Yup.string().required('Country is Required!'),
-    state: Yup.string().required('State is Required!'),
-    city: Yup.string().required('City is Required!'),
-    address: Yup.string().required('Address is Required!'),
-    zip: Yup.string().required('Zip is Required!'),
-    about: Yup.string().required('About is Required!'),
-  });
-
-  const { values, errors, handleChange, handleSubmit, touched } = useFormik({
-    initialValues,
-    validationSchema,
-    onSubmit: () => {},
-  });
 
   return (
     <Box pt={2} pb={4}>
@@ -162,101 +153,109 @@ const AddNewUser: FC = () => {
           </Grid>
           <Grid item md={8} xs={12}>
             <Card sx={{ padding: 3, boxShadow: 2 }}>
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={handleSubmit(onSubmit)}>
                 <Grid container spacing={3}>
                   <Grid item sm={6} xs={12}>
                     <LightTextField
                       fullWidth
-                      name="fullName"
                       placeholder="Full Name"
-                      value={values.fullName}
-                      onChange={handleChange}
-                      error={Boolean(touched.fullName && errors.fullName)}
-                      helperText={touched.fullName && errors.fullName}
+                      error={Boolean(errors.fullName)}
+                      helperText={errors.fullName?.message}
+                      {...register('fullName', {
+                        required: 'Name is Required!'
+                      })}
                     />
                   </Grid>
 
                   <Grid item sm={6} xs={12}>
                     <LightTextField
                       fullWidth
-                      name="email"
                       placeholder="Email Address"
-                      value={values.email}
-                      onChange={handleChange}
-                      error={Boolean(touched.email && errors.email)}
-                      helperText={touched.email && errors.email}
+                      error={Boolean(errors.email)}
+                      helperText={errors.email?.message}
+                      {...register('email', {
+                        required: 'Email is Required!',
+                        pattern: {
+                          value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                          message: 'Must be a valid email'
+                        }
+                      })}
                     />
                   </Grid>
 
                   <Grid item sm={6} xs={12}>
                     <LightTextField
                       fullWidth
-                      name="phone"
                       placeholder="Phone Number"
-                      value={values.phone}
-                      onChange={handleChange}
-                      error={Boolean(touched.phone && errors.phone)}
-                      helperText={touched.phone && errors.phone}
+                      error={Boolean(errors.phone)}
+                      helperText={errors.phone?.message}
+                      {...register('phone', {
+                        required: 'Phone is Required!',
+                        minLength: {
+                          value: 8,
+                          message: 'Phone must be at least 8 characters'
+                        }
+                      })}
                     />
                   </Grid>
 
                   <Grid item sm={6} xs={12}>
                     <LightTextField
                       fullWidth
-                      name="country"
                       placeholder="Country"
-                      value={values.country}
-                      onChange={handleChange}
-                      error={Boolean(touched.country && errors.country)}
-                      helperText={touched.country && errors.country}
+                      error={Boolean(errors.country)}
+                      helperText={errors.country?.message}
+                      {...register('country', {
+                        required: 'Country is Required!'
+                      })}
                     />
                   </Grid>
 
                   <Grid item sm={6} xs={12}>
                     <LightTextField
                       fullWidth
-                      name="state"
                       placeholder="State/Region"
-                      value={values.state}
-                      onChange={handleChange}
-                      error={Boolean(touched.state && errors.state)}
-                      helperText={touched.state && errors.state}
+                      error={Boolean(errors.state)}
+                      helperText={errors.state?.message}
+                      {...register('state', {
+                        required: 'State is Required!'
+                      })}
                     />
                   </Grid>
 
                   <Grid item sm={6} xs={12}>
                     <LightTextField
                       fullWidth
-                      name="city"
                       placeholder="City"
-                      value={values.city}
-                      onChange={handleChange}
-                      error={Boolean(touched.city && errors.city)}
-                      helperText={touched.city && errors.city}
+                      error={Boolean(errors.city)}
+                      helperText={errors.city?.message}
+                      {...register('city', {
+                        required: 'City is Required!'
+                      })}
                     />
                   </Grid>
 
                   <Grid item sm={6} xs={12}>
                     <LightTextField
                       fullWidth
-                      name="address"
                       placeholder="Address"
-                      value={values.address}
-                      onChange={handleChange}
-                      error={Boolean(touched.address && errors.address)}
-                      helperText={touched.address && errors.address}
+                      error={Boolean(errors.address)}
+                      helperText={errors.address?.message}
+                      {...register('address', {
+                        required: 'Address is Required!'
+                      })}
                     />
                   </Grid>
 
                   <Grid item sm={6} xs={12}>
                     <LightTextField
                       fullWidth
-                      name="zip"
                       placeholder="Zip/Code"
-                      value={values.zip}
-                      onChange={handleChange}
-                      error={Boolean(touched.zip && errors.zip)}
-                      helperText={touched.zip && errors.zip}
+                      error={Boolean(errors.zip)}
+                      helperText={errors.zip?.message}
+                      {...register('zip', {
+                        required: 'Zip is Required!'
+                      })}
                     />
                   </Grid>
 
@@ -265,15 +264,15 @@ const AddNewUser: FC = () => {
                       multiline
                       fullWidth
                       rows={10}
-                      name="about"
                       placeholder="About"
-                      value={values.about}
-                      onChange={handleChange}
-                      error={Boolean(touched.about && errors.about)}
-                      helperText={touched.about && errors.about}
+                      error={Boolean(errors.about)}
+                      helperText={errors.about?.message}
                       sx={{
                         '& .MuiOutlinedInput-root textarea': { padding: 0 },
                       }}
+                      {...register('about', {
+                        required: 'About is Required!'
+                      })}
                     />
                   </Grid>
 

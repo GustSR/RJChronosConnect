@@ -13,23 +13,27 @@ import {
   useTheme,
 } from '@mui/material';
 import { FlexBox, H5 } from '@shared/ui/components';
-import { ChangeEvent, FC, useMemo } from 'react';
+import { FC, useMemo, useState } from 'react';
 import {
-  useExpanded,
-  usePagination,
-  useRowSelect,
-  useSortBy,
-  useTable,
-} from 'react-table';
+  useReactTable,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  flexRender,
+  ColumnDef,
+  SortingState,
+} from '@tanstack/react-table';
 import ScrollBar from 'simplebar-react';
 
 // component props interface
-interface CustomTableProps {
-  columnShape: object[];
-  data: object[];
-  rowClick?: (rowData: object) => void;
+interface CustomTableProps<TData = unknown> {
+  columns: ColumnDef<TData>[];
+  data: TData[];
+  rowClick?: (rowData: TData) => void;
   hidePagination?: boolean;
   showFooter?: boolean;
+  pageSize?: number;
 }
 
 // styled component
@@ -60,194 +64,112 @@ const StyledPagination = styled(Pagination)(({ theme }) => ({
   },
 }));
 
-const CustomTable: FC<CustomTableProps> = (props) => {
-  const { data, rowClick, showFooter, columnShape, hidePagination } = props;
-  // hooks
+const CustomTable = <TData = unknown>(props: CustomTableProps<TData>) => {
+  const { data, rowClick, showFooter, columns, hidePagination, pageSize = 10 } = props;
   const theme = useTheme();
-  const tableData: Record<string, unknown>[] = useMemo(
-    () => data as Record<string, unknown>[],
-    [data]
-  );
-  const columns: Record<string, unknown>[] = useMemo(
-    () => columnShape as Record<string, unknown>[],
-    [columnShape]
-  );
-
-  const {
-    getTableProps,
-    getTableBodyProps,
-    headerGroups,
-    prepareRow,
-    page,
-    pageOptions,
-    gotoPage,
-  }: {
-    getTableProps: () => Record<string, unknown>;
-    getTableBodyProps: () => Record<string, unknown>;
-    headerGroups: {
-      getHeaderGroupProps: () => Record<string, unknown>;
-      headers: {
-        getHeaderProps: (props?: unknown) => Record<string, unknown>;
-        getSortByToggleProps: () => Record<string, unknown>;
-        render: (type: string) => React.ReactNode;
-        width?: number;
-        minWidth?: number;
-        maxWidth?: number;
-      }[];
-    }[];
-    prepareRow: (row: unknown) => void;
-    page: {
-      getRowProps: () => Record<string, unknown>;
-      original: Record<string, unknown>;
-      cells: {
-        getCellProps: () => Record<string, unknown>;
-        render: (type: string) => React.ReactNode;
-      }[];
-    }[];
-    pageOptions: unknown[];
-    gotoPage: (page: number) => void;
-  } = useTable(
-    {
-      columns,
-      data: tableData,
+  
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: pageSize,
+  });
+  
+  const table = useReactTable({
+    data,
+    columns,
+    state: {
+      sorting,
+      pagination,
     },
-    useSortBy,
-    useExpanded,
-    usePagination,
-    useRowSelect
-  );
-  // handle pagination
-  const handleChange = (_e: ChangeEvent<unknown>, currentPageNo: number) => {
-    gotoPage(currentPageNo - 1);
-  };
-
-  // table border color
-  const borderColor =
-    theme.palette.mode === 'light' ? 'text.secondary' : 'divider';
+    onSortingChange: setSorting,
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+  });
+  
+  const borderColor = theme.palette.mode === 'light' ? 'text.secondary' : 'divider';
 
   return (
     <Box>
       <ScrollBar>
-        <Table
-          {...getTableProps()}
-          sx={{
-            borderSpacing: '0 1rem',
-            borderCollapse: 'separate',
-          }}
-        >
+        <Table sx={{ borderSpacing: '0 1rem', borderCollapse: 'separate' }}>
           <TableHead>
-            {headerGroups.map(
-              (headerGroup: {
-                getHeaderGroupProps: () => Record<string, unknown>;
-                headers: {
-                  getHeaderProps: (props?: unknown) => Record<string, unknown>;
-                  getSortByToggleProps: () => Record<string, unknown>;
-                  render: (type: string) => React.ReactNode;
-                  width?: number;
-                  minWidth?: number;
-                  maxWidth?: number;
-                }[];
-              }) => (
-                <TableRow {...headerGroup.getHeaderGroupProps()}>
-                  {headerGroup.headers.map(
-                    (column: {
-                      getHeaderProps: (
-                        props?: unknown
-                      ) => Record<string, unknown>;
-                      getSortByToggleProps: () => Record<string, unknown>;
-                      render: (type: string) => React.ReactNode;
-                      width?: number;
-                      minWidth?: number;
-                      maxWidth?: number;
-                    }) => (
-                      <TableCell
-                        {...column.getHeaderProps(
-                          column.getSortByToggleProps()
-                        )}
-                        sx={{
-                          paddingY: 0,
-                          fontSize: 13,
-                          fontWeight: 600,
-                          borderBottom: 0,
-                          color: 'text.disabled',
-                          width: column.width,
-                          minWidth: column.minWidth,
-                          maxWidth: column.maxWidth,
-                          '&:last-child': { textAlign: 'center' },
-                        }}
-                      >
-                        {column.render('Header')}
-                      </TableCell>
-                    )
-                  )}
-                </TableRow>
-              )
-            )}
-          </TableHead>
-
-          <TableBody {...getTableBodyProps()}>
-            {page.map(
-              (row: {
-                getRowProps: () => Record<string, unknown>;
-                original: Record<string, unknown>;
-                cells: {
-                  getCellProps: () => Record<string, unknown>;
-                  render: (type: string) => React.ReactNode;
-                }[];
-              }) => {
-                prepareRow(row);
-                return (
-                  <TableRow
-                    {...row.getRowProps()}
-                    onClick={rowClick && rowClick(row.original)}
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableCell
+                    key={header.id}
                     sx={{
-                      backgroundColor: 'background.paper',
-                      cursor: rowClick ? 'pointer' : 'unset',
-                      '& td:first-of-type': {
-                        borderLeft: '1px solid',
-                        borderTopLeftRadius: '8px',
-                        borderBottomLeftRadius: '8px',
-                        borderColor,
-                      },
-                      '& td:last-of-type': {
-                        textAlign: 'center',
-                        borderRight: '1px solid',
-                        borderTopRightRadius: '8px',
-                        borderBottomRightRadius: '8px',
-                        borderColor,
-                      },
-                      '&:last-of-type .MuiTableCell-root': {
-                        borderBottom:
-                          theme.palette.mode === 'dark'
-                            ? `1px solid ${theme.palette.divider} !important`
-                            : `1px solid ${theme.palette.text.secondary} !important`,
-                      },
+                      paddingY: 0,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      borderBottom: 0,
+                      color: 'text.disabled',
+                      '&:last-child': { textAlign: 'center' },
+                      cursor: header.column.getCanSort() ? 'pointer' : 'default',
+                    }}
+                    onClick={header.column.getToggleSortingHandler()}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                    {{
+                      asc: ' ↑',
+                      desc: ' ↓',
+                    }[header.column.getIsSorted() as string] ?? null}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableHead>
+          <TableBody>
+            {table.getRowModel().rows.map((row) => (
+              <TableRow
+                key={row.id}
+                onClick={() => rowClick && rowClick(row.original)}
+                sx={{
+                  backgroundColor: 'background.paper',
+                  cursor: rowClick ? 'pointer' : 'unset',
+                  '& td:first-of-type': {
+                    borderLeft: '1px solid',
+                    borderTopLeftRadius: '8px',
+                    borderBottomLeftRadius: '8px',
+                    borderColor,
+                  },
+                  '& td:last-of-type': {
+                    textAlign: 'center',
+                    borderRight: '1px solid',
+                    borderTopRightRadius: '8px',
+                    borderBottomRightRadius: '8px',
+                    borderColor,
+                  },
+                }}
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell
+                    key={cell.id}
+                    sx={{
+                      fontSize: 13,
+                      fontWeight: 500,
+                      color: 'text.disabled',
+                      borderTop: '1px solid',
+                      borderBottom: '1px solid',
+                      borderColor,
                     }}
                   >
-                    {row.cells.map(
-                      (cell: {
-                        getCellProps: () => Record<string, unknown>;
-                        render: (type: string) => React.ReactNode;
-                      }) => (
-                        <TableCell
-                          {...cell.getCellProps()}
-                          sx={{
-                            fontSize: 13,
-                            fontWeight: 500,
-                            color: 'text.disabled',
-                            borderTop: '1px solid',
-                            borderBottom: '1px solid',
-                            borderColor,
-                          }}
-                        >
-                          {cell.render('Cell')}
-                        </TableCell>
-                      )
+                    {flexRender(
+                      cell.column.columnDef.cell,
+                      cell.getContext()
                     )}
-                  </TableRow>
-                );
-              }
-            )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </ScrollBar>
@@ -255,22 +177,30 @@ const CustomTable: FC<CustomTableProps> = (props) => {
       {!hidePagination && (
         <Stack alignItems="flex-end" marginY={1}>
           <StyledPagination
-            count={pageOptions.length}
+            count={table.getPageCount()}
+            page={table.getState().pagination.pageIndex + 1}
+            onChange={(_, page) => table.setPageIndex(page - 1)}
             shape="rounded"
-            onChange={handleChange}
           />
         </Stack>
       )}
 
       {showFooter && (
         <FlexBox alignItems="center" justifyContent="space-between">
-          <H5 color="text.disabled">Showing 1-12 of 24 result</H5>
+          <H5 color="text.disabled">
+            Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}-
+            {Math.min(
+              (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+              table.getFilteredRowModel().rows.length
+            )} of {table.getFilteredRowModel().rows.length} results
+          </H5>
           <ButtonBase
             disableRipple
             sx={{
               fontSize: 14,
               fontWeight: 600,
             }}
+            onClick={() => table.setPageIndex(0)}
           >
             See All
             <ArrowRightAlt sx={{ marginLeft: 0.5 }} />
