@@ -6,6 +6,8 @@ Este módulo gerencia a comunicação com o RabbitMQ para publicar mensagens.
 import pika
 import json
 import time
+import uuid
+from datetime import datetime
 from .core.config import settings
 from .core.logging import get_logger
 
@@ -54,7 +56,10 @@ class RabbitMQPublisher:
     def publicar_mensagem(self, exchange_name, routing_key, mensagem: dict):
         """
         Publica uma mensagem em um exchange com retry automático.
+        Automaticamente adiciona metadados de timestamp e event_id se ausentes.
         """
+        # Enriquece mensagem com metadados se não existirem
+        mensagem_enriched = self._enrich_message(mensagem)
         max_tentativas = 3
         tentativa = 0
         
@@ -69,9 +74,15 @@ class RabbitMQPublisher:
                 self.channel.basic_publish(
                     exchange=exchange_name,
                     routing_key=routing_key,
-                    body=json.dumps(mensagem),
+                    body=json.dumps(mensagem_enriched, ensure_ascii=False, default=str),
                     properties=pika.BasicProperties(
                         delivery_mode=2,  # Torna a mensagem persistente
+                        content_type='application/json',
+                        headers={
+                            'event_type': mensagem_enriched.get('event_type'),
+                            'severity': mensagem_enriched.get('severity'),
+                            'source': 'olt-manager-huawei'
+                        }
                     )
                 )
                 logger.info(f"Mensagem publicada para exchange '{exchange_name}' com routing key '{routing_key}'")
@@ -121,3 +132,62 @@ class RabbitMQPublisher:
         finally:
             self.connection = None
             self.channel = None
+
+    def _enrich_message(self, mensagem: dict) -> dict:
+        """
+        Enriquece a mensagem com metadados padrão se não existirem.
+        
+        Args:
+            mensagem: Mensagem original
+            
+        Returns:
+            Mensagem enriquecida com metadados
+        """
+        enriched = mensagem.copy()
+        
+        # Adiciona event_id único se não existir
+        if 'event_id' not in enriched:
+            enriched['event_id'] = str(uuid.uuid4())
+        
+        # Adiciona timestamp se não existir
+        if 'timestamp' not in enriched:
+            enriched['timestamp'] = datetime.utcnow().isoformat() + 'Z'
+        
+        # Adiciona source se não existir
+        if 'source' not in enriched:
+            enriched['source'] = {
+                'service': 'olt-manager-huawei',
+                'version': '1.0.0',
+                'component': 'trap-listener'
+            }
+        
+        # Garante que severity seja lowercase para padronização
+        if 'severity' in enriched:
+            enriched['severity'] = enriched['severity'].lower()
+        
+        return enriched
+
+    def publicar_evento_critico(self, event_type: str, data: dict, olt_ip: str):
+        """
+        Método conveniência para publicar eventos críticos com alta prioridade.
+        
+        Args:
+            event_type: Tipo do evento (ex: 'ont.power.dying_gasp')
+            data: Dados específicos do evento
+            olt_ip: IP da OLT que originou o evento
+        """
+        mensagem = {
+            'event_type': event_type,
+            'severity': 'critical',
+            'olt_ip': olt_ip,
+            'data': data,
+            'requires_immediate_attention': True
+        }
+        
+        routing_key = f"critical.{olt_ip}.{event_type}"
+        
+        self.publicar_mensagem(
+            exchange_name='olt_events_priority',
+            routing_key=routing_key,
+            mensagem=mensagem
+        )

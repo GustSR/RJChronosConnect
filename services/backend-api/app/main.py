@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import auth, devices, monitoring, provisioning, tasks, wifi
+from .api import auth, devices, monitoring, provisioning, tasks, wifi, olt_management
 
 app = FastAPI(
     title="RJChronos API",
@@ -29,3 +29,4 @@ app.include_router(monitoring.router, prefix="/api", tags=["Monitoring"])
 app.include_router(provisioning.router, prefix="/api/provisioning", tags=["Provisioning"])
 app.include_router(tasks.router, prefix="/api/activity-history", tags=["Activity History"])
 app.include_router(wifi.router, prefix="/api/wifi", tags=["WiFi"])
+app.include_router(olt_management.router, prefix="/api/olts", tags=["OLT Management"])
