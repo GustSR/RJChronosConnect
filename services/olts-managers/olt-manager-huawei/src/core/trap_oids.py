@@ -25,6 +25,22 @@ class TrapOIDConfig:
     VARBIND_OID_ALARM_ID = '1.3.6.1.4.1.2011.6.128.1.1.2.51.1.1.1'  # hwOntAlarmProfileId
     VARBIND_OID_ALARM_VALUE = '1.3.6.1.4.1.2011.6.128.1.1.2.51.1.1.2'  # hwOntAlarmProfileValue
     VARBIND_OID_ALARM_STATUS = '1.3.6.1.4.1.2011.6.128.1.1.2.51.1.1.3'  # hwOntAlarmProfileStatus (1: active, 2: cleared)
+    
+    # Traps Críticos de Sistema
+    TRAP_OID_DYING_GASP = '1.3.6.1.4.1.2011.6.128.1.1.2.0.22'  # hwGponOntDyingGaspTrap
+    TRAP_OID_PORT_DOWN = '1.3.6.1.4.1.2011.6.128.1.1.2.0.7'   # hwGponPortDownTrap
+    TRAP_OID_PORT_UP = '1.3.6.1.4.1.2011.6.128.1.1.2.0.8'     # hwGponPortUpTrap
+    TRAP_OID_LOS_ALARM = '1.3.6.1.4.1.2011.6.128.1.1.2.0.9'   # hwGponLOSAlarmTrap
+    TRAP_OID_LOF_ALARM = '1.3.6.1.4.1.2011.6.128.1.1.2.0.10'  # hwGponLOFAlarmTrap
+    
+    # Varbinds para Dying Gasp
+    VARBIND_OID_ONT_ID = '1.3.6.1.4.1.2011.6.128.1.1.2.43.1.7'        # hwGponOntId
+    VARBIND_OID_DYING_GASP_TIME = '1.3.6.1.4.1.2011.6.128.1.1.2.43.1.20'  # hwGponOntLastDyingGaspTime
+    VARBIND_OID_LAST_DOWN_CAUSE = '1.3.6.1.4.1.2011.6.128.1.1.2.43.1.21'  # hwGponOntLastDownCause
+    
+    # Varbinds para Alarmes de Fibra
+    VARBIND_OID_PORT_INDEX = '1.3.6.1.4.1.2011.6.128.1.1.2.21.1.1'    # hwGponPortIndex
+    VARBIND_OID_OPTICAL_POWER = '1.3.6.1.4.1.2011.6.128.1.1.2.53.1.6'  # hwGponOpticalPowerReceive
 
 class TrapOIDManager:
     """Gerenciador de OIDs para traps, com suporte a diferentes modelos."""
@@ -40,7 +56,23 @@ class TrapOIDManager:
         # Mapeamentos de status para valores legíveis
         self.status_mappings = {
             'ont_run_status': {1: 'online', 2: 'offline'},
-            'alarm_status': {1: 'active', 2: 'cleared'}
+            'alarm_status': {1: 'active', 2: 'cleared'},
+            'last_down_cause': {
+                1: 'unknown',
+                2: 'dying_gasp', 
+                3: 'los_alarm',
+                4: 'lof_alarm',
+                5: 'manual_shutdown',
+                6: 'olt_reboot'
+            },
+            'port_status': {1: 'up', 2: 'down'},
+            'optical_power_level': {
+                1: 'normal',
+                2: 'low', 
+                3: 'high',
+                4: 'critical_low',
+                5: 'critical_high'
+            }
         }
     
     def get_config(self, model: str = "default") -> TrapOIDConfig:

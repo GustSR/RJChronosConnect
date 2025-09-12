@@ -82,6 +82,16 @@ class TrapListener:
             self._decodificar_mudanca_estado_ont(var_binds_dict, remetente, oid_config)
         elif trap_oid_str == oid_config.TRAP_OID_ONT_ALARM:
             self._decodificar_alarme_ont(var_binds_dict, remetente, oid_config)
+        elif trap_oid_str == oid_config.TRAP_OID_DYING_GASP:
+            self._decodificar_dying_gasp(var_binds_dict, remetente, oid_config)
+        elif trap_oid_str == oid_config.TRAP_OID_PORT_DOWN:
+            self._decodificar_port_down(var_binds_dict, remetente, oid_config)
+        elif trap_oid_str == oid_config.TRAP_OID_PORT_UP:
+            self._decodificar_port_up(var_binds_dict, remetente, oid_config)
+        elif trap_oid_str == oid_config.TRAP_OID_LOS_ALARM:
+            self._decodificar_los_alarm(var_binds_dict, remetente, oid_config)
+        elif trap_oid_str == oid_config.TRAP_OID_LOF_ALARM:
+            self._decodificar_lof_alarm(var_binds_dict, remetente, oid_config)
         else:
             logger.info(f"Trap não reconhecido ({trap_oid_str}) de {remetente}. Não será publicado.")
 
@@ -142,6 +152,158 @@ class TrapListener:
         self.rabbitmq_publisher.publicar_mensagem(
             exchange_name='olt_events',
             routing_key=f"olt.{olt_ip}.ont.alarm",
+            mensagem=mensagem
+        )
+
+    def _decodificar_dying_gasp(self, var_binds_dict: dict, olt_ip: str, oid_config):
+        """Decodifica trap de dying gasp (perda de energia da ONT)."""
+        logger.critical("Evento DYING GASP recebido - ONT perdeu energia!")
+        
+        if_index_raw = var_binds_dict.get(oid_config.VARBIND_OID_IF_INDEX)
+        ont_id_raw = var_binds_dict.get(oid_config.VARBIND_OID_ONT_ID)
+        serial_raw = var_binds_dict.get(oid_config.VARBIND_OID_ONT_SERIAL)
+        dying_gasp_time_raw = var_binds_dict.get(oid_config.VARBIND_OID_DYING_GASP_TIME)
+        down_cause_raw = var_binds_dict.get(oid_config.VARBIND_OID_LAST_DOWN_CAUSE)
+
+        if_index = int(if_index_raw) if if_index_raw else None
+        olt_model = self._detect_olt_model_from_ip(olt_ip)
+        port_str = self._ifindex_to_port(if_index, olt_model) if if_index else None
+
+        mensagem = {
+            'event_type': 'ont.power.dying_gasp',
+            'severity': 'critical',
+            'olt_ip': olt_ip,
+            'port': port_str,
+            'if_index': if_index,
+            'ont_id': int(ont_id_raw) if ont_id_raw else None,
+            'serial_number': serial_raw.prettyPrint() if serial_raw else None,
+            'dying_gasp_time': dying_gasp_time_raw.prettyPrint() if dying_gasp_time_raw else None,
+            'down_cause': trap_oid_manager.get_status_text('last_down_cause', int(down_cause_raw)) if down_cause_raw else 'dying_gasp',
+            'detection_method': 'dying_gasp_trap',
+            'immediate_action_required': True
+        }
+        
+        logger.debug(f"Dados do dying gasp: {mensagem}")
+        self.rabbitmq_publisher.publicar_mensagem(
+            exchange_name='olt_events',
+            routing_key=f"olt.{olt_ip}.ont.dying_gasp",
+            mensagem=mensagem
+        )
+
+    def _decodificar_port_down(self, var_binds_dict: dict, olt_ip: str, oid_config):
+        """Decodifica trap de porta PON down (possível rompimento de fibra)."""
+        logger.critical("Evento PORT DOWN recebido - Possível rompimento de fibra!")
+        
+        port_index_raw = var_binds_dict.get(oid_config.VARBIND_OID_PORT_INDEX)
+        if_index_raw = var_binds_dict.get(oid_config.VARBIND_OID_IF_INDEX)
+        optical_power_raw = var_binds_dict.get(oid_config.VARBIND_OID_OPTICAL_POWER)
+
+        if_index = int(if_index_raw) if if_index_raw else None
+        olt_model = self._detect_olt_model_from_ip(olt_ip)
+        port_str = self._ifindex_to_port(if_index, olt_model) if if_index else None
+
+        mensagem = {
+            'event_type': 'pon.interface.down',
+            'severity': 'critical',
+            'olt_ip': olt_ip,
+            'port': port_str,
+            'if_index': if_index,
+            'port_index': int(port_index_raw) if port_index_raw else None,
+            'optical_power': str(optical_power_raw) if optical_power_raw else 'unknown',
+            'suspected_cause': 'fiber_cut_or_equipment_failure',
+            'mass_impact_expected': True
+        }
+        
+        logger.debug(f"Dados do port down: {mensagem}")
+        self.rabbitmq_publisher.publicar_mensagem(
+            exchange_name='olt_events',
+            routing_key=f"olt.{olt_ip}.pon.port_down",
+            mensagem=mensagem
+        )
+
+    def _decodificar_port_up(self, var_binds_dict: dict, olt_ip: str, oid_config):
+        """Decodifica trap de porta PON up (recuperação de conectividade)."""
+        logger.info("Evento PORT UP recebido - Porta PON recuperada!")
+        
+        port_index_raw = var_binds_dict.get(oid_config.VARBIND_OID_PORT_INDEX)
+        if_index_raw = var_binds_dict.get(oid_config.VARBIND_OID_IF_INDEX)
+
+        if_index = int(if_index_raw) if if_index_raw else None
+        olt_model = self._detect_olt_model_from_ip(olt_ip)
+        port_str = self._ifindex_to_port(if_index, olt_model) if if_index else None
+
+        mensagem = {
+            'event_type': 'pon.interface.up',
+            'severity': 'info',
+            'olt_ip': olt_ip,
+            'port': port_str,
+            'if_index': if_index,
+            'port_index': int(port_index_raw) if port_index_raw else None,
+            'recovery_detected': True
+        }
+        
+        logger.debug(f"Dados do port up: {mensagem}")
+        self.rabbitmq_publisher.publicar_mensagem(
+            exchange_name='olt_events',
+            routing_key=f"olt.{olt_ip}.pon.port_up",
+            mensagem=mensagem
+        )
+
+    def _decodificar_los_alarm(self, var_binds_dict: dict, olt_ip: str, oid_config):
+        """Decodifica trap de alarme LOS (Loss of Signal)."""
+        logger.warning("Alarme LOS recebido - Perda de sinal ótico!")
+        
+        if_index_raw = var_binds_dict.get(oid_config.VARBIND_OID_IF_INDEX)
+        alarm_status_raw = var_binds_dict.get(oid_config.VARBIND_OID_ALARM_STATUS)
+
+        if_index = int(if_index_raw) if if_index_raw else None
+        olt_model = self._detect_olt_model_from_ip(olt_ip)
+        port_str = self._ifindex_to_port(if_index, olt_model) if if_index else None
+
+        mensagem = {
+            'event_type': 'ont.signal.los_alarm',
+            'severity': 'high',
+            'olt_ip': olt_ip,
+            'port': port_str,
+            'if_index': if_index,
+            'alarm_type': 'loss_of_signal',
+            'alarm_status': trap_oid_manager.get_status_text('alarm_status', int(alarm_status_raw)) if alarm_status_raw else 'active',
+            'possible_causes': ['fiber_disconnected', 'ont_powered_off', 'optical_degradation']
+        }
+        
+        logger.debug(f"Dados do LOS alarm: {mensagem}")
+        self.rabbitmq_publisher.publicar_mensagem(
+            exchange_name='olt_events',
+            routing_key=f"olt.{olt_ip}.ont.los_alarm",
+            mensagem=mensagem
+        )
+
+    def _decodificar_lof_alarm(self, var_binds_dict: dict, olt_ip: str, oid_config):
+        """Decodifica trap de alarme LOF (Loss of Frame)."""
+        logger.warning("Alarme LOF recebido - Perda de quadro!")
+        
+        if_index_raw = var_binds_dict.get(oid_config.VARBIND_OID_IF_INDEX)
+        alarm_status_raw = var_binds_dict.get(oid_config.VARBIND_OID_ALARM_STATUS)
+
+        if_index = int(if_index_raw) if if_index_raw else None
+        olt_model = self._detect_olt_model_from_ip(olt_ip)
+        port_str = self._ifindex_to_port(if_index, olt_model) if if_index else None
+
+        mensagem = {
+            'event_type': 'ont.signal.lof_alarm',
+            'severity': 'high',
+            'olt_ip': olt_ip,
+            'port': port_str,
+            'if_index': if_index,
+            'alarm_type': 'loss_of_frame',
+            'alarm_status': trap_oid_manager.get_status_text('alarm_status', int(alarm_status_raw)) if alarm_status_raw else 'active',
+            'possible_causes': ['signal_degradation', 'synchronization_loss', 'equipment_malfunction']
+        }
+        
+        logger.debug(f"Dados do LOF alarm: {mensagem}")
+        self.rabbitmq_publisher.publicar_mensagem(
+            exchange_name='olt_events',
+            routing_key=f"olt.{olt_ip}.ont.lof_alarm",
             mensagem=mensagem
         )
 
