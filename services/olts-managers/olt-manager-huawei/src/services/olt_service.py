@@ -5,49 +5,56 @@ from ..core.config import settings
 from ..core.logging import get_logger
 # Connection manager não usado diretamente - usando connection pool
 from ..services.connection_pool import pool_manager
-from ..commands.get_ont_info_snmp import GetOntInfoSnmpCommand
-from ..commands.get_ont_optical_info_snmp import GetOntOpticalInfoSnmpCommand # Changed
-from ..commands.add_ont import AddOntCommand
-from ..commands.reboot_ont import RebootOntCommand
-from ..commands.get_service_port_cli import GetServicePortCliCommand
-from ..commands.add_dba_profile import AddDbaProfileCommand
-from ..commands.add_ont_line_profile import AddOntLineProfileCommand
-from ..commands.add_ont_srv_profile import AddOntSrvProfileCommand
-from ..commands.get_ont_port_state_snmp import GetOntPortStateSnmpCommand
-# GetMacAddressSnmpCommand - usando CLI version
-from ..commands.pon_port_control import PonPortControlCommand
-from ..commands.get_ont_autofind_cli import GetOntAutofindCliCommand
-from ..commands.get_all_autofind_onts import GetAllAutofindOntsCommand
-from ..commands.ont_confirm import OntConfirmCommand
-# GetOntRegisterInfoSnmpCommand - usando CLI version
-from ..commands.get_ont_port_attribute_snmp import GetOntPortAttributeSnmpCommand
-from ..commands.get_ont_eth_stats_snmp import GetOntEthStatsSnmpCommand
-from ..commands.get_ont_traffic_snmp import GetOntTrafficSnmpCommand
-from ..commands.add_gpon_alarm_profile import AddGponAlarmProfileCommand
-from ..commands.get_board_cli import GetBoardCliCommand
-from ..commands.get_port_state_cli import GetPortStateCliCommand
-from ..commands.get_ont_failed_cli import GetOntFailedCliCommand
-from ..commands.add_service_port import AddServicePortCommand
-from ..commands.set_port_mode import SetPortModeCommand
-from ..commands.get_ont_register_info_cli import GetOntRegisterInfoCliCommand
-from ..commands.get_mac_address_cli import GetMacAddressCliCommand
-# Novos comandos de configuração avançada
-from ..commands.set_gpon_password import SetGponPasswordCommand
-from ..commands.set_optical_threshold import SetOpticalThresholdCommand, RemoveOpticalThresholdCommand
-from ..commands.get_current_configuration_cli import GetCurrentConfigurationCliCommand
-from ..commands.manage_vlan import CreateVlanCommand, DeleteVlanCommand, AssignPortToVlanCommand
-from ..commands.manage_users import CreateUserCommand, DeleteUserCommand, ChangeUserPasswordCommand
-from ..commands.backup_restore import BackupConfigurationCommand, RestoreConfigurationCommand
-from ..schemas import (
+# Imports de comandos ONT (clientes)
+from ..commands.ont.get_ont_info_snmp import GetOntInfoSnmpCommand
+from ..commands.ont.get_ont_optical_info_snmp import GetOntOpticalInfoSnmpCommand
+from ..commands.ont.add_ont import AddOntCommand
+from ..commands.ont.reboot_ont import RebootOntCommand
+from ..commands.ont.get_service_port_cli import GetServicePortCliCommand
+from ..commands.ont.add_ont_line_profile import AddOntLineProfileCommand
+from ..commands.ont.add_ont_srv_profile import AddOntSrvProfileCommand
+from ..commands.ont.get_ont_port_state_snmp import GetOntPortStateSnmpCommand
+from ..commands.ont.pon_port_control import PonPortControlCommand
+from ..commands.ont.get_ont_autofind_cli import GetOntAutofindCliCommand
+from ..commands.ont.get_all_autofind_onts import GetAllAutofindOntsCommand
+from ..commands.ont.ont_confirm import OntConfirmCommand
+from ..commands.ont.get_ont_port_attribute_snmp import GetOntPortAttributeSnmpCommand
+from ..commands.ont.get_ont_eth_stats_snmp import GetOntEthStatsSnmpCommand
+from ..commands.ont.get_ont_traffic_snmp import GetOntTrafficSnmpCommand
+from ..commands.ont.get_ont_failed_cli import GetOntFailedCliCommand
+from ..commands.ont.add_service_port import AddServicePortCommand
+from ..commands.ont.get_ont_register_info_cli import GetOntRegisterInfoCliCommand
+from ..commands.ont.get_mac_address_cli import GetMacAddressCliCommand
+
+# Imports de comandos OLT (equipamento)
+from ..commands.olt.add_dba_profile import AddDbaProfileCommand
+from ..commands.olt.add_gpon_alarm_profile import AddGponAlarmProfileCommand
+from ..commands.olt.get_board_cli import GetBoardCliCommand
+from ..commands.olt.get_port_state_cli import GetPortStateCliCommand
+from ..commands.olt.set_port_mode import SetPortModeCommand
+from ..commands.olt.set_gpon_password import SetGponPasswordCommand
+from ..commands.olt.set_optical_threshold import SetOpticalThresholdCommand, RemoveOpticalThresholdCommand
+from ..commands.olt.get_current_configuration_cli import GetCurrentConfigurationCliCommand
+from ..commands.olt.manage_vlan import CreateVlanCommand, DeleteVlanCommand, AssignPortToVlanCommand
+from ..commands.olt.manage_users import CreateUserCommand, DeleteUserCommand, ChangeUserPasswordCommand
+from ..commands.olt.backup_restore import BackupConfigurationCommand, RestoreConfigurationCommand
+# Imports de schemas ONT
+from ..schemas.ont import (
     ont_add_request,
-    dba_profile_add_request,
     ont_line_profile_add_request,
     ont_srv_profile_add_request,
-    ont_confirm_request,
+    ont_confirm_request
+)
+
+# Imports de schemas OLT
+from ..schemas.olt import (
+    dba_profile_add_request,
     gpon_alarm_profile_add_request,
-    service_port_add_request,
     port_mode_set_request
 )
+
+# Imports de schemas compartilhados
+from ..schemas import service_port_add_request
 
 logger = get_logger(__name__)
 

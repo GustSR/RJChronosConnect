@@ -1,46 +1,89 @@
 # OLT Manager - Huawei
 
-Serviço FastAPI para gerenciamento completo de OLTs (Optical Line Terminal) da Huawei. Suporta operações via CLI SSH e SNMP, com arquitetura robusta e otimizada para produção.
+Microsserviço FastAPI para gerenciamento completo de OLTs (Optical Line Terminal) da Huawei. Arquitetura baseada em **Domain-Driven Design (DDD)** com separação clara entre gestão de equipamentos (OLT) e clientes (ONT). Suporta operações via CLI SSH e SNMP, otimizado para produção.
 
 ## ✨ Recursos Principais
 
-- **40 endpoints REST** para gerenciamento completo de OLTs
-- **Connection pooling SSH** para performance otimizada (80-90% melhoria)
-- **Parsing robusto** com suporte a múltiplas versões de firmware
-- **Trap listener SNMP** para eventos em tempo real
-- **Publicação RabbitMQ** com retry automático
-- **Logging centralizado** e estruturado
-- **Validação de dados** robusta
-- **Suporte a múltiplos modelos** (MA5600T, MA5800)
-- **Configuração avançada** (GPON password, thresholds ópticos)
-- **Gerenciamento de VLANs** completo
-- **Gerenciamento de usuários** da OLT
-- **Backup e restore** de configuração
+### 🏗️ **Arquitetura DDD**
+- **Separação de domínios** clara entre OLT (equipamento) e ONT (clientes)
+- **40+ endpoints REST** organizados por domínio e funcionalidade
+- **Rotas especializadas** por área de responsabilidade
 
-## 🎨 Arquitetura
+### ⚡ **Performance & Escalabilidade**
+- **Connection pooling SSH** otimizado (80-90% melhoria de performance)
+- **Parsing robusto** com suporte a múltiplas versões de firmware
+- **SNMP operations** para consultas rápidas de dados
+
+### 📡 **Eventos em Tempo Real**
+- **Trap listener SNMP** para eventos de ONTs
+- **Publicação RabbitMQ** com retry automático
+- **Notificações automáticas** de mudanças de estado
+
+### 🔧 **Gestão Completa**
+- **Provisionamento automatizado** de ONTs
+- **Configuração avançada** (GPON password, thresholds ópticos)
+- **Gerenciamento de VLANs** e service-ports
+- **Gestão de usuários** administrativos
+- **Backup e restore** de configurações
+
+### 🛡️ **Confiabilidade**
+- **Logging centralizado** e estruturado
+- **Validação robusta** de dados de entrada
+- **Suporte a múltiplos modelos** (MA5600T, MA5800)
+- **Health checks** e monitoramento integrado
+
+## 🎨 Arquitetura Domain-Driven Design
 
 ```
-FastAPI App
+FastAPI App (Domain-Separated Architecture)
 │
-├── Connection Pool Manager (SSH)
-│   ├── Pool por OLT (max 3 conexões)
-│   ├── Health checks automáticos
-│   └── Cleanup de conexões idle
+├── 🏗️ OLT Domain (Equipment Management)
+│   ├── /api/v1/olts/* - Equipment endpoints
+│   ├── commands/olt/ - Equipment commands
+│   ├── schemas/olt/ - Equipment data models
+│   └── Features:
+│       ├── Port management (PON ports)
+│       ├── VLAN configuration
+│       ├── User administration
+│       ├── Backup & restore
+│       └── Hardware monitoring
 │
-├── Robust Parser
-│   ├── Múltiplas regras por comando
-│   ├── Fallback automático
-│   └── Suporte a diferentes firmwares
+├── 👥 ONT Domain (Customer Management)
+│   ├── /api/v1/olts/*/onts/* - Customer endpoints
+│   ├── commands/ont/ - Customer commands
+│   ├── schemas/ont/ - Customer data models
+│   └── Features:
+│       ├── ONT provisioning
+│       ├── Autofind & confirmation
+│       ├── Optical monitoring
+│       ├── Traffic statistics
+│       └── Service-port management
 │
-├── SNMP Manager
-│   ├── OIDs por modelo/versão
-│   ├── Conversores robustos
-│   └── Validação de ranges
+├── 📊 Health Domain (Monitoring)
+│   ├── /health - Service health checks
+│   ├── /pool-stats - Connection statistics
+│   └── System monitoring
 │
-└── Trap Listener
-    ├── OIDs configuráveis
-    ├── Detecção de modelo
-    └── Retry RabbitMQ
+├── 🔧 Infrastructure Layer
+│   ├── Connection Pool Manager (SSH)
+│   │   ├── Pool por OLT (max 3 conexões)
+│   │   ├── Health checks automáticos
+│   │   └── Cleanup de conexões idle
+│   │
+│   ├── Robust Parser Engine
+│   │   ├── Multiple rules per command
+│   │   ├── Automatic fallback
+│   │   └── Multi-firmware support
+│   │
+│   ├── SNMP Manager
+│   │   ├── OIDs por modelo/versão
+│   │   ├── Robust converters
+│   │   └── Range validation
+│   │
+│   └── Event Processing
+│       ├── SNMP Trap Listener
+│       ├── RabbitMQ Publisher
+│       └── Real-time notifications
 ```
 
 ## 🚀 Instalação e Configuração
@@ -93,11 +136,11 @@ SSH_POOL_CONNECTION_TIMEOUT=30
 NETMIKO_SESSION_LOG=false
 ```
 
-## 📁 Estrutura do Projeto
+## 📁 Estrutura do Projeto (Domain-Driven Design)
 
 ```
 src/
-├── core/                    # Módulos fundamentais
+├── 🔧 core/                    # Infraestrutura compartilhada
 │   ├── config.py            # Configurações centralizadas
 │   ├── logging.py           # Sistema de logging
 │   ├── exceptions.py        # Exceções customizadas
@@ -106,77 +149,138 @@ src/
 │   ├── oid_mappings.py      # Mapeamento de OIDs SNMP
 │   └── trap_oids.py         # Configuração de traps
 │
-├── services/               # Camada de serviços
+├── 🌐 api/                     # Camada de apresentação (por domínio)
+│   ├── olt_routes.py        # 🏗️ Endpoints de gestão de equipamentos
+│   ├── ont_routes.py        # 👥 Endpoints de gestão de clientes
+│   └── health_routes.py     # 📊 Endpoints de monitoramento
+│
+├── 💼 services/               # Camada de aplicação
 │   ├── olt_service.py       # Lógica de negócio principal
 │   ├── connection_manager.py # Gerenciador de conexão SSH
 │   └── connection_pool.py   # Pool de conexões otimizado
 │
-├── commands/               # Comandos CLI e SNMP
-│   ├── get_*_cli.py         # Comandos CLI padronizados
-│   ├── get_*_snmp.py        # Comandos SNMP padronizados
-│   └── base_command.py      # Classe base para comandos
+├── 📦 commands/               # Comandos organizados por domínio
+│   ├── base_command.py      # Interface base para comandos
+│   ├── olt/                 # 🏗️ Comandos de equipamento
+│   │   ├── get_board_cli.py
+│   │   ├── manage_vlan.py
+│   │   ├── backup_restore.py
+│   │   └── ... (12 comandos OLT)
+│   └── ont/                 # 👥 Comandos de clientes
+│       ├── add_ont.py
+│       ├── get_ont_info_*.py
+│       ├── ont_confirm.py
+│       └── ... (17 comandos ONT)
 │
-├── schemas/                # Modelos Pydantic
-│   └── *.py                 # Schemas de request/response
+├── 📋 schemas/               # Modelos de dados por domínio
+│   ├── olt/                 # 🏗️ Schemas de equipamento
+│   │   ├── board_info.py
+│   │   ├── port_state.py
+│   │   ├── vlan_request.py
+│   │   └── ... (12 schemas OLT)
+│   ├── ont/                 # 👥 Schemas de clientes
+│   │   ├── ont.py
+│   │   ├── ont_add_request.py
+│   │   ├── ont_optical_info.py
+│   │   └── ... (13 schemas ONT)
+│   └── 📄 shared/            # Schemas compartilhados
+│       ├── command_response.py
+│       ├── service_port.py
+│       └── mac_address_info.py
 │
-├── trap_listener/          # Listener de traps SNMP
-│   └── listener.py          # Processamento de traps
+├── 📡 trap_listener/          # Processamento de eventos
+│   └── listener.py          # Listener de traps SNMP
 │
-├── main.py                 # Aplicação FastAPI
-└── rabbitmq_publisher.py   # Publicador RabbitMQ
+├── 🧪 tests/                  # Testes organizados
+│   ├── integration/         # Testes de integração
+│   └── utils/              # Utilitários de teste
+│
+├── 📜 scripts/               # Scripts de utilidade
+│   └── update_class_names.py
+│
+├── main.py                 # 🚀 Aplicação FastAPI principal
+└── rabbitmq_publisher.py   # Publicador de eventos
 ```
 
-## 📚 Endpoints da API (40 endpoints)
+## 📚 API Endpoints Organizados por Domínio (40+ endpoints)
 
-### Port Management (4 endpoints)
+### 🏗️ **OLT Domain - Equipment Management**
+
+#### **Port Management** (4 endpoints)
 - `POST /api/v1/olts/{olt_id}/ports/{port}/shutdown` - Desligar porta PON
 - `POST /api/v1/olts/{olt_id}/ports/{port}/enable` - Ligar porta PON
 - `GET /api/v1/olts/{olt_id}/ports/{port}/state` - Estado da porta PON
-- `PUT /api/v1/olts/{olt_id}/ports/{port}/mode` - Modo da porta PON
+- `PUT /api/v1/olts/{olt_id}/ports/{port}/mode` - Configurar modo da porta
 
-### ONT Management (16 endpoints)
-- `GET /api/v1/olts/{olt_id}/onts?serial_number=` - Info por SN
-- `GET /api/v1/olts/{olt_id}/ports/{port}/onts/all` - Todas ONTs na porta
-- `POST /api/v1/olts/{olt_id}/onts` - Provisionar ONT
-- `POST /api/v1/olts/{olt_id}/ports/{port}/onts/{ont_id}/reboot` - Reboot ONT
-- `GET /api/v1/olts/{olt_id}/ports/{port}/onts/{ont_id}/optical-info` - Info óptica
-- `GET /api/v1/olts/{olt_id}/ports/{port}/onts/{ont_id}/traffic` - Tráfego
-- `GET /api/v1/olts/{olt_id}/ports/{port}/onts/{ont_id}/port-states` - Estados das portas
-- `GET /api/v1/olts/{olt_id}/ports/{port}/onts/{ont_id}/mac-addresses` - MACs aprendidos
-- `GET /api/v1/olts/{olt_id}/ports/{port}/autofind-onts` - ONTs em auto-find
-- `POST /api/v1/olts/{olt_id}/ports/{port}/onts/{ont_id}/confirm` - Confirmar ONT
-- E mais 6 endpoints para atributos, estatísticas, etc.
+#### **Hardware Monitoring** (3 endpoints)
+- `GET /api/v1/olts/{olt_id}/board-info` - Informações das placas
+- `GET /api/v1/olts/{olt_id}/version` - Versão da OLT
+- `GET /api/v1/olts/{olt_id}/configuration` - Configuração completa
 
-### Profiles (4 endpoints)
+#### **Profile Management** (2 endpoints)
 - `POST /api/v1/olts/{olt_id}/dba-profiles` - Criar perfil DBA
-- `POST /api/v1/olts/{olt_id}/ont-line-profiles` - Criar perfil de linha
-- `POST /api/v1/olts/{olt_id}/ont-srv-profiles` - Criar perfil de serviço
-- `POST /api/v1/olts/{olt_id}/gpon-alarm-profiles` - Criar perfil de alarme
+- `POST /api/v1/olts/{olt_id}/gpon-alarm-profiles` - Criar perfil de alarme GPON
 
-### Advanced Configuration (4 endpoints) 🆕
+#### **Advanced Configuration** (3 endpoints)
 - `POST /api/v1/olts/{olt_id}/interfaces/gpon/password` - Configurar senha GPON
 - `POST /api/v1/olts/{olt_id}/interfaces/optical/thresholds` - Configurar thresholds ópticos
 - `DELETE /api/v1/olts/{olt_id}/interfaces/{frame}/{slot}/{port}/optical/thresholds` - Remover thresholds
-- `GET /api/v1/olts/{olt_id}/configuration` - Obter configuração completa
 
-### VLAN Management (3 endpoints) 🆕
+#### **VLAN Management** (3 endpoints)
 - `POST /api/v1/olts/{olt_id}/vlans` - Criar VLAN
 - `DELETE /api/v1/olts/{olt_id}/vlans/{vlan_id}` - Remover VLAN
 - `POST /api/v1/olts/{olt_id}/vlans/assign-port` - Associar porta à VLAN
 
-### User Management (3 endpoints) 🆕
-- `POST /api/v1/olts/{olt_id}/users` - Criar usuário
+#### **User Management** (3 endpoints)
+- `POST /api/v1/olts/{olt_id}/users` - Criar usuário administrativo
 - `DELETE /api/v1/olts/{olt_id}/users/{username}` - Remover usuário
 - `PUT /api/v1/olts/{olt_id}/users/{username}/password` - Alterar senha
 
-### Backup & Restore (2 endpoints) 🆕
-- `POST /api/v1/olts/{olt_id}/backup` - Fazer backup da configuração
+#### **Backup & Restore** (2 endpoints)
+- `POST /api/v1/olts/{olt_id}/backup` - Backup da configuração
 - `POST /api/v1/olts/{olt_id}/restore` - Restaurar configuração
 
-### Monitoring (4 endpoints)
-- `GET /api/v1/olts/{olt_id}/board-info` - Info das placas
-- `GET /api/v1/olts/{olt_id}/version` - Versão da OLT
-- `GET /health` - Health check
+---
+
+### 👥 **ONT Domain - Customer Management**
+
+#### **ONT Information** (3 endpoints)
+- `GET /api/v1/olts/{olt_id}/onts?serial_number=` - Buscar ONT por serial
+- `GET /api/v1/olts/{olt_id}/ports/{port}/onts/all` - Todas ONTs na porta
+- `GET /api/v1/olts/{olt_id}/ports/{port}/register-info` - Info de registro
+
+#### **ONT Operations** (2 endpoints)
+- `POST /api/v1/olts/{olt_id}/onts` - Provisionar nova ONT
+- `POST /api/v1/olts/{olt_id}/ports/{port}/onts/{ont_id}/reboot` - Reiniciar ONT
+
+#### **Monitoring & Diagnostics** (5 endpoints)
+- `GET /api/v1/olts/{olt_id}/ports/{port}/onts/{ont_id}/optical-info` - Informações ópticas
+- `GET /api/v1/olts/{olt_id}/ports/{port}/onts/{ont_id}/traffic` - Estatísticas de tráfego
+- `GET /api/v1/olts/{olt_id}/ports/{port}/onts/{ont_id}/port-states` - Estados das portas
+- `GET /api/v1/olts/{olt_id}/ports/{port}/onts/{ont_id}/eth-ports/{eth_port}/attributes` - Atributos ethernet
+- `GET /api/v1/olts/{olt_id}/ports/{port}/onts/{ont_id}/eth-ports/{eth_port}/statistics` - Estatísticas ethernet
+
+#### **Auto-Discovery** (3 endpoints)
+- `GET /api/v1/olts/{olt_id}/autofind-onts` - ONTs descobertas automaticamente
+- `GET /api/v1/olts/{olt_id}/ports/{port}/autofind` - Autofind em porta específica
+- `POST /api/v1/olts/{olt_id}/onts/confirm` - Confirmar ONT autofind
+
+#### **Advanced Features** (4 endpoints)
+- `GET /api/v1/olts/{olt_id}/ports/{port}/failed-onts` - ONTs com falha
+- `GET /api/v1/olts/{olt_id}/ports/{port}/onts/{ont_id}/service-ports` - Service-ports da ONT
+- `POST /api/v1/olts/{olt_id}/service-ports` - Adicionar service-port
+- `GET /api/v1/olts/{olt_id}/ports/{port}/mac-addresses` - Endereços MAC aprendidos
+
+#### **Profile Management** (2 endpoints)
+- `POST /api/v1/olts/{olt_id}/ont-line-profiles` - Criar perfil de linha ONT
+- `POST /api/v1/olts/{olt_id}/ont-srv-profiles` - Criar perfil de serviço ONT
+
+---
+
+### 📊 **Health Domain - System Monitoring**
+
+#### **Service Health** (2 endpoints)
+- `GET /health` - Health check do serviço
 - `GET /pool-stats` - Estatísticas do connection pool
 
 ## 🔍 Uso
@@ -363,4 +467,22 @@ Para dúvidas ou problemas:
 
 ---
 
-⚙️ **Desenvolvido para produção** com foco em performance, confiabilidade e manutenibilidade.
+⚙️ **Desenvolvido para produção** com arquitetura **Domain-Driven Design**, focando em separação clara de responsabilidades, performance otimizada e manutenibilidade de código.
+
+## 🏛️ Arquitetura Domain-Driven Design
+
+### **Benefícios da Separação de Domínios:**
+
+1. **🔒 Responsabilidades Claras**: Cada domínio tem responsabilidades bem definidas
+2. **🚀 Evolução Independente**: Domínios podem evoluir sem afetar outros
+3. **👥 Desenvolvimento em Equipe**: Diferentes desenvolvedores podem trabalhar em domínios específicos
+4. **🧪 Testes Focados**: Testes organizados por contexto de negócio
+5. **📖 Documentação Intuitiva**: API organizada por área funcional
+
+### **Domínios Implementados:**
+
+- **🏗️ OLT Domain**: Gestão de hardware, configurações de rede, administração
+- **👥 ONT Domain**: Provisioning de clientes, monitoramento, diagnósticos
+- **📊 Health Domain**: Monitoramento de sistema, métricas, health checks
+
+Esta arquitetura garante que o microsserviço seja escalável, manutenível e alinhado com as necessidades de negócio de operadoras de telecomunicações.

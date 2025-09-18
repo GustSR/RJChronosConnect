@@ -1,6 +1,6 @@
 # 📚 Documentação Completa da API - OLT Manager Huawei
 
-Esta documentação detalha todos os 40 endpoints REST disponíveis na API do OLT Manager Huawei, incluindo exemplos de uso, parâmetros, respostas e casos de uso para integração com frontend.
+Esta documentação detalha todos os 40+ endpoints REST disponíveis na API do OLT Manager Huawei, organizados seguindo a **arquitetura Domain-Driven Design (DDD)** com separação clara entre gestão de equipamentos (OLT) e clientes (ONT).
 
 ## 🌟 Visão Geral
 
@@ -8,25 +8,41 @@ Esta documentação detalha todos os 40 endpoints REST disponíveis na API do OL
 - **Versão da API:** `v1`
 - **Formato:** JSON
 - **Autenticação:** Não requerida (uso interno)
-- **Total de Endpoints:** 40
-- **Grupos de Funcionalidades:** 8
+- **Total de Endpoints:** 40+
+- **Arquitetura:** Domain-Driven Design (DDD)
+- **Domínios:** OLT (Equipment), ONT (Customer), Health (Monitoring)
 
 ---
 
-## 📑 Índice
+## 📑 Índice por Domínio
 
-1. [Port Management (4 endpoints)](#port-management)
-2. [ONT Management (16 endpoints)](#ont-management)
-3. [Profiles (4 endpoints)](#profiles)
-4. [Advanced Configuration (4 endpoints)](#advanced-configuration)
-5. [VLAN Management (3 endpoints)](#vlan-management)
-6. [User Management (3 endpoints)](#user-management)
-7. [Backup & Restore (2 endpoints)](#backup--restore)
-8. [Monitoring (4 endpoints)](#monitoring)
+### 🏗️ **OLT Domain - Equipment Management**
+1. [Port Management (4 endpoints)](#olt-port-management)
+2. [Hardware Monitoring (3 endpoints)](#olt-hardware-monitoring)
+3. [Profile Management (2 endpoints)](#olt-profile-management)
+4. [Advanced Configuration (3 endpoints)](#olt-advanced-configuration)
+5. [VLAN Management (3 endpoints)](#olt-vlan-management)
+6. [User Management (3 endpoints)](#olt-user-management)
+7. [Backup & Restore (2 endpoints)](#olt-backup-restore)
+
+### 👥 **ONT Domain - Customer Management**
+8. [ONT Information (3 endpoints)](#ont-information)
+9. [ONT Operations (2 endpoints)](#ont-operations)
+10. [Monitoring & Diagnostics (5 endpoints)](#ont-monitoring)
+11. [Auto-Discovery (3 endpoints)](#ont-autodiscovery)
+12. [Advanced Features (4 endpoints)](#ont-advanced)
+13. [Profile Management (2 endpoints)](#ont-profiles)
+
+### 📊 **Health Domain - System Monitoring**
+14. [Service Health (2 endpoints)](#health-monitoring)
 
 ---
 
-## 🔌 Port Management
+## 🏗️ OLT Domain - Equipment Management
+
+---
+
+## 🔌 OLT Port Management
 
 Gerenciamento de portas PON da OLT.
 
