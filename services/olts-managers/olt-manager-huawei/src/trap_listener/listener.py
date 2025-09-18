@@ -350,25 +350,22 @@ class TrapListener:
     def _detect_olt_model_from_ip(self, olt_ip: str) -> str:
         """
         Detecta o modelo da OLT baseado no IP.
-        
+
         Args:
             olt_ip: IP da OLT
-            
+
         Returns:
-            Modelo detectado (padrão: MA5600T)
+            Modelo detectado (usa configuração ou padrão)
         """
-        # Por enquanto retorna padrão, mas pode ser expandido para:
-        # - Manter mapeamento IP -> modelo em configuração
-        # - Consultar base de dados
-        # - Usar SNMP sysDescr para detectar automaticamente
-        
-        # Exemplo de mapeamento simples (pode ser movido para config)
-        ip_to_model = {
-            # "192.168.1.1": "MA5600T",
-            # "192.168.1.2": "MA5800",
-        }
-        
-        model = ip_to_model.get(olt_ip, "MA5600T")
-        logger.debug(f"Modelo detectado para {olt_ip}: {model}")
+        # Busca no mapeamento configurado via variáveis de ambiente
+        ip_to_model = settings.ip_to_model_dict
+
+        model = ip_to_model.get(olt_ip, settings.default_olt_model)
+
+        if olt_ip in ip_to_model:
+            logger.info(f"Modelo configurado para {olt_ip}: {model}")
+        else:
+            logger.debug(f"Usando modelo padrão para {olt_ip}: {model}")
+
         return model
 

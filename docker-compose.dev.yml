@@ -79,13 +79,30 @@ services:
   olt-manager-huawei:
     build:
       context: ./services/olts-managers/olt-manager-huawei
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: rjchronos_olt_manager_huawei_dev
     volumes:
       - ./services/olts-managers/olt-manager-huawei/src:/app/src
     networks:
       - rjchronos-net
+    depends_on:
+      - rabbitmq
     command: uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload
+    environment:
+      # Configurações de conexão com outros serviços
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - BACKEND_API_URL=http://backend:8000
+
+      # Configurações de OLT para testes
+      - TEST_OLT_IP=${TEST_OLT_IP:-}
+      - TEST_OLT_MODEL=${TEST_OLT_MODEL:-MA5600T}
+      - OLT_IP_MODEL_MAPPING=${OLT_IP_MODEL_MAPPING:-{}}
+
+      # Configurações SNMP
+      - TRAP_LISTENER_HOST=0.0.0.0
+      - TRAP_LISTENER_PORT=162
+      - SNMP_COMMUNITY=${SNMP_COMMUNITY:-public}
 
   genieacs-sim:
     image: drumsergio/genieacs-sim:latest
