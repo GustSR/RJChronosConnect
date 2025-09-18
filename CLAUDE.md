@@ -1,4 +1,4 @@
-# Diretrizes para Gemini neste Projeto
+# Diretrizes neste Projeto
 
 ## 1. Adesão ao Stack Tecnológico
 
