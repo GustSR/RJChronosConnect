@@ -1,0 +1,173 @@
+# Configuração de logging para olt-manager-huawei
+# Microserviço focado em equipamentos Huawei
+
+service:
+  name: "olt-manager-huawei"
+  version: "1.0.0"
+
+logging:
+  # Configuração de transporte (RabbitMQ)
+  transport:
+    type: "rabbitmq"
+    url: "amqp://localhost:5672"  # Será sobrescrito por variável de ambiente
+    exchange: "system.logs"
+    timeout_ms: 1000
+    retry_attempts: 3
+    retry_delay_ms: 500
+
+  # Configuração de fallback (arquivo local)
+  fallback:
+    type: "file"
+    path: "/var/log/olt-manager-huawei.log"
+    rotation: "daily"
+    retention: "7 days"
+    max_size_mb: 100
+
+  # Filtros de log
+  filters:
+    min_level: "info"
+    exclude_patterns:
+      - "connection_test"
+      - "heartbeat"
+      - "health_check"
+    include_only: []
+
+  # Rate limiting (alto volume por causa das ONTs)
+  rate_limit:
+    max_per_second: 200
+    burst_size: 1000
+    window_seconds: 60
+
+  # Tipos de eventos específicos do OLT Manager Huawei
+  event_types:
+    # Eventos críticos de configuração
+    - name: "olt_sysname_change"
+      destination: "postgresql"
+      level: "warning"
+      category: "configuration"
+      retention: "5 years"
+      compliance: ["ANATEL", "ITIL"]
+      pii_fields: ["olt_id", "user_id"]
+      legal_basis: "Execução de contrato"
+      description: "Mudança de sysname da OLT"
+
+    - name: "olt_configuration_change"
+      destination: "postgresql"
+      level: "warning"
+      category: "configuration"
+      retention: "5 years"
+      compliance: ["ANATEL", "ITIL"]
+      pii_fields: ["olt_id", "user_id"]
+      legal_basis: "Execução de contrato"
+
+    - name: "ont_activation"
+      destination: "postgresql"
+      level: "info"
+      category: "equipment_activation"
+      retention: "3 years"
+      compliance: ["ANATEL"]
+      pii_fields: ["customer_id", "ont_serial"]
+      legal_basis: "Execução de contrato"
+
+    - name: "ont_deactivation"
+      destination: "postgresql"
+      level: "info"
+      category: "equipment_activation"
+      retention: "3 years"
+      compliance: ["ANATEL"]
+      pii_fields: ["customer_id", "ont_serial"]
+      legal_basis: "Execução de contrato"
+
+    # Eventos operacionais de alto volume (ClickHouse)
+    - name: "ont_status_monitoring"
+      destination: "clickhouse"
+      level: "info"
+      category: "monitoring"
+      retention: "6 months"
+      compliance: []
+      pii_fields: []
+      description: "Monitoramento periódico do status das ONTs"
+
+    - name: "ont_power_level"
+      destination: "clickhouse"
+      level: "info"
+      category: "monitoring"
+      retention: "6 months"
+      compliance: []
+      pii_fields: []
+      description: "Medição de nível de potência das ONTs"
+
+    - name: "port_utilization"
+      destination: "clickhouse"
+      level: "info"
+      category: "performance"
+      retention: "1 year"
+      compliance: []
+      pii_fields: []
+
+    - name: "equipment_performance_metric"
+      destination: "clickhouse"
+      level: "info"
+      category: "performance"
+      retention: "6 months"
+      compliance: []
+      pii_fields: []
+
+    # Comandos e automação
+    - name: "huawei_command_executed"
+      destination: "clickhouse"
+      level: "info"
+      category: "automation"
+      retention: "1 year"
+      compliance: ["ITIL"]
+      pii_fields: []
+
+    - name: "snmp_trap_received"
+      destination: "clickhouse"
+      level: "info"
+      category: "monitoring"
+      retention: "3 months"
+      compliance: []
+      pii_fields: []
+
+    - name: "connection_status_change"
+      destination: "clickhouse"
+      level: "info"
+      category: "monitoring"
+      retention: "6 months"
+      compliance: []
+      pii_fields: []
+
+    # Eventos de erro e troubleshooting
+    - name: "command_execution_error"
+      destination: "postgresql"
+      level: "error"
+      category: "operational_error"
+      retention: "2 years"
+      compliance: ["ITIL"]
+      pii_fields: []
+
+    - name: "connection_failure"
+      destination: "postgresql"
+      level: "error"
+      category: "connectivity"
+      retention: "1 year"
+      compliance: []
+      pii_fields: []
+
+    # Debug e desenvolvimento
+    - name: "ssh_connection_debug"
+      destination: "local_file"
+      level: "debug"
+      category: "debug"
+      retention: "7 days"
+      compliance: []
+      pii_fields: []
+
+    - name: "command_trace"
+      destination: "local_file"
+      level: "debug"
+      category: "debug"
+      retention: "7 days"
+      compliance: []
+      pii_fields: []

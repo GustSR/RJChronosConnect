@@ -23,7 +23,8 @@ from ..schemas.olt import (
     optical_threshold_request as optical_threshold_request_schema,
     vlan_request as vlan_request_schema,
     user_request as user_request_schema,
-    backup_request as backup_request_schema
+    backup_request as backup_request_schema,
+    sysname_request as sysname_request_schema
 )
 
 # Imports de schemas compartilhados
@@ -182,3 +183,76 @@ def restore_configuration(olt_id: int, request: backup_request_schema.BackupRequ
     """Restaura configuração da OLT a partir de um backup."""
     validate_olt_id(olt_id)
     return olt_service.restore_configuration(olt_id, request)
+
+# ============================================================================
+# ENDPOINTS DE IDENTIFICAÇÃO E NAMING
+# ============================================================================
+
+@router.post("/olts/{olt_id}/set-hostname", response_model=command_response_schema.CommandResponse, summary="Set OLT Hostname")
+def set_olt_hostname(olt_id: int, request: sysname_request_schema.SysnameRequest, user_id: str = None, force: bool = False):
+    """
+    Define o nome (hostname/sysname) da OLT para identificação amigável.
+
+    Este endpoint permite definir um nome amigável para a OLT que será:
+    - Usado como identificador principal no sistema
+    - Exibido no prompt da OLT
+    - Incluído nos eventos do RabbitMQ
+    - Usado para rastreabilidade e logs
+
+    Inclui proteções avançadas para evitar problemas operacionais.
+    """
+    validate_olt_id(olt_id)
+    return olt_service.set_olt_hostname(olt_id, request, user_id, force)
+
+
+@router.post("/olts/{olt_id}/validate-hostname-change", summary="Validate Hostname Change")
+def validate_hostname_change(olt_id: int, new_sysname: str, user_id: str = None):
+    """
+    Valida se uma mudança de hostname pode ser realizada com segurança.
+
+    Executa todas as verificações de proteção antes de permitir a mudança:
+    - Verificação de duplicidade
+    - Validação de formato
+    - Verificação de cooldown
+    - Análise de impacto nos sistemas
+    """
+    validate_olt_id(olt_id)
+    return olt_service.validate_sysname_change(olt_id, new_sysname, user_id)
+
+
+@router.get("/olts/{olt_id}/hostname", summary="Get Current Hostname")
+def get_olt_hostname(olt_id: int):
+    """
+    Obtém o hostname/sysname atual da OLT.
+
+    Retorna o nome configurado atualmente no equipamento.
+    """
+    validate_olt_id(olt_id)
+    return olt_service.get_olt_sysname(olt_id)
+
+
+@router.post("/olts/{olt_id}/rollback-hostname", response_model=command_response_schema.CommandResponse, summary="Rollback Hostname Change")
+def rollback_olt_hostname(olt_id: int, user_id: str = None, reason: str = None):
+    """
+    Faz rollback da última mudança de hostname da OLT.
+
+    Permite reverter para o nome anterior dentro de uma janela de tempo
+    limitada (1 hora por padrão).
+    """
+    validate_olt_id(olt_id)
+    return olt_service.rollback_olt_sysname(olt_id, user_id, reason)
+
+
+@router.get("/olts/{olt_id}/hostname-audit", summary="Get Hostname Change Audit")
+def get_hostname_audit(olt_id: int):
+    """
+    Obtém histórico completo de mudanças de hostname de uma OLT.
+
+    Retorna auditoria detalhada incluindo:
+    - Todas as mudanças realizadas
+    - Usuários que executaram as mudanças
+    - Timestamps e razões
+    - Disponibilidade de rollback
+    """
+    validate_olt_id(olt_id)
+    return olt_service.get_sysname_audit(olt_id)

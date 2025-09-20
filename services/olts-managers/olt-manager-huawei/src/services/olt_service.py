@@ -38,6 +38,9 @@ from ..commands.olt.get_current_configuration_cli import GetCurrentConfiguration
 from ..commands.olt.manage_vlan import CreateVlanCommand, DeleteVlanCommand, AssignPortToVlanCommand
 from ..commands.olt.manage_users import CreateUserCommand, DeleteUserCommand, ChangeUserPasswordCommand
 from ..commands.olt.backup_restore import BackupConfigurationCommand, RestoreConfigurationCommand
+from ..commands.olt.set_sysname import SetSysnameCommand
+from ..commands.olt.validate_sysname_change import ValidateSysnameChangeCommand, GetSysnameCommand
+from ..commands.olt.rollback_sysname import RollbackSysnameCommand, SysnameAuditCommand
 # Imports de schemas ONT
 from ..schemas.ont import (
     ont_add_request,
@@ -355,5 +358,99 @@ def backup_configuration(olt_id: int, backup_type: str = "full", include_passwor
 
 def restore_configuration(olt_id: int, backup_data: Dict[str, Any], restore_type: str = "full") -> Dict[str, Any]:
     """Restaura configuração da OLT a partir de backup."""
-    return _execute_cli_command(olt_id, RestoreConfigurationCommand, 
+    return _execute_cli_command(olt_id, RestoreConfigurationCommand,
                                backup_data=backup_data, restore_type=restore_type)
+
+# ========== FUNÇÕES DE IDENTIFICAÇÃO E NAMING ==========
+
+def set_olt_hostname(olt_id: int, request, user_id: str = None, force: bool = False) -> Dict[str, Any]:
+    """
+    Define o nome (hostname/sysname) da OLT para identificação amigável.
+
+    Inclui proteções avançadas para evitar problemas operacionais.
+
+    Args:
+        olt_id: ID da OLT
+        request: Objeto SysnameRequest contendo o novo nome
+        user_id: ID do usuário executando a operação (opcional)
+        force: Se True, força mudança ignorando proteções (apenas para admin)
+
+    Returns:
+        Dict com resultado da operação
+    """
+    return _execute_cli_command(
+        olt_id,
+        SetSysnameCommand,
+        sysname=request.sysname,
+        olt_id=olt_id,
+        user_id=user_id,
+        force=force
+    )
+
+
+def validate_sysname_change(olt_id: int, new_sysname: str, user_id: str = None) -> Dict[str, Any]:
+    """
+    Valida se uma mudança de sysname pode ser realizada com segurança.
+
+    Args:
+        olt_id: ID da OLT
+        new_sysname: Novo nome desejado
+        user_id: ID do usuário solicitando a validação (opcional)
+
+    Returns:
+        Dict com resultado da validação
+    """
+    return _execute_cli_command(
+        olt_id,
+        ValidateSysnameChangeCommand,
+        olt_id=olt_id,
+        new_sysname=new_sysname,
+        user_id=user_id
+    )
+
+
+def get_olt_sysname(olt_id: int) -> Dict[str, Any]:
+    """
+    Obtém o sysname atual da OLT.
+
+    Args:
+        olt_id: ID da OLT
+
+    Returns:
+        Dict contendo o sysname atual
+    """
+    return _execute_cli_command(olt_id, GetSysnameCommand)
+
+
+def rollback_olt_sysname(olt_id: int, user_id: str = None, reason: str = None) -> Dict[str, Any]:
+    """
+    Faz rollback da última mudança de sysname da OLT.
+
+    Args:
+        olt_id: ID da OLT
+        user_id: ID do usuário executando o rollback (opcional)
+        reason: Motivo do rollback (opcional)
+
+    Returns:
+        Dict com resultado da operação
+    """
+    return _execute_cli_command(
+        olt_id,
+        RollbackSysnameCommand,
+        olt_id=olt_id,
+        user_id=user_id,
+        reason=reason
+    )
+
+
+def get_sysname_audit(olt_id: int) -> Dict[str, Any]:
+    """
+    Obtém histórico completo de mudanças de sysname de uma OLT.
+
+    Args:
+        olt_id: ID da OLT
+
+    Returns:
+        Dict contendo histórico de mudanças
+    """
+    return _execute_cli_command(olt_id, SysnameAuditCommand, olt_id=olt_id)
