@@ -1,0 +1,173 @@
+{
+  "rabbit_version": "3.12",
+  "rabbitmq_version": "3.12",
+  "product_name": "RabbitMQ",
+  "product_version": "3.12",
+  "users": [],
+  "vhosts": [
+    {
+      "name": "/",
+      "tracing": false
+    }
+  ],
+  "permissions": [],
+  "topic_permissions": [],
+  "parameters": [],
+  "global_parameters": [
+    {
+      "name": "cluster_name",
+      "value": "rjchronos-logging"
+    }
+  ],
+  "policies": [
+    {
+      "vhost": "/",
+      "name": "ha-all",
+      "pattern": ".*",
+      "apply-to": "all",
+      "definition": {
+        "ha-mode": "all",
+        "ha-sync-mode": "automatic"
+      },
+      "priority": 0
+    },
+    {
+      "vhost": "/",
+      "name": "log-ttl",
+      "pattern": "logs\\.",
+      "apply-to": "queues",
+      "definition": {
+        "message-ttl": 3600000,
+        "max-length": 100000,
+        "overflow": "drop-head"
+      },
+      "priority": 1
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "system.logs",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "system.logs.dlx",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "logs.postgresql.critical",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-message-ttl": 3600000,
+        "x-dead-letter-exchange": "system.logs.dlx",
+        "x-dead-letter-routing-key": "postgresql.critical.failed"
+      }
+    },
+    {
+      "name": "logs.clickhouse.operational",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-message-ttl": 3600000,
+        "x-max-length": 50000,
+        "x-overflow": "drop-head",
+        "x-dead-letter-exchange": "system.logs.dlx",
+        "x-dead-letter-routing-key": "clickhouse.operational.failed"
+      }
+    },
+    {
+      "name": "logs.dlq.postgresql",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "logs.dlq.clickhouse",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "system.logs",
+      "vhost": "/",
+      "destination": "logs.postgresql.critical",
+      "destination_type": "queue",
+      "routing_key": "*.*.critical",
+      "arguments": {}
+    },
+    {
+      "source": "system.logs",
+      "vhost": "/",
+      "destination": "logs.postgresql.critical",
+      "destination_type": "queue",
+      "routing_key": "*.error.critical",
+      "arguments": {}
+    },
+    {
+      "source": "system.logs",
+      "vhost": "/",
+      "destination": "logs.postgresql.critical",
+      "destination_type": "queue",
+      "routing_key": "*.warning.critical",
+      "arguments": {}
+    },
+    {
+      "source": "system.logs",
+      "vhost": "/",
+      "destination": "logs.clickhouse.operational",
+      "destination_type": "queue",
+      "routing_key": "*.*.operational",
+      "arguments": {}
+    },
+    {
+      "source": "system.logs",
+      "vhost": "/",
+      "destination": "logs.clickhouse.operational",
+      "destination_type": "queue",
+      "routing_key": "*.info.operational",
+      "arguments": {}
+    },
+    {
+      "source": "system.logs",
+      "vhost": "/",
+      "destination": "logs.clickhouse.operational",
+      "destination_type": "queue",
+      "routing_key": "*.debug.operational",
+      "arguments": {}
+    },
+    {
+      "source": "system.logs.dlx",
+      "vhost": "/",
+      "destination": "logs.dlq.postgresql",
+      "destination_type": "queue",
+      "routing_key": "postgresql.critical.failed",
+      "arguments": {}
+    },
+    {
+      "source": "system.logs.dlx",
+      "vhost": "/",
+      "destination": "logs.dlq.clickhouse",
+      "destination_type": "queue",
+      "routing_key": "clickhouse.operational.failed",
+      "arguments": {}
+    }
+  ]
+}

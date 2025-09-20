@@ -75,9 +75,100 @@ services:
     networks:
       - rjchronos-net
 
+  # Sistema de logging centralizado
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./infrastructure/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+      - ./infrastructure/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    networks:
+      - rjchronos-net
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.8-alpine
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    environment:
+      - CLICKHOUSE_DB=logs
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - clickhouse_logs:/var/log/clickhouse-server
+      - ./infrastructure/clickhouse/config.xml:/etc/clickhouse-server/config.xml:ro
+    networks:
+      - rjchronos-net
+
+  # Consumers de log
+  log-consumer-postgresql:
+    build:
+      context: ./services/log-consumer-postgresql
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
+    networks:
+      - rjchronos-net
+    depends_on:
+      - db-app
+      - rabbitmq
+    restart: unless-stopped
+
+  log-consumer-clickhouse:
+    build:
+      context: ./services/log-consumer-clickhouse
+    environment:
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PORT=8123
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=
+      - CLICKHOUSE_DATABASE=logs
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
+    networks:
+      - rjchronos-net
+    depends_on:
+      - clickhouse
+      - rabbitmq
+    restart: unless-stopped
+
+  # Monitor do sistema de logging
+  log-monitor:
+    build:
+      context: ./services/log-monitor
+    ports:
+      - "8000:8000"  # Prometheus metrics
+      - "8080:8080"  # Health check API
+    environment:
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PORT=8123
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=
+      - CLICKHOUSE_DATABASE=logs
+      - POSTGRESQL_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
+    networks:
+      - rjchronos-net
+    depends_on:
+      - rabbitmq
+      - clickhouse
+      - db-app
+      - log-consumer-postgresql
+      - log-consumer-clickhouse
+    restart: unless-stopped
+
 volumes:
   postgres_app_data:
   mongo_acs_data:
+  rabbitmq_data:
+  clickhouse_data:
+  clickhouse_logs:
 
 networks:
   rjchronos-net:
