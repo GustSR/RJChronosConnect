@@ -8,6 +8,8 @@ uma fila de mensagens (como RabbitMQ).
 """
 
 import threading
+import requests
+from typing import Optional, Dict, Any, List
 from pysnmp.entity import engine, config
 from pysnmp.carrier.asyncore.dgram import udp
 from pysnmp.entity.rfc3413 import ntfrcv
@@ -95,6 +97,191 @@ class TrapListener:
         else:
             logger.info(f"Trap não reconhecido ({trap_oid_str}) de {remetente}. Não será publicado.")
 
+    def _get_olt_info_from_backend(self, olt_ip: str) -> Optional[Dict[str, Any]]:
+        """
+        Consulta o backend-api para obter informações completas da OLT pelo IP.
+
+        Args:
+            olt_ip: IP da OLT para buscar
+
+        Returns:
+            Dict com informações da OLT (id, name, etc.) ou None se não encontrada
+        """
+        try:
+            backend_url = getattr(settings, 'backend_api_url', 'http://backend-api:8000')
+            response = requests.get(
+                f"{backend_url}/api/olts",
+                params={"ip": olt_ip},
+                timeout=5
+            )
+
+            if response.status_code == 200:
+                olts_data = response.json()
+                if olts_data and len(olts_data) > 0:
+                    olt_info = olts_data[0]  # Pega a primeira OLT encontrada
+                    logger.debug(f"OLT encontrada no backend: {olt_info}")
+                    return olt_info
+                else:
+                    logger.warning(f"Nenhuma OLT encontrada no backend com IP {olt_ip}")
+                    return None
+            else:
+                logger.warning(f"Backend retornou status {response.status_code} para IP {olt_ip}")
+                return None
+
+        except requests.RequestException as e:
+            logger.error(f"Erro ao consultar backend para IP {olt_ip}: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Erro inesperado ao consultar backend: {e}")
+            return None
+
+    def _enrich_message_with_olt_info(self, message: Dict[str, Any], olt_ip: str) -> Dict[str, Any]:
+        """
+        Enriquece a mensagem com informações da OLT obtidas do backend.
+
+        Args:
+            message: Mensagem original do trap
+            olt_ip: IP da OLT
+
+        Returns:
+            Mensagem enriquecida com olt_id e olt_name
+        """
+        olt_info = self._get_olt_info_from_backend(olt_ip)
+
+        if olt_info:
+            # Adiciona informações enriquecidas da OLT
+            message['olt_id'] = olt_info.get('id')
+            message['olt_name'] = olt_info.get('name', f'OLT_{olt_ip}')
+            logger.debug(f"Mensagem enriquecida com olt_id={message['olt_id']}, olt_name={message['olt_name']}")
+        else:
+            # Fallback: usar informações básicas
+            message['olt_id'] = None
+            message['olt_name'] = f'OLT_{olt_ip}'
+            logger.warning(f"Usando informações de fallback para OLT {olt_ip}")
+
+        return message
+
+    def _publish_enriched_message(self, message: Dict[str, Any], olt_ip: str, event_type: str) -> None:
+        """
+        Enriquece e publica uma mensagem no RabbitMQ com dual routing para transição suave.
+
+        Durante mudanças de nome, publica na routing key antiga e nova para evitar
+        perda de mensagens em sistemas consumidores.
+
+        Args:
+            message: Mensagem original do trap
+            olt_ip: IP da OLT
+            event_type: Tipo do evento para routing key
+        """
+        # Enriquecer mensagem com informações da OLT do backend
+        mensagem_enriquecida = self._enrich_message_with_olt_info(message, olt_ip)
+
+        logger.debug(f"Dados decodificados do trap {event_type}: {mensagem_enriquecida}")
+
+        # Determinar routing keys para dual routing
+        routing_keys = self._determine_routing_keys(mensagem_enriquecida, olt_ip, event_type)
+
+        # Publicar mensagem em todas as routing keys determinadas
+        for routing_key in routing_keys:
+            try:
+                self.rabbitmq_publisher.publicar_mensagem(
+                    exchange_name='olt_events',
+                    routing_key=routing_key,
+                    mensagem=mensagem_enriquecida
+                )
+                logger.debug(f"Mensagem publicada em routing key: {routing_key}")
+            except Exception as e:
+                logger.error(f"Erro ao publicar mensagem em routing key {routing_key}: {e}")
+
+    def _determine_routing_keys(self, message: Dict[str, Any], olt_ip: str, event_type: str) -> List[str]:
+        """
+        Determina as routing keys para publicação, incluindo dual routing se necessário.
+
+        Args:
+            message: Mensagem enriquecida
+            olt_ip: IP da OLT
+            event_type: Tipo do evento
+
+        Returns:
+            Lista de routing keys para publicar a mensagem
+        """
+        routing_keys = []
+
+        # 1. Routing key principal usando nome atual da OLT
+        olt_name = message.get('olt_name')
+        if olt_name and olt_name != f'OLT_{olt_ip}':
+            # Usar nome da OLT como identificador principal
+            olt_identifier = olt_name.replace('_', '-').lower()
+            routing_keys.append(f"olt.{olt_identifier}.{event_type}")
+        else:
+            # Fallback para IP se nome não disponível
+            routing_keys.append(f"olt.{olt_ip}.{event_type}")
+
+        # 2. Verificar se há necessidade de dual routing (transição)
+        dual_routing_keys = self._check_dual_routing_needed(message, olt_ip, event_type)
+        routing_keys.extend(dual_routing_keys)
+
+        # 3. Sempre manter routing key por IP como fallback
+        ip_routing_key = f"olt.{olt_ip}.{event_type}"
+        if ip_routing_key not in routing_keys:
+            routing_keys.append(ip_routing_key)
+
+        return routing_keys
+
+    def _check_dual_routing_needed(self, message: Dict[str, Any], olt_ip: str, event_type: str) -> List[str]:
+        """
+        Verifica se é necessário dual routing devido a mudanças recentes de nome.
+
+        Durante um período após mudança de nome, mantém routing keys antigas
+        para garantir que consumidores não percam mensagens.
+
+        Args:
+            message: Mensagem enriquecida
+            olt_ip: IP da OLT
+            event_type: Tipo do evento
+
+        Returns:
+            Lista de routing keys adicionais para dual routing
+        """
+        additional_keys = []
+
+        try:
+            olt_id = message.get('olt_id')
+            if not olt_id:
+                return additional_keys
+
+            # Verificar se houve mudança recente de nome via backend-api
+            response = requests.get(
+                f"{settings.backend_api_url}/olts/{olt_id}/sysname-history",
+                timeout=3
+            )
+
+            if response.status_code == 200:
+                history_data = response.json()
+
+                # Verificar mudanças nas últimas 24 horas (período de transição)
+                from datetime import datetime, timedelta
+                transition_period = timedelta(hours=24)
+
+                for record in history_data.get('recent_changes', []):
+                    change_time = datetime.fromisoformat(record.get('timestamp'))
+                    if datetime.now() - change_time <= transition_period:
+                        # Adicionar routing key do nome anterior
+                        old_name = record.get('old_sysname')
+                        if old_name and old_name != message.get('olt_name'):
+                            old_identifier = old_name.replace('_', '-').lower()
+                            old_routing_key = f"olt.{old_identifier}.{event_type}"
+                            if old_routing_key not in additional_keys:
+                                additional_keys.append(old_routing_key)
+                                logger.info(f"Dual routing ativo: {old_routing_key}")
+
+        except requests.RequestException as e:
+            logger.debug(f"Não foi possível verificar histórico de mudanças para dual routing: {e}")
+        except Exception as e:
+            logger.warning(f"Erro ao verificar dual routing: {e}")
+
+        return additional_keys
+
     def _decodificar_mudanca_estado_ont(self, var_binds_dict: dict, olt_ip: str, oid_config):
         """Decodifica os dados do trap de mudança de estado da ONT e publica no RabbitMQ."""
         logger.info("Evento de mudança de estado da ONT recebido.")
@@ -116,13 +303,8 @@ class TrapListener:
             'serial_number': serial_raw.prettyPrint() if serial_raw else None,
             'status': trap_oid_manager.get_status_text('ont_run_status', int(status_raw)) if status_raw else 'unknown'
         }
-        
-        logger.debug(f"Dados decodificados do trap de mudança de estado: {mensagem}")
-        self.rabbitmq_publisher.publicar_mensagem(
-            exchange_name='olt_events',
-            routing_key=f"olt.{olt_ip}.ont.state_change",
-            mensagem=mensagem
-        )
+
+        self._publish_enriched_message(mensagem, olt_ip, 'ont.state_change')
 
     def _decodificar_alarme_ont(self, var_binds_dict: dict, olt_ip: str, oid_config):
         """Decodifica os dados do trap de alarme da ONT e publica no RabbitMQ."""
@@ -148,12 +330,7 @@ class TrapListener:
             'alarm_status': trap_oid_manager.get_status_text('alarm_status', int(alarm_status_raw)) if alarm_status_raw else 'unknown'
         }
 
-        logger.debug(f"Dados decodificados do trap de alarme: {mensagem}")
-        self.rabbitmq_publisher.publicar_mensagem(
-            exchange_name='olt_events',
-            routing_key=f"olt.{olt_ip}.ont.alarm",
-            mensagem=mensagem
-        )
+        self._publish_enriched_message(mensagem, olt_ip, 'ont.alarm')
 
     def _decodificar_dying_gasp(self, var_binds_dict: dict, olt_ip: str, oid_config):
         """Decodifica trap de dying gasp (perda de energia da ONT)."""
@@ -182,13 +359,8 @@ class TrapListener:
             'detection_method': 'dying_gasp_trap',
             'immediate_action_required': True
         }
-        
-        logger.debug(f"Dados do dying gasp: {mensagem}")
-        self.rabbitmq_publisher.publicar_mensagem(
-            exchange_name='olt_events',
-            routing_key=f"olt.{olt_ip}.ont.dying_gasp",
-            mensagem=mensagem
-        )
+
+        self._publish_enriched_message(mensagem, olt_ip, 'ont.dying_gasp')
 
     def _decodificar_port_down(self, var_binds_dict: dict, olt_ip: str, oid_config):
         """Decodifica trap de porta PON down (possível rompimento de fibra)."""
@@ -214,12 +386,7 @@ class TrapListener:
             'mass_impact_expected': True
         }
         
-        logger.debug(f"Dados do port down: {mensagem}")
-        self.rabbitmq_publisher.publicar_mensagem(
-            exchange_name='olt_events',
-            routing_key=f"olt.{olt_ip}.pon.port_down",
-            mensagem=mensagem
-        )
+        self._publish_enriched_message(mensagem, olt_ip, 'pon.port_down')
 
     def _decodificar_port_up(self, var_binds_dict: dict, olt_ip: str, oid_config):
         """Decodifica trap de porta PON up (recuperação de conectividade)."""
@@ -242,12 +409,7 @@ class TrapListener:
             'recovery_detected': True
         }
         
-        logger.debug(f"Dados do port up: {mensagem}")
-        self.rabbitmq_publisher.publicar_mensagem(
-            exchange_name='olt_events',
-            routing_key=f"olt.{olt_ip}.pon.port_up",
-            mensagem=mensagem
-        )
+        self._publish_enriched_message(mensagem, olt_ip, 'pon.port_up')
 
     def _decodificar_los_alarm(self, var_binds_dict: dict, olt_ip: str, oid_config):
         """Decodifica trap de alarme LOS (Loss of Signal)."""
@@ -271,12 +433,7 @@ class TrapListener:
             'possible_causes': ['fiber_disconnected', 'ont_powered_off', 'optical_degradation']
         }
         
-        logger.debug(f"Dados do LOS alarm: {mensagem}")
-        self.rabbitmq_publisher.publicar_mensagem(
-            exchange_name='olt_events',
-            routing_key=f"olt.{olt_ip}.ont.los_alarm",
-            mensagem=mensagem
-        )
+        self._publish_enriched_message(mensagem, olt_ip, 'ont.los_alarm')
 
     def _decodificar_lof_alarm(self, var_binds_dict: dict, olt_ip: str, oid_config):
         """Decodifica trap de alarme LOF (Loss of Frame)."""
@@ -300,12 +457,7 @@ class TrapListener:
             'possible_causes': ['signal_degradation', 'synchronization_loss', 'equipment_malfunction']
         }
         
-        logger.debug(f"Dados do LOF alarm: {mensagem}")
-        self.rabbitmq_publisher.publicar_mensagem(
-            exchange_name='olt_events',
-            routing_key=f"olt.{olt_ip}.ont.lof_alarm",
-            mensagem=mensagem
-        )
+        self._publish_enriched_message(mensagem, olt_ip, 'ont.lof_alarm')
 
     def _ifindex_to_port(self, if_index: int, olt_model: str = "MA5600T") -> str:
         """Converte ifIndex para string de porta usando lógica robusta."""
