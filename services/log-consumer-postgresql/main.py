@@ -288,24 +288,26 @@ class PostgreSQLConsumer:
 
 async def main():
     """Função principal."""
+    import os
+
     config = {
         "database": {
-            "url": "postgresql+asyncpg://user:password@localhost:5432/rjchronos",
-            "echo": False,
-            "pool_size": 10,
-            "max_overflow": 20
+            "url": os.getenv("DATABASE_URL", "postgresql+asyncpg://user:password@localhost:5432/rjchronos"),
+            "echo": os.getenv("DB_ECHO", "false").lower() == "true",
+            "pool_size": int(os.getenv("DB_POOL_SIZE", "10")),
+            "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "20"))
         },
         "rabbitmq": {
-            "url": "amqp://localhost:5672",
-            "exchange": "system.logs",
-            "critical_queue": "logs.postgresql.critical",
+            "url": os.getenv("RABBITMQ_URL", "amqp://localhost:5672"),
+            "exchange": os.getenv("RABBITMQ_EXCHANGE", "system.logs"),
+            "critical_queue": os.getenv("RABBITMQ_CRITICAL_QUEUE", "logs.postgresql.critical"),
             "critical_routing_patterns": [
                 "*.*.critical",
                 "*.error.critical",
                 "*.warning.critical"
             ],
-            "prefetch_count": 10,
-            "timeout": 30
+            "prefetch_count": int(os.getenv("RABBITMQ_PREFETCH_COUNT", "10")),
+            "timeout": int(os.getenv("RABBITMQ_TIMEOUT", "30"))
         }
     }
 

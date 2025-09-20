@@ -114,6 +114,13 @@ services:
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
       - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
+      - RABBITMQ_EXCHANGE=system.logs
+      - RABBITMQ_CRITICAL_QUEUE=logs.postgresql.critical
+      - RABBITMQ_PREFETCH_COUNT=10
+      - RABBITMQ_TIMEOUT=30
+      - DB_ECHO=false
+      - DB_POOL_SIZE=10
+      - DB_MAX_OVERFLOW=20
     networks:
       - rjchronos-net
     depends_on:
@@ -131,6 +138,12 @@ services:
       - CLICKHOUSE_PASSWORD=
       - CLICKHOUSE_DATABASE=logs
       - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
+      - RABBITMQ_EXCHANGE=system.logs
+      - RABBITMQ_OPERATIONAL_QUEUE=logs.clickhouse.operational
+      - RABBITMQ_PREFETCH_COUNT=100
+      - RABBITMQ_TIMEOUT=30
+      - CLICKHOUSE_BATCH_SIZE=1000
+      - CLICKHOUSE_BATCH_TIMEOUT=30
     networks:
       - rjchronos-net
     depends_on:

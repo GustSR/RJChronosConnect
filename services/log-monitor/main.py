@@ -434,21 +434,22 @@ async def detailed_metrics():
 
 async def main():
     """Função principal."""
+    import os
     global monitor
 
     config = {
         "rabbitmq": {
-            "url": "amqp://localhost:5672"
+            "url": os.getenv("RABBITMQ_URL", "amqp://localhost:5672")
         },
         "clickhouse": {
-            "host": "localhost",
-            "port": 8123,
-            "username": "default",
-            "password": "",
-            "database": "logs"
+            "host": os.getenv("CLICKHOUSE_HOST", "localhost"),
+            "port": int(os.getenv("CLICKHOUSE_PORT", "8123")),
+            "username": os.getenv("CLICKHOUSE_USER", "default"),
+            "password": os.getenv("CLICKHOUSE_PASSWORD", ""),
+            "database": os.getenv("CLICKHOUSE_DATABASE", "logs")
         },
         "postgresql": {
-            "url": "postgresql+asyncpg://user:password@localhost:5432/rjchronos"
+            "url": os.getenv("POSTGRESQL_URL", os.getenv("DATABASE_URL", "postgresql+asyncpg://user:password@localhost:5432/rjchronos"))
         }
     }
 

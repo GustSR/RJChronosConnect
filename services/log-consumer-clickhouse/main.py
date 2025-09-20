@@ -417,28 +417,30 @@ class ClickHouseConsumer:
 
 async def main():
     """Função principal."""
+    import os
+
     config = {
         "clickhouse": {
-            "host": "localhost",
-            "port": 8123,
-            "username": "default",
-            "password": "",
-            "database": "logs"
+            "host": os.getenv("CLICKHOUSE_HOST", "localhost"),
+            "port": int(os.getenv("CLICKHOUSE_PORT", "8123")),
+            "username": os.getenv("CLICKHOUSE_USER", "default"),
+            "password": os.getenv("CLICKHOUSE_PASSWORD", ""),
+            "database": os.getenv("CLICKHOUSE_DATABASE", "logs")
         },
         "rabbitmq": {
-            "url": "amqp://localhost:5672",
-            "exchange": "system.logs",
-            "operational_queue": "logs.clickhouse.operational",
+            "url": os.getenv("RABBITMQ_URL", "amqp://localhost:5672"),
+            "exchange": os.getenv("RABBITMQ_EXCHANGE", "system.logs"),
+            "operational_queue": os.getenv("RABBITMQ_OPERATIONAL_QUEUE", "logs.clickhouse.operational"),
             "operational_routing_patterns": [
                 "*.*.operational",
                 "*.info.operational",
                 "*.debug.operational"
             ],
-            "prefetch_count": 100,
-            "timeout": 30
+            "prefetch_count": int(os.getenv("RABBITMQ_PREFETCH_COUNT", "100")),
+            "timeout": int(os.getenv("RABBITMQ_TIMEOUT", "30"))
         },
-        "batch_size": 1000,
-        "batch_timeout": 30
+        "batch_size": int(os.getenv("CLICKHOUSE_BATCH_SIZE", "1000")),
+        "batch_timeout": int(os.getenv("CLICKHOUSE_BATCH_TIMEOUT", "30"))
     }
 
     consumer = ClickHouseConsumer(config)
