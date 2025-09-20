@@ -1,0 +1,169 @@
+# Configuração de logging para backend-api
+# Arquivo de configuração YAML para o sistema de logging avançado
+
+service:
+  name: "backend-api"
+  version: "1.0.0"
+
+logging:
+  # Configuração de transporte (RabbitMQ)
+  transport:
+    type: "rabbitmq"
+    url: "amqp://localhost:5672"  # Será sobrescrito por variável de ambiente
+    exchange: "system.logs"
+    timeout_ms: 1000
+    retry_attempts: 3
+    retry_delay_ms: 500
+
+  # Configuração de fallback (arquivo local)
+  fallback:
+    type: "file"
+    path: "/var/log/backend-api.log"
+    rotation: "daily"
+    retention: "7 days"
+    max_size_mb: 100
+
+  # Filtros de log
+  filters:
+    min_level: "info"
+    exclude_patterns:
+      - "health_check"
+      - "metrics_collection"
+    include_only: []  # Se vazio, inclui todos exceto os excluídos
+
+  # Rate limiting
+  rate_limit:
+    max_per_second: 100
+    burst_size: 500
+    window_seconds: 60
+
+  # Tipos de eventos específicos do backend-api
+  event_types:
+    # Eventos críticos de autenticação
+    - name: "user_login"
+      destination: "postgresql"
+      level: "info"
+      category: "authentication"
+      retention: "5 years"
+      compliance: ["LGPD", "ANATEL"]
+      pii_fields: ["user_id", "ip_address", "user_agent"]
+      legal_basis: "Legítimo interesse para segurança"
+      description: "Login de usuário no sistema"
+
+    - name: "user_logout"
+      destination: "postgresql"
+      level: "info"
+      category: "authentication"
+      retention: "5 years"
+      compliance: ["LGPD"]
+      pii_fields: ["user_id", "session_id"]
+      legal_basis: "Legítimo interesse para auditoria"
+
+    - name: "user_password_change"
+      destination: "postgresql"
+      level: "warning"
+      category: "security"
+      retention: "5 years"
+      compliance: ["LGPD", "ISO27001"]
+      pii_fields: ["user_id"]
+      legal_basis: "Legítimo interesse para segurança"
+
+    # Eventos críticos de acesso a dados
+    - name: "customer_data_access"
+      destination: "postgresql"
+      level: "info"
+      category: "data_access"
+      retention: "5 years"
+      compliance: ["LGPD", "ANATEL"]
+      pii_fields: ["user_id", "customer_id", "accessed_fields"]
+      legal_basis: "Consentimento do titular"
+
+    - name: "customer_equipment_access"
+      destination: "postgresql"
+      level: "info"
+      category: "equipment_access"
+      retention: "3 years"
+      compliance: ["ANATEL", "ITIL"]
+      pii_fields: ["customer_id", "equipment_id"]
+      legal_basis: "Execução de contrato"
+
+    # Eventos de configuração crítica
+    - name: "olt_configuration_change"
+      destination: "postgresql"
+      level: "warning"
+      category: "configuration"
+      retention: "5 years"
+      compliance: ["ANATEL", "ITIL"]
+      pii_fields: ["user_id", "olt_id"]
+      legal_basis: "Execução de contrato"
+
+    - name: "olt_sysname_change"
+      destination: "postgresql"
+      level: "warning"
+      category: "configuration"
+      retention: "5 years"
+      compliance: ["ANATEL", "ITIL"]
+      pii_fields: ["user_id", "olt_id"]
+      legal_basis: "Execução de contrato"
+
+    # Eventos de segurança
+    - name: "unauthorized_access_attempt"
+      destination: "postgresql"
+      level: "error"
+      category: "security"
+      retention: "7 years"
+      compliance: ["LGPD", "ISO27001"]
+      pii_fields: ["ip_address", "user_agent", "attempted_user"]
+      legal_basis: "Legítimo interesse para segurança"
+
+    - name: "security_incident"
+      destination: "postgresql"
+      level: "critical"
+      category: "security"
+      retention: "10 years"
+      compliance: ["LGPD", "ISO27001", "ANATEL"]
+      pii_fields: ["affected_users", "compromised_data"]
+      legal_basis: "Obrigação legal"
+
+    # Eventos operacionais (ClickHouse)
+    - name: "api_request"
+      destination: "clickhouse"
+      level: "info"
+      category: "operational"
+      retention: "6 months"
+      compliance: []
+      pii_fields: []
+      description: "Requisições da API"
+
+    - name: "database_query"
+      destination: "clickhouse"
+      level: "debug"
+      category: "performance"
+      retention: "3 months"
+      compliance: []
+      pii_fields: []
+
+    - name: "task_execution"
+      destination: "clickhouse"
+      level: "info"
+      category: "automation"
+      retention: "1 year"
+      compliance: ["ITIL"]
+      pii_fields: []
+
+    # Eventos de monitoramento
+    - name: "performance_metric"
+      destination: "clickhouse"
+      level: "info"
+      category: "monitoring"
+      retention: "6 months"
+      compliance: []
+      pii_fields: []
+
+    - name: "health_check"
+      destination: "local_file"
+      level: "debug"
+      category: "monitoring"
+      retention: "7 days"
+      compliance: []
+      pii_fields: []
