@@ -23,7 +23,9 @@ const ForgetPassword = Loadable(
 
 // Dashboard pages
 const Dashboard = Loadable(lazy(() => import('../pages/Dashboard')));
-const DashboardClientes = Loadable(lazy(() => import('../pages/DashboardClientes')));
+const DashboardClientes = Loadable(
+  lazy(() => import('../pages/DashboardClientes'))
+);
 const DashboardOLTs = Loadable(lazy(() => import('../pages/DashboardOLTs')));
 
 // Kanban page
@@ -40,7 +42,7 @@ const ClienteDetalhes = Loadable(
 
 // ONU Configuration pages
 const ONUConfiguration = Loadable(
-  lazy(() => import('../pages/ONUConfigurationNew'))
+  lazy(() => import('../pages/ONUConfiguration'))
 );
 const ONUConfigurationStatus = Loadable(
   lazy(() => import('../pages/ONUConfigurationStatus'))

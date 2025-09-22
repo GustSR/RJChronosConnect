@@ -27,68 +27,76 @@ const spacing = (factor: number) => `${8 * factor}px`;
 // Função para criar o theme completo do Uko
 const createUkoTheme = (mode: 'light' | 'dark'): Theme => {
   // Criação do theme base
-  const baseTheme = createTheme({
-    palette: {
-      mode,
-      // Cores primárias
-      primary: {
-        ...colors.primary,
-        main: colors.primary.main,
+  const baseTheme = createTheme(
+    {
+      palette: {
+        mode,
+        // Cores primárias
+        primary: {
+          ...colors.primary,
+          main: colors.primary.main,
+        },
+        // Cores secundárias
+        secondary: {
+          ...colors.secondary,
+          main: colors.secondary.main,
+        },
+        // Cores semânticas
+        success: {
+          ...colors.success,
+          main: colors.success.main,
+        },
+        warning: {
+          ...colors.warning,
+          main: colors.warning.main,
+        },
+        error: {
+          ...colors.error,
+          main: colors.error.main,
+        },
+        info: {
+          ...colors.info,
+          main: colors.info.main,
+        },
+        // Cores de background
+        background: {
+          default:
+            mode === 'light'
+              ? colors.background.light.default
+              : colors.background.dark.default,
+          paper:
+            mode === 'light'
+              ? colors.background.light.paper
+              : colors.background.dark.paper,
+        },
+        // Cores de texto
+        text: {
+          primary:
+            mode === 'light'
+              ? colors.text.light.primary
+              : colors.text.dark.primary,
+          secondary:
+            mode === 'light'
+              ? colors.text.light.secondary
+              : colors.text.dark.secondary,
+          disabled:
+            mode === 'light'
+              ? colors.text.light.disabled
+              : colors.text.dark.disabled,
+        },
+        // Dividers
+        divider: mode === 'light' ? colors.grey[200] : colors.grey[700],
+        // Grey palette
+        grey: colors.grey,
       },
-      // Cores secundárias  
-      secondary: {
-        ...colors.secondary,
-        main: colors.secondary.main,
-      },
-      // Cores semânticas
-      success: {
-        ...colors.success,
-        main: colors.success.main,
-      },
-      warning: {
-        ...colors.warning,
-        main: colors.warning.main,
-      },
-      error: {
-        ...colors.error,
-        main: colors.error.main,
-      },
-      info: {
-        ...colors.info,
-        main: colors.info.main,
-      },
-      // Cores de background
-      background: {
-        default: mode === 'light' 
-          ? colors.background.light.default 
-          : colors.background.dark.default,
-        paper: mode === 'light' 
-          ? colors.background.light.paper 
-          : colors.background.dark.paper,
-      },
-      // Cores de texto
-      text: {
-        primary: mode === 'light' 
-          ? colors.text.light.primary 
-          : colors.text.dark.primary,
-        secondary: mode === 'light' 
-          ? colors.text.light.secondary 
-          : colors.text.dark.secondary,
-        disabled: mode === 'light' 
-          ? colors.text.light.disabled 
-          : colors.text.dark.disabled,
-      },
-      // Dividers
-      divider: mode === 'light' ? colors.grey[200] : colors.grey[700],
-      // Grey palette
-      grey: colors.grey,
+      typography,
+      shape,
+      breakpoints,
+      spacing,
+      shadows: createShadows(mode),
     },
-    typography,
-    shape,
-    breakpoints,
-    spacing,
-    shadows: createShadows(mode),
-  }, ptBR);
+    ptBR
+  );
 
   // Theme final com component overrides
   const themeWithComponents = createTheme({
@@ -113,7 +121,7 @@ export const ukoConfig = {
     sidebarCollapsedWidth: 80,
     footerHeight: 56,
   },
-  
+
   // Configurações de animação
   animation: {
     duration: {
@@ -130,7 +138,7 @@ export const ukoConfig = {
       emphasized: 'cubic-bezier(0.2, 0, 0, 1)',
     },
   },
-  
+
   // Z-index scale do Uko
   zIndex: {
     drawer: 1200,
@@ -145,7 +153,7 @@ declare module '@mui/material/styles' {
   interface Theme {
     ukoConfig?: typeof ukoConfig;
   }
-  
+
   interface ThemeOptions {
     ukoConfig?: typeof ukoConfig;
   }
@@ -153,7 +161,7 @@ declare module '@mui/material/styles' {
   interface Palette {
     grey: typeof colors.grey;
   }
-  
+
   interface PaletteOptions {
     grey?: typeof colors.grey;
   }

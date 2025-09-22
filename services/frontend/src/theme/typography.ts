@@ -3,14 +3,15 @@ import { TypographyOptions } from '@mui/material/styles/createTypography';
 // Sistema de typography completo do Uko Template
 export const typography: TypographyOptions = {
   // Font Family - Uko usa Inter
-  fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  
+  fontFamily:
+    '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+
   // Font weights disponíveis
   fontWeightLight: 300,
   fontWeightRegular: 400,
   fontWeightMedium: 500,
   fontWeightBold: 600,
-  
+
   // Headings - Hierarquia do Uko
   h1: {
     fontSize: '48px',
@@ -117,7 +118,7 @@ export const customTypographyVariants = {
     lineHeight: 1.3,
     letterSpacing: '-0.025em',
   },
-  
+
   // Labels - Para formulários
   label1: {
     fontSize: '14px',
@@ -131,7 +132,7 @@ export const customTypographyVariants = {
     lineHeight: 1.3,
     letterSpacing: '0.003em',
   },
-  
+
   // Helper texts
   helper: {
     fontSize: '12px',
@@ -139,7 +140,7 @@ export const customTypographyVariants = {
     lineHeight: 1.4,
     letterSpacing: '0.003em',
   },
-  
+
   // Code - Para textos de código
   code: {
     fontSize: '14px',
@@ -148,7 +149,7 @@ export const customTypographyVariants = {
     letterSpacing: '0em',
     fontFamily: '"Fira Code", "Monaco", "Consolas", monospace',
   },
-  
+
   // Links
   link: {
     fontSize: '14px',
@@ -158,7 +159,7 @@ export const customTypographyVariants = {
     textDecoration: 'none',
     cursor: 'pointer',
   },
-  
+
   // Small texts
   small: {
     fontSize: '11px',

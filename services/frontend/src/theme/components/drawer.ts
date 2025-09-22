@@ -7,9 +7,10 @@ export const drawerOverrides = (theme: Theme): Components['MuiDrawer'] => ({
     paper: {
       backgroundColor: theme.palette.background.paper,
       borderRight: `1px solid ${theme.palette.divider}`,
-      boxShadow: theme.palette.mode === 'light' 
-        ? '0px 8px 45px rgba(3, 0, 71, 0.09)'
-        : '0px 8px 45px rgba(0, 0, 0, 0.4)',
+      boxShadow:
+        theme.palette.mode === 'light'
+          ? '0px 8px 45px rgba(3, 0, 71, 0.09)'
+          : '0px 8px 45px rgba(0, 0, 0, 0.4)',
     },
   },
 });

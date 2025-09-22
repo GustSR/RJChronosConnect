@@ -124,7 +124,15 @@ const UserActivity: FC = () => {
   // Loading state
   if (loading) {
     return (
-      <AnimatedCard sx={{ padding: '2rem', height: '400px', display: 'flex', flexDirection: 'column' }} delay={700}>
+      <AnimatedCard
+        sx={{
+          padding: '2rem',
+          height: '400px',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+        delay={700}
+      >
         <H5>Atividades Recentes dos Usuários</H5>
         <ScrollBar style={{ flex: 1, maxHeight: '320px' }}>
           <Table>
@@ -173,7 +181,15 @@ const UserActivity: FC = () => {
   // Error state
   if (error) {
     return (
-      <AnimatedCard sx={{ padding: '2rem', height: '400px', display: 'flex', flexDirection: 'column' }} delay={700}>
+      <AnimatedCard
+        sx={{
+          padding: '2rem',
+          height: '400px',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+        delay={700}
+      >
         <H5>Atividades Recentes dos Usuários</H5>
         <Alert severity="error" sx={{ mt: 2 }}>
           {error} - Dados em cache não disponíveis
@@ -183,7 +199,15 @@ const UserActivity: FC = () => {
   }
 
   return (
-    <AnimatedCard sx={{ padding: '2rem', height: '400px', display: 'flex', flexDirection: 'column' }} delay={700}>
+    <AnimatedCard
+      sx={{
+        padding: '2rem',
+        height: '400px',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+      delay={700}
+    >
       <H5>Atividades Recentes dos Usuários</H5>
 
       <ScrollBar style={{ flex: 1, maxHeight: '320px' }}>

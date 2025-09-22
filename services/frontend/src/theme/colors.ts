@@ -80,7 +80,7 @@ export const warning = {
   main: '#FEBF06',
 };
 
-// Error (Red/Pink) - Uko  
+// Error (Red/Pink) - Uko
 export const error = {
   25: '#FFFBFA',
   50: '#FEF3F2',
@@ -146,7 +146,8 @@ export const text = {
 };
 
 // Função para criar variações com alpha
-export const createAlpha = (color: string, opacity: number) => alpha(color, opacity);
+export const createAlpha = (color: string, opacity: number) =>
+  alpha(color, opacity);
 
 // Export das cores para uso no theme
 export const colors = {

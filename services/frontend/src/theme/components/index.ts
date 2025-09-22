@@ -17,11 +17,11 @@ import { dialogOverrides } from './dialog';
 export const createComponentOverrides = (theme: Theme): Components => ({
   // Button components
   MuiButton: buttonOverrides(theme),
-  
+
   // Surface components
   MuiCard: cardOverrides(theme),
   MuiPaper: paperOverrides(theme),
-  
+
   // Input components
   MuiTextField: textFieldOverrides(theme),
   MuiOutlinedInput: {
@@ -38,7 +38,7 @@ export const createComponentOverrides = (theme: Theme): Components => ({
       },
     },
   },
-  
+
   // Navigation components
   MuiList: listOverrides(theme),
   MuiListItemButton: {
@@ -47,32 +47,35 @@ export const createComponentOverrides = (theme: Theme): Components => ({
         borderRadius: theme.shape.borderRadius * 1.5,
         margin: '0 8px',
         '&:hover': {
-          backgroundColor: theme.palette.mode === 'light' 
-            ? theme.palette.primary.main + '08'
-            : theme.palette.primary.main + '12',
+          backgroundColor:
+            theme.palette.mode === 'light'
+              ? theme.palette.primary.main + '08'
+              : theme.palette.primary.main + '12',
         },
         '&.Mui-selected': {
-          backgroundColor: theme.palette.mode === 'light'
-            ? theme.palette.primary.main + '10'
-            : theme.palette.primary.main + '20',
+          backgroundColor:
+            theme.palette.mode === 'light'
+              ? theme.palette.primary.main + '10'
+              : theme.palette.primary.main + '20',
           '&:hover': {
-            backgroundColor: theme.palette.mode === 'light'
-              ? theme.palette.primary.main + '15'
-              : theme.palette.primary.main + '25',
+            backgroundColor:
+              theme.palette.mode === 'light'
+                ? theme.palette.primary.main + '15'
+                : theme.palette.primary.main + '25',
           },
         },
       },
     },
   },
-  
+
   MuiDrawer: drawerOverrides(theme),
   MuiAppBar: appBarOverrides(theme),
-  
+
   // Feedback components
   MuiChip: chipOverrides(theme),
   MuiAlert: alertOverrides(theme),
   MuiDialog: dialogOverrides(theme),
-  
+
   // Data display components
   MuiTooltip: {
     styleOverrides: {
@@ -94,7 +97,7 @@ export const createComponentOverrides = (theme: Theme): Components => ({
       },
     },
   },
-  
+
   // Layout components
   MuiContainer: {
     styleOverrides: {
@@ -108,7 +111,7 @@ export const createComponentOverrides = (theme: Theme): Components => ({
       },
     },
   },
-  
+
   // Typography components
   MuiTypography: {
     styleOverrides: {

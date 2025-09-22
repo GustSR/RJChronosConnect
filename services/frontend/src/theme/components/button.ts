@@ -21,15 +21,17 @@ export const buttonOverrides = (theme: Theme): Components['MuiButton'] => ({
         transform: 'translateY(0px)',
       },
       '&.Mui-disabled': {
-        backgroundColor: theme.palette.mode === 'light' 
-          ? theme.palette.grey[100] 
-          : theme.palette.grey[800],
-        color: theme.palette.mode === 'light' 
-          ? theme.palette.grey[400] 
-          : theme.palette.grey[500],
+        backgroundColor:
+          theme.palette.mode === 'light'
+            ? theme.palette.grey[100]
+            : theme.palette.grey[800],
+        color:
+          theme.palette.mode === 'light'
+            ? theme.palette.grey[400]
+            : theme.palette.grey[500],
       },
     },
-    
+
     // Primary variant - Cor principal do Uko
     containedPrimary: {
       backgroundColor: theme.palette.primary.main,
@@ -46,16 +48,19 @@ export const buttonOverrides = (theme: Theme): Components['MuiButton'] => ({
         boxShadow: `0px 2px 8px ${theme.palette.primary.main}50`,
       },
     },
-    
+
     // Secondary variant
     containedSecondary: {
       backgroundColor: theme.palette.secondary.main,
-      color: theme.palette.mode === 'light' ? theme.palette.common.white : theme.palette.common.black,
+      color:
+        theme.palette.mode === 'light'
+          ? theme.palette.common.white
+          : theme.palette.common.black,
       '&:hover': {
         backgroundColor: theme.palette.secondary.dark,
       },
     },
-    
+
     // Success variant
     containedSuccess: {
       backgroundColor: theme.palette.success.main,
@@ -67,7 +72,7 @@ export const buttonOverrides = (theme: Theme): Components['MuiButton'] => ({
         transform: 'translateY(-2px)',
       },
     },
-    
+
     // Error variant
     containedError: {
       backgroundColor: theme.palette.error.main,
@@ -79,7 +84,7 @@ export const buttonOverrides = (theme: Theme): Components['MuiButton'] => ({
         transform: 'translateY(-2px)',
       },
     },
-    
+
     // Warning variant
     containedWarning: {
       backgroundColor: theme.palette.warning.main,
@@ -91,7 +96,7 @@ export const buttonOverrides = (theme: Theme): Components['MuiButton'] => ({
         transform: 'translateY(-2px)',
       },
     },
-    
+
     // Outlined variants
     outlinedPrimary: {
       borderColor: theme.palette.primary.main,
@@ -104,7 +109,7 @@ export const buttonOverrides = (theme: Theme): Components['MuiButton'] => ({
         transform: 'translateY(-1px)',
       },
     },
-    
+
     outlinedSecondary: {
       borderColor: theme.palette.secondary.main,
       color: theme.palette.secondary.main,
@@ -115,7 +120,7 @@ export const buttonOverrides = (theme: Theme): Components['MuiButton'] => ({
         borderColor: theme.palette.secondary.dark,
       },
     },
-    
+
     // Text variants
     textPrimary: {
       color: theme.palette.primary.main,
@@ -123,14 +128,14 @@ export const buttonOverrides = (theme: Theme): Components['MuiButton'] => ({
         backgroundColor: `${theme.palette.primary.main}08`,
       },
     },
-    
+
     textSecondary: {
       color: theme.palette.secondary.main,
       '&:hover': {
         backgroundColor: `${theme.palette.secondary.main}08`,
       },
     },
-    
+
     // Tamanhos diferentes
     sizeSmall: {
       padding: theme.spacing(1, 2),
@@ -138,7 +143,7 @@ export const buttonOverrides = (theme: Theme): Components['MuiButton'] => ({
       minHeight: '32px',
       borderRadius: theme.shape.borderRadius * 1.25, // 10px
     },
-    
+
     sizeLarge: {
       padding: theme.spacing(2, 4),
       fontSize: '15px',
@@ -146,7 +151,7 @@ export const buttonOverrides = (theme: Theme): Components['MuiButton'] => ({
       borderRadius: theme.shape.borderRadius * 1.75, // 14px
     },
   },
-  
+
   // Variantes customizadas do Uko
   variants: [
     // Soft variants - Estilo popular no Uko
@@ -206,24 +211,27 @@ export const buttonOverrides = (theme: Theme): Components['MuiButton'] => ({
         },
       },
     },
-    
+
     // Ghost variant - Transparente com borda
     {
       props: { variant: 'outlined' },
       style: {
         '&.ghost': {
           backgroundColor: 'transparent',
-          borderColor: theme.palette.mode === 'light' 
-            ? theme.palette.grey[300] 
-            : theme.palette.grey[600],
+          borderColor:
+            theme.palette.mode === 'light'
+              ? theme.palette.grey[300]
+              : theme.palette.grey[600],
           color: theme.palette.text.primary,
           '&:hover': {
-            backgroundColor: theme.palette.mode === 'light' 
-              ? theme.palette.grey[50] 
-              : theme.palette.grey[800],
-            borderColor: theme.palette.mode === 'light' 
-              ? theme.palette.grey[400] 
-              : theme.palette.grey[500],
+            backgroundColor:
+              theme.palette.mode === 'light'
+                ? theme.palette.grey[50]
+                : theme.palette.grey[800],
+            borderColor:
+              theme.palette.mode === 'light'
+                ? theme.palette.grey[400]
+                : theme.palette.grey[500],
           },
         },
       },

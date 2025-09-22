@@ -18,6 +18,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Modal,
+  Card,
 } from '@mui/material';
 import {
   ArrowBack,
@@ -73,8 +75,8 @@ const ClienteDetalhes: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [onusDoCliente, setOnusDoCliente] = useState<ONUDoCliente[]>([]);
-  const [editandoCliente, setEditandoCliente] = useState(false);
   const [modalAddOnuOpen, setModalAddOnuOpen] = useState(false);
+  const [modalEditClienteOpen, setModalEditClienteOpen] = useState(false);
 
   // Estados para edição do cliente
   const [dadosEdicao, setDadosEdicao] = useState<Partial<Cliente>>({});
@@ -135,17 +137,24 @@ const ClienteDetalhes: React.FC = () => {
     }
   }, [id, provisionedONUs]);
 
+  const handleOpenEditModal = () => {
+    if (cliente) {
+      setDadosEdicao(cliente);
+      setModalEditClienteOpen(true);
+    }
+  };
+
   const handleSalvarEdicao = () => {
     if (cliente && dadosEdicao) {
       setCliente({ ...cliente, ...dadosEdicao });
-      setEditandoCliente(false);
+      setModalEditClienteOpen(false);
     }
   };
 
   const handleCancelarEdicao = () => {
     if (cliente) {
       setDadosEdicao(cliente);
-      setEditandoCliente(false);
+      setModalEditClienteOpen(false);
     }
   };
 
@@ -226,31 +235,6 @@ const ClienteDetalhes: React.FC = () => {
         >
           <ArrowBack />
         </IconButton>
-        <Box sx={{ flexGrow: 1 }}>
-          <Typography variant="h4" fontWeight="700" sx={{ mb: 1 }}>
-            Detalhes do Cliente
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Visualize e gerencie as informações e equipamentos do cliente
-          </Typography>
-        </Box>
-
-        <Stack direction="row" spacing={2}>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => setModalAddOnuOpen(true)}
-            sx={{
-              borderRadius: 3,
-              background: 'linear-gradient(135deg, #6366f1, #5855eb)',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #5855eb, #4f46e5)',
-              },
-            }}
-          >
-            Adicionar ONU/ONT
-          </Button>
-        </Stack>
       </Box>
 
       {/* Informações Básicas do Cliente */}
@@ -285,276 +269,152 @@ const ClienteDetalhes: React.FC = () => {
                 sx={{ textTransform: 'capitalize' }}
               />
             </Box>
-            <IconButton
-              onClick={() => setEditandoCliente(!editandoCliente)}
-              color="primary"
-              size="small"
-            >
-              <Edit />
-            </IconButton>
+            <Stack direction="row" spacing={1}>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => setModalAddOnuOpen(true)}
+                size="small"
+                sx={{
+                  borderRadius: 2,
+                  background: 'linear-gradient(135deg, #6366f1, #5855eb)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #5855eb, #4f46e5)',
+                  },
+                }}
+              >
+                Adicionar ONU/ONT
+              </Button>
+              <IconButton
+                onClick={handleOpenEditModal}
+                color="primary"
+                size="small"
+              >
+                <Edit />
+              </IconButton>
+            </Stack>
           </Box>
 
           <Divider sx={{ my: 3 }} />
 
-          {editandoCliente ? (
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Nome"
-                  value={dadosEdicao.nome || ''}
-                  onChange={(e) =>
-                    setDadosEdicao({ ...dadosEdicao, nome: e.target.value })
-                  }
-                  size="small"
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Telefone"
-                  value={dadosEdicao.telefone || ''}
-                  onChange={(e) =>
-                    setDadosEdicao({ ...dadosEdicao, telefone: e.target.value })
-                  }
-                  size="small"
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="E-mail"
-                  value={dadosEdicao.email || ''}
-                  onChange={(e) =>
-                    setDadosEdicao({ ...dadosEdicao, email: e.target.value })
-                  }
-                  size="small"
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Documento"
-                  value={dadosEdicao.documento || ''}
-                  onChange={(e) =>
-                    setDadosEdicao({
-                      ...dadosEdicao,
-                      documento: e.target.value,
-                    })
-                  }
-                  size="small"
-                />
-              </Grid>
-              <Grid item xs={12} md={8}>
-                <TextField
-                  fullWidth
-                  label="Endereço"
-                  value={dadosEdicao.endereco || ''}
-                  onChange={(e) =>
-                    setDadosEdicao({ ...dadosEdicao, endereco: e.target.value })
-                  }
-                  size="small"
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    value={dadosEdicao.status || 'ativo'}
-                    label="Status"
-                    onChange={(e) =>
-                      setDadosEdicao({
-                        ...dadosEdicao,
-                        status: e.target.value as
-                          | 'ativo'
-                          | 'inativo'
-                          | 'suspenso',
-                      })
-                    }
-                  >
-                    <MenuItem value="ativo">Ativo</MenuItem>
-                    <MenuItem value="suspenso">Suspenso</MenuItem>
-                    <MenuItem value="inativo">Inativo</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Observações"
-                  value={dadosEdicao.observacoes || ''}
-                  onChange={(e) =>
-                    setDadosEdicao({
-                      ...dadosEdicao,
-                      observacoes: e.target.value,
-                    })
-                  }
-                  size="small"
-                  multiline
-                  rows={2}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Box
-                  sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}
-                >
-                  <Button variant="outlined" onClick={handleCancelarEdicao}>
-                    Cancelar
-                  </Button>
-                  <Button variant="contained" onClick={handleSalvarEdicao}>
-                    Salvar
-                  </Button>
-                </Box>
-              </Grid>
-            </Grid>
-          ) : (
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6} md={3}>
-                <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Phone
-                      sx={{ fontSize: 18, mr: 1, color: 'text.secondary' }}
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      Telefone
-                    </Typography>
-                  </Box>
-                  <Typography variant="body1" fontWeight="500">
-                    {cliente.telefone}
-                  </Typography>
-                </Box>
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={3}>
-                <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Email
-                      sx={{ fontSize: 18, mr: 1, color: 'text.secondary' }}
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      E-mail
-                    </Typography>
-                  </Box>
-                  <Typography variant="body1" fontWeight="500">
-                    {cliente.email}
-                  </Typography>
-                </Box>
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={3}>
-                <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Person
-                      sx={{ fontSize: 18, mr: 1, color: 'text.secondary' }}
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      Documento
-                    </Typography>
-                  </Box>
-                  <Typography variant="body1" fontWeight="500">
-                    {cliente.documento}
-                  </Typography>
-                </Box>
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={3}>
-                <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Schedule
-                      sx={{ fontSize: 18, mr: 1, color: 'text.secondary' }}
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      Data de Cadastro
-                    </Typography>
-                  </Box>
-                  <Typography variant="body1" fontWeight="500">
-                    {new Date(cliente.dataCadastro).toLocaleDateString('pt-BR')}
-                  </Typography>
-                </Box>
-              </Grid>
-
-              <Grid item xs={12}>
-                <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <LocationOn
-                      sx={{ fontSize: 18, mr: 1, color: 'text.secondary' }}
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      Endereço
-                    </Typography>
-                  </Box>
-                  <Typography variant="body1" fontWeight="500">
-                    {cliente.endereco}
-                  </Typography>
-                </Box>
-              </Grid>
-
-              {cliente.observacoes && (
-                <Grid item xs={12}>
-                  <Box>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      gutterBottom
-                    >
-                      Observações
-                    </Typography>
-                    <Typography variant="body1" fontWeight="500">
-                      {cliente.observacoes}
-                    </Typography>
-                  </Box>
-                </Grid>
-              )}
-            </Grid>
-          )}
-        </CardContent>
-      </AnimatedCard>
-
-      {/* Inventário de ONUs/ONTs */}
-      <AnimatedCard delay={200}>
-        <CardContent sx={{ p: 4 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-            <Typography variant="h5" fontWeight="600">
-              Inventário de ONUs/ONTs
-            </Typography>
-            <Chip
-              label={`${onusDoCliente.length} equipamento${
-                onusDoCliente.length !== 1 ? 's' : ''
-              }`}
-              size="small"
-              sx={{ ml: 2 }}
-            />
-          </Box>
-
-          {onusDoCliente.length === 0 ? (
-            <Alert severity="info" sx={{ textAlign: 'center', py: 4 }}>
-              Nenhuma ONU/ONT encontrada para este cliente.
-              <Box sx={{ mt: 2 }}>
-                <Button
-                  variant="contained"
-                  startIcon={<Add />}
-                  onClick={() => setModalAddOnuOpen(true)}
-                >
-                  Adicionar Primeira ONU/ONT
-                </Button>
-              </Box>
-            </Alert>
-          ) : (
-            <Grid container spacing={3}>
-              {onusDoCliente.map((onu) => (
-                <Grid item xs={12} md={6} lg={4} key={onu.id}>
-                  <ONUInventoryCard
-                    onu={onu}
-                    onConfigure={() =>
-                      navigate(`/clientes/${onu.id}/configurar`)
-                    }
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6} md={3}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Phone
+                    sx={{ fontSize: 18, mr: 1, color: 'text.secondary' }}
                   />
-                </Grid>
-              ))}
+                  <Typography variant="body2" color="text.secondary">
+                    Telefone
+                  </Typography>
+                </Box>
+                <Typography variant="body1" fontWeight="500">
+                  {cliente.telefone}
+                </Typography>
+              </Box>
             </Grid>
-          )}
+
+            <Grid item xs={12} sm={6} md={3}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Email
+                    sx={{ fontSize: 18, mr: 1, color: 'text.secondary' }}
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    E-mail
+                  </Typography>
+                </Box>
+                <Typography variant="body1" fontWeight="500">
+                  {cliente.email}
+                </Typography>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Person
+                    sx={{ fontSize: 18, mr: 1, color: 'text.secondary' }}
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    Documento
+                  </Typography>
+                </Box>
+                <Typography variant="body1" fontWeight="500">
+                  {cliente.documento}
+                </Typography>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Schedule
+                    sx={{ fontSize: 18, mr: 1, color: 'text.secondary' }}
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    Data de Cadastro
+                  </Typography>
+                </Box>
+                <Typography variant="body1" fontWeight="500">
+                  {new Date(cliente.dataCadastro).toLocaleDateString('pt-BR')}
+                </Typography>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <LocationOn
+                    sx={{ fontSize: 18, mr: 1, color: 'text.secondary' }}
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    Endereço
+                  </Typography>
+                </Box>
+                <Typography variant="body1" fontWeight="500">
+                  {cliente.endereco}
+                </Typography>
+              </Box>
+            </Grid>
+
+            {cliente.observacoes && (
+              <Grid item xs={12}>
+                <Box>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    gutterBottom
+                  >
+                    Observações
+                  </Typography>
+                  <Typography variant="body1" fontWeight="500">
+                    {cliente.observacoes}
+                  </Typography>
+                </Box>
+              </Grid>
+            )}
+          </Grid>
         </CardContent>
       </AnimatedCard>
+
+      {/* ONUs/ONTs */}
+      {onusDoCliente.length === 0 ? (
+        <Alert severity="info" sx={{ textAlign: 'center', py: 4, mb: 4 }}>
+          Nenhuma ONU/ONT encontrada para este cliente.
+        </Alert>
+      ) : (
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          {onusDoCliente.map((onu) => (
+            <Grid item xs={12} md={6} lg={4} key={onu.id}>
+              <ONUInventoryCard
+                onu={onu}
+                onConfigure={() => navigate(`/clientes/${onu.id}/configurar`)}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      )}
 
       {/* Modal para Adicionar ONU */}
       {cliente && (
@@ -566,6 +426,169 @@ const ClienteDetalhes: React.FC = () => {
           onProvisionONU={handleProvisionONU}
         />
       )}
+
+      {/* Modal para Editar Cliente */}
+      <Modal
+        open={modalEditClienteOpen}
+        onClose={handleCancelarEdicao}
+        slotProps={{
+          backdrop: {
+            sx: {
+              transition: 'none !important',
+            },
+          },
+        }}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          '& .MuiModal-root': {
+            transition: 'none !important',
+          },
+        }}
+      >
+        <Card
+          sx={{
+            minWidth: 500,
+            maxWidth: 800,
+            p: 4,
+            outline: 'none',
+            borderRadius: 2,
+            backgroundColor: 'white',
+            transition: 'none !important',
+            transform: 'none !important',
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 3 }}>
+            Editar Cliente
+          </Typography>
+
+          <Stack spacing={3}>
+            {/* Nome */}
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label="Nome"
+                value={dadosEdicao.nome || ''}
+                onChange={(e) =>
+                  setDadosEdicao({ ...dadosEdicao, nome: e.target.value })
+                }
+                fullWidth
+                size="small"
+                required
+              />
+            </Stack>
+
+            {/* Telefone e Email */}
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label="Telefone"
+                value={dadosEdicao.telefone || ''}
+                onChange={(e) =>
+                  setDadosEdicao({ ...dadosEdicao, telefone: e.target.value })
+                }
+                fullWidth
+                size="small"
+                type="tel"
+                required
+              />
+              <TextField
+                label="E-mail"
+                value={dadosEdicao.email || ''}
+                onChange={(e) =>
+                  setDadosEdicao({ ...dadosEdicao, email: e.target.value })
+                }
+                fullWidth
+                size="small"
+                type="email"
+                required
+              />
+            </Stack>
+
+            {/* Documento e Status */}
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label="Documento"
+                value={dadosEdicao.documento || ''}
+                onChange={(e) =>
+                  setDadosEdicao({
+                    ...dadosEdicao,
+                    documento: e.target.value,
+                  })
+                }
+                fullWidth
+                size="small"
+                required
+              />
+              <FormControl fullWidth size="small">
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={dadosEdicao.status || 'ativo'}
+                  label="Status"
+                  onChange={(e) =>
+                    setDadosEdicao({
+                      ...dadosEdicao,
+                      status: e.target.value as
+                        | 'ativo'
+                        | 'inativo'
+                        | 'suspenso',
+                    })
+                  }
+                >
+                  <MenuItem value="ativo">Ativo</MenuItem>
+                  <MenuItem value="suspenso">Suspenso</MenuItem>
+                  <MenuItem value="inativo">Inativo</MenuItem>
+                </Select>
+              </FormControl>
+            </Stack>
+
+            {/* Endereço */}
+            <TextField
+              label="Endereço"
+              value={dadosEdicao.endereco || ''}
+              onChange={(e) =>
+                setDadosEdicao({ ...dadosEdicao, endereco: e.target.value })
+              }
+              fullWidth
+              size="small"
+              required
+            />
+
+            {/* Observações */}
+            <TextField
+              label="Observações"
+              value={dadosEdicao.observacoes || ''}
+              onChange={(e) =>
+                setDadosEdicao({
+                  ...dadosEdicao,
+                  observacoes: e.target.value,
+                })
+              }
+              fullWidth
+              size="small"
+              multiline
+              rows={3}
+            />
+
+            {/* Botões de Ação */}
+            <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
+              <Button
+                variant="contained"
+                onClick={handleSalvarEdicao}
+                sx={{ flex: 1 }}
+              >
+                Salvar
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={handleCancelarEdicao}
+                sx={{ flex: 1 }}
+              >
+                Cancelar
+              </Button>
+            </Stack>
+          </Stack>
+        </Card>
+      </Modal>
     </Container>
   );
 };

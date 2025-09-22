@@ -6,13 +6,13 @@ import { grey } from './colors';
 export const createShadows = (mode: 'light' | 'dark'): Shadows => {
   // Cores base para shadows baseado no modo
   const shadowColorMain = mode === 'light' ? grey[500] : '#000000';
-  
+
   // Variações de alpha para diferentes intensidades
   const shadowColor1 = alpha(shadowColorMain, mode === 'light' ? 0.03 : 0.06);
   const shadowColor2 = alpha(shadowColorMain, mode === 'light' ? 0.04 : 0.08);
   const shadowColor3 = alpha(shadowColorMain, mode === 'light' ? 0.08 : 0.12);
   const shadowColor4 = alpha(shadowColorMain, mode === 'light' ? 0.12 : 0.16);
-  const shadowColor5 = alpha(shadowColorMain, mode === 'light' ? 0.16 : 0.20);
+  const shadowColor5 = alpha(shadowColorMain, mode === 'light' ? 0.16 : 0.2);
 
   return [
     'none',
@@ -73,24 +73,24 @@ export const customShadows = {
   cardSoft: '0px 4px 20px rgba(0, 0, 0, 0.05)',
   cardMedium: '0px 8px 30px rgba(0, 0, 0, 0.08)',
   cardHard: '0px 16px 40px rgba(0, 0, 0, 0.12)',
-  
+
   // Button shadows
   buttonPrimary: '0px 4px 12px rgba(105, 80, 232, 0.3)',
   buttonSecondary: '0px 2px 8px rgba(0, 0, 0, 0.1)',
   buttonHover: '0px 6px 20px rgba(105, 80, 232, 0.4)',
-  
+
   // Modal shadows
   modal: '0px 20px 60px rgba(0, 0, 0, 0.15)',
   dropdown: '0px 8px 24px rgba(0, 0, 0, 0.12)',
-  
+
   // Navigation shadows
   sidebar: '0px 8px 45px rgba(3, 0, 71, 0.09)',
   topbar: '0px 2px 8px rgba(0, 0, 0, 0.06)',
-  
+
   // Input shadows
   inputFocus: '0px 0px 0px 3px rgba(105, 80, 232, 0.1)',
   inputError: '0px 0px 0px 3px rgba(239, 71, 112, 0.1)',
-  
+
   // Dark mode variants
   dark: {
     cardSoft: '0px 4px 20px rgba(0, 0, 0, 0.3)',
@@ -98,7 +98,7 @@ export const customShadows = {
     cardHard: '0px 16px 40px rgba(0, 0, 0, 0.5)',
     sidebar: '0px 8px 45px rgba(0, 0, 0, 0.4)',
     modal: '0px 20px 60px rgba(0, 0, 0, 0.6)',
-  }
+  },
 };
 
 export default { createShadows, customShadows };

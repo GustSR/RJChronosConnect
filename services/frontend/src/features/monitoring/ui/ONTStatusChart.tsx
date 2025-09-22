@@ -99,13 +99,25 @@ const ONTStatusChart: FC = () => {
         show: false,
       },
       events: {
-        dataPointMouseEnter: function(event: any, chartContext: any, config: any) {
-          const percentages = [statusData!.onlinePercentage, statusData!.offlinePercentage, statusData!.toProvisionPercentage];
+        dataPointMouseEnter: function (
+          event: any,
+          chartContext: any,
+          config: any
+        ) {
+          const percentages = [
+            statusData!.onlinePercentage,
+            statusData!.offlinePercentage,
+            statusData!.toProvisionPercentage,
+          ];
           setHoveredValue(`${percentages[config.dataPointIndex]}%`);
         },
-        dataPointMouseLeave: function(event: any, chartContext: any, config: any) {
+        dataPointMouseLeave: function (
+          event: any,
+          chartContext: any,
+          config: any
+        ) {
           setHoveredValue(null);
-        }
+        },
       },
     },
     colors: ['#10b981', '#ef4444', '#f59e0b'],
@@ -133,7 +145,8 @@ const ONTStatusChart: FC = () => {
               fontSize: '24px',
               fontWeight: 600,
               color: '#1e293b',
-              formatter: () => hoveredValue || `${statusData.onlinePercentage}%`,
+              formatter: () =>
+                hoveredValue || `${statusData.onlinePercentage}%`,
             },
             total: {
               show: true,

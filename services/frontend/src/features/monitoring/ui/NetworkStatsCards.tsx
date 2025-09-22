@@ -116,7 +116,8 @@ const NetworkStatsCards: FC = () => {
       metrics.olt_stats?.total_onus || 0
     );
     const onuOfflineTrend = calculateTrend(
-      (metrics.olt_stats?.total_onus || 0) - (metrics.olt_stats?.online_onus || 0),
+      (metrics.olt_stats?.total_onus || 0) -
+        (metrics.olt_stats?.online_onus || 0),
       metrics.olt_stats?.total_onus || 0
     );
 
@@ -133,7 +134,10 @@ const NetworkStatsCards: FC = () => {
       {
         id: 2,
         title: 'ONUs Offline',
-        value: `${((metrics.olt_stats?.total_onus || 0) - (metrics.olt_stats?.online_onus || 0)).toLocaleString()}`,
+        value: `${(
+          (metrics.olt_stats?.total_onus || 0) -
+          (metrics.olt_stats?.online_onus || 0)
+        ).toLocaleString()}`,
         trend: 'down',
         trendValue: onuOfflineTrend.value,
         icon: <SignalWifiOff sx={{ fontSize: 24 }} />,

@@ -2,19 +2,23 @@ import { Theme } from '@mui/material/styles';
 import { Components } from '@mui/material/styles/components';
 
 // TextField overrides do Uko Template
-export const textFieldOverrides = (theme: Theme): Components['MuiTextField'] => ({
+export const textFieldOverrides = (
+  theme: Theme
+): Components['MuiTextField'] => ({
   styleOverrides: {
     root: {
       '& .MuiOutlinedInput-root': {
         borderRadius: theme.shape.borderRadius * 1.5, // 12px
         transition: 'all 0.2s ease',
-        backgroundColor: theme.palette.mode === 'light' 
-          ? theme.palette.grey[50]
-          : theme.palette.grey[900],
+        backgroundColor:
+          theme.palette.mode === 'light'
+            ? theme.palette.grey[50]
+            : theme.palette.grey[900],
         '& fieldset': {
-          borderColor: theme.palette.mode === 'light' 
-            ? theme.palette.grey[200]
-            : theme.palette.grey[700],
+          borderColor:
+            theme.palette.mode === 'light'
+              ? theme.palette.grey[200]
+              : theme.palette.grey[700],
           borderWidth: '1px',
         },
         '&:hover fieldset': {
@@ -32,17 +36,19 @@ export const textFieldOverrides = (theme: Theme): Components['MuiTextField'] => 
           borderColor: theme.palette.error.main,
         },
         '&.Mui-disabled': {
-          backgroundColor: theme.palette.mode === 'light' 
-            ? theme.palette.grey[100]
-            : theme.palette.grey[800],
+          backgroundColor:
+            theme.palette.mode === 'light'
+              ? theme.palette.grey[100]
+              : theme.palette.grey[800],
           '& fieldset': {
-            borderColor: theme.palette.mode === 'light' 
-              ? theme.palette.grey[200]
-              : theme.palette.grey[700],
+            borderColor:
+              theme.palette.mode === 'light'
+                ? theme.palette.grey[200]
+                : theme.palette.grey[700],
           },
         },
       },
-      
+
       // Input text styling
       '& .MuiOutlinedInput-input': {
         padding: theme.spacing(1.5, 1.75),
@@ -50,20 +56,22 @@ export const textFieldOverrides = (theme: Theme): Components['MuiTextField'] => 
         fontWeight: 400,
         lineHeight: 1.5,
         '&::placeholder': {
-          color: theme.palette.mode === 'light' 
-            ? theme.palette.grey[500]
-            : theme.palette.grey[400],
+          color:
+            theme.palette.mode === 'light'
+              ? theme.palette.grey[500]
+              : theme.palette.grey[400],
           opacity: 1,
         },
       },
-      
+
       // Label styling
       '& .MuiInputLabel-root': {
         fontSize: '14px',
         fontWeight: 500,
-        color: theme.palette.mode === 'light' 
-          ? theme.palette.grey[600]
-          : theme.palette.grey[300],
+        color:
+          theme.palette.mode === 'light'
+            ? theme.palette.grey[600]
+            : theme.palette.grey[300],
         '&.Mui-focused': {
           color: theme.palette.primary.main,
         },
@@ -71,7 +79,7 @@ export const textFieldOverrides = (theme: Theme): Components['MuiTextField'] => 
           color: theme.palette.error.main,
         },
       },
-      
+
       // Helper text styling
       '& .MuiFormHelperText-root': {
         fontSize: '12px',
@@ -83,7 +91,7 @@ export const textFieldOverrides = (theme: Theme): Components['MuiTextField'] => 
       },
     },
   },
-  
+
   variants: [
     // Small variant
     {
@@ -98,7 +106,7 @@ export const textFieldOverrides = (theme: Theme): Components['MuiTextField'] => 
         },
       },
     },
-    
+
     // Medium variant (default, mas explícito)
     {
       props: { size: 'medium' },
