@@ -81,6 +81,7 @@ export const ProvisioningProvider: React.FC<ProvisioningProviderProps> = ({
           discoveredAt: item.discovered_at,
           distance: item.distance || 0,
           onuType: item.onu_type,
+          ponType: (item.pon_type as string) ?? 'GPON',
           status: item.status,
           rxPower: item.rx_power,
           temperature: item.temperature,
@@ -111,16 +112,17 @@ export const ProvisioningProvider: React.FC<ProvisioningProviderProps> = ({
           id: item.id,
           serialNumber: item.serial_number,
           oltName: item.olt_id, // OLT ID do backend
-          board: 1, // Seria extraído dos dados reais
+          board: 1, // Seria extraido dos dados reais
           port: parseInt(item.pon_port?.split('/')[1]) || 1,
           onuId: Math.floor(Math.random() * 100) + 1,
           authorizedAt: item.created_at,
           onuType: item.model,
+          ponType: (item.pon_type as string) ?? 'GPON',
 
-          // Dados do cliente (obtidos do backend após salvamento)
+          // Dados do cliente (obtidos do backend apos salvamento)
           clientName:
             item.customer_name || `Cliente ${item.serial_number?.slice(-4)}`,
-          clientAddress: item.customer_address || 'Endereço não informado',
+          clientAddress: item.customer_address || 'Endereco nao informado',
           comment: item.comment || '',
 
           // Status e monitoramento
@@ -131,11 +133,11 @@ export const ProvisioningProvider: React.FC<ProvisioningProviderProps> = ({
           attachedVlans: [100], // Seria obtido dos dados reais
           onuMode: 'routing' as const,
 
-          // Configuração de rede
+          // Configuracao de rede
           tr069Profile: 'default-profile',
           wanSetupMode: 'dhcp' as const,
 
-          // Configurações padrão
+          // Configuracoes padrao
           lanPorts: [
             { id: 1, enabled: true, mode: 'auto', description: 'LAN 1' },
             { id: 2, enabled: true, mode: 'auto', description: 'LAN 2' },
@@ -176,7 +178,7 @@ export const ProvisioningProvider: React.FC<ProvisioningProviderProps> = ({
     }
   };
 
-  // Carregar dados na inicialização
+  // Carregar dados na inicializacao
   useEffect(() => {
     refreshPendingONUs();
     refreshProvisionedONUs();

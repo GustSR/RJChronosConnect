@@ -14,6 +14,7 @@ export const mockPendingONUs: PendingONU[] = [
     discoveredAt: '2024-08-29T10:30:00Z',
     distance: 1.2,
     onuType: 'ZTE F601',
+    ponType: 'GPON',
     status: 'pending',
     rxPower: -18.5,
     temperature: 32,
@@ -27,6 +28,7 @@ export const mockPendingONUs: PendingONU[] = [
     discoveredAt: '2024-08-29T11:15:00Z',
     distance: 2.8,
     onuType: 'FiberHome AN5506-04-A',
+    ponType: 'GPON',
     status: 'pending',
     rxPower: -21.2,
     temperature: 35,
@@ -40,6 +42,7 @@ export const mockPendingONUs: PendingONU[] = [
     discoveredAt: '2024-08-29T09:45:00Z',
     distance: 0.8,
     onuType: 'Huawei HG8240H5',
+    ponType: 'GPON',
     status: 'pending',
     rxPower: -16.8,
     temperature: 29,
@@ -53,6 +56,7 @@ export const mockPendingONUs: PendingONU[] = [
     discoveredAt: '2024-08-29T12:00:00Z',
     distance: 3.5,
     onuType: 'ZTE F670L',
+    ponType: 'GPON',
     status: 'pending',
     rxPower: -23.1,
     temperature: 38,
@@ -70,8 +74,9 @@ export const mockProvisionedONUs: ProvisionedONU[] = [
     onuId: 1,
     authorizedAt: '2024-08-28T14:20:00Z',
     onuType: 'ZTE F601',
+    ponType: 'GPON',
 
-    clientName: 'João Silva Santos',
+    clientName: 'Joao Silva Santos',
     clientAddress: 'Rua das Flores, 123, Centro - Rio de Janeiro/RJ',
     comment: 'Cliente VIP - Plano 500MB',
 
@@ -115,13 +120,13 @@ export const mockProvisionedONUs: ProvisionedONU[] = [
       },
     ],
 
-    // Configurações VoIP
+    // Configuracoes VoIP
     voipEnabled: true,
     voipSettings: {
       sipServer: 'sip.provedor.com.br',
       sipUser: 'joao.silva',
       sipPassword: '********',
-      displayName: 'João Silva Santos',
+      displayName: 'Joao Silva Santos',
     },
   },
   {
@@ -133,10 +138,11 @@ export const mockProvisionedONUs: ProvisionedONU[] = [
     onuId: 5,
     authorizedAt: '2024-08-27T09:30:00Z',
     onuType: 'FiberHome AN5506-04-A',
+    ponType: 'GPON',
 
     clientName: 'Maria Oliveira Costa',
-    clientAddress: 'Av. Atlântica, 456, Copacabana - Rio de Janeiro/RJ',
-    comment: 'Instalação residencial',
+    clientAddress: 'Av. Atlantica, 456, Copacabana - Rio de Janeiro/RJ',
+    comment: 'Instalacao residencial',
 
     status: 'online',
     uptime: '3d 8h 15m',
@@ -167,7 +173,7 @@ export const mockProvisionedONUs: ProvisionedONU[] = [
       },
     ],
 
-    // Configurações VoIP
+    // Configuracoes VoIP
     voipEnabled: false,
     voipSettings: {
       sipServer: '',
@@ -178,16 +184,16 @@ export const mockProvisionedONUs: ProvisionedONU[] = [
   },
 ];
 
-// Perfis TR069 disponíveis
+// Perfis TR069 disponiveis
 export const tr069Profiles = [
-  { value: 'default-profile', label: 'Perfil Padrão Residencial' },
+  { value: 'default-profile', label: 'Perfil Padrao Residencial' },
   { value: 'business-profile', label: 'Perfil Empresarial' },
   { value: 'gaming-profile', label: 'Perfil Gaming' },
   { value: 'iptv-profile', label: 'Perfil IPTV' },
   { value: 'custom-profile', label: 'Perfil Personalizado' },
 ];
 
-// Tipos de ONUs disponíveis
+// Tipos de ONUs disponiveis
 export const onuTypes = [
   { value: 'zte-f601', label: 'ZTE F601', manufacturer: 'ZTE' },
   { value: 'zte-f670l', label: 'ZTE F670L', manufacturer: 'ZTE' },

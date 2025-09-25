@@ -1,38 +1,43 @@
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  Alert,
   Box,
-  Container,
-  Typography,
-  Grid,
-  Paper,
   Button,
   Chip,
-  Alert,
-  InputAdornment,
-  TextField,
+  Container,
   FormControl,
+  IconButton,
   InputLabel,
-  Select,
-  MenuItem,
-  Stack,
   LinearProgress,
+  MenuItem,
+  Select,
+  Stack,
+  Tooltip,
+  Typography,
 } from '@mui/material';
+import { ColumnDef } from '@tanstack/react-table';
 import {
-  Add,
-  Refresh,
-  Search,
-  FilterList,
-  TrendingUp,
-  Schedule,
   CheckCircle,
-  Warning,
+  Close as CloseIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { useTitle } from '@shared/lib/hooks';
 import { AnimatedCard } from '@shared/ui/components';
-import PendingOnuCard from '@entities/onu/ui/PendingOnuCard';
+import SearchInput from '@shared/ui/components/SearchInput';
+import CustomTable from '@features/CustomTable';
 import { useProvisioning } from '@features/onu-provisioning';
-// import { PendingONU } from 'types/provisioning';
+import { PendingONU } from '@features/onu-provisioning/provisioning';
+
+const TABLE_PAGE_SIZE = 12;
+
+const defaultClientData = {
+  client_name: 'Cliente provisorio',
+  client_address: 'Endereco a ser configurado',
+  service_profile: 'default',
+  vlan_id: 100,
+  wan_mode: 'dhcp',
+};
 
 const Provisioning: React.FC = () => {
   useTitle('Provisionamento - RJ Chronos');
@@ -46,210 +51,219 @@ const Provisioning: React.FC = () => {
     rejectONU,
     refreshPendingONUs,
   } = useProvisioning();
+
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [oltFilter, setOltFilter] = useState<string>('all');
+  const [selectedOlt, setSelectedOlt] = useState<string>('all');
 
-  // Filtrar ONUs baseado nos critérios
-  const filteredONUs = pendingONUs.filter((onu) => {
-    const matchesSearch =
-      onu.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      onu.onuType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      onu.oltName.toLowerCase().includes(searchTerm.toLowerCase());
+  const uniqueOlts = useMemo(() => {
+    const names = pendingONUs
+      .map((onu) => onu.oltName)
+      .filter((name): name is string => Boolean(name));
+    return Array.from(new Set(names)).sort();
+  }, [pendingONUs]);
 
-    const matchesStatus = statusFilter === 'all' || onu.status === statusFilter;
-    const matchesOlt = oltFilter === 'all' || onu.oltName === oltFilter;
+  const filteredONUs = useMemo(() => {
+    const text = searchTerm.trim().toLowerCase();
 
-    return matchesSearch && matchesStatus && matchesOlt;
-  });
-
-  // Estatísticas
-  const stats = {
-    total: pendingONUs.length,
-    pending: pendingONUs.filter((onu) => onu.status === 'pending').length,
-    authorized: pendingONUs.filter((onu) => onu.status === 'authorized').length,
-    failed: pendingONUs.filter((onu) => onu.status === 'failed').length,
-  };
-
-  // Obter OLTs únicas para filtro
-  const uniqueOlts = [...new Set(pendingONUs.map((onu) => onu.oltName))];
-
-  const handleProvision = async (onuId: string) => {
-    try {
-      // Provisionar com dados básicos - o resto será configurado na tela de configuração
-      const success = await provisionONU(onuId, {
-        client_name: `Cliente ${onuId.slice(-6)}`, // Nome temporário baseado no ID
-        client_address: 'Endereço a ser configurado',
-        service_profile: 'default',
-        vlan_id: 100,
-        wan_mode: 'dhcp',
-      });
-
-      if (success) {
-        // Redirecionar imediatamente para configuração
-        navigate(`/clientes/${onuId}/configurar`);
-      } else {
-        alert('Erro ao autorizar ONU. Tente novamente.');
+    return pendingONUs.filter((onu) => {
+      const matchesOlt = selectedOlt === 'all' || onu.oltName === selectedOlt;
+      if (!matchesOlt) {
+        return false;
       }
-    } catch (error) {
-      console.error('Erro no provisionamento:', error);
-      alert('Erro ao processar provisionamento');
-    }
-  };
 
-  const handleReject = async (onuId: string) => {
-    const reason =
-      prompt('Motivo da rejeição (opcional):') ||
-      'Rejeitada pelo administrador';
-
-    if (!confirm('Tem certeza que deseja rejeitar esta ONU?')) {
-      return;
-    }
-
-    try {
-      const success = await rejectONU(onuId, reason);
-
-      if (success) {
-        alert('ONU rejeitada com sucesso');
-      } else {
-        alert('Erro ao rejeitar ONU. Tente novamente.');
+      if (!text) {
+        return true;
       }
-    } catch (error) {
-      console.error('Erro na rejeição:', error);
-      alert('Erro ao processar rejeição');
-    }
-  };
 
-  const handleRefresh = async () => {
-    await refreshPendingONUs();
-  };
+      return [onu.serialNumber, onu.onuType, onu.oltName]
+        .filter(Boolean)
+        .some((value) => value.toLowerCase().includes(text));
+    });
+  }, [pendingONUs, searchTerm, selectedOlt]);
+
+  const tableData = useMemo(
+    () =>
+      filteredONUs.map((onu) => ({
+        ...onu,
+        ponType: onu.ponType ?? 'GPON',
+      })),
+    [filteredONUs]
+  );
+
+  const handleProvision = useCallback(
+    async (onuId: string) => {
+      try {
+        const success = await provisionONU(onuId, {
+          ...defaultClientData,
+          client_name: `Cliente ${onuId.slice(-6)}`,
+        });
+
+        if (success) {
+          navigate(`/clientes/${onuId}/configurar`);
+        } else {
+          window.alert('Erro ao autorizar ONU. Tente novamente.');
+        }
+      } catch (err) {
+        console.error('Erro no provisionamento:', err);
+        window.alert('Erro ao processar provisionamento');
+      }
+    },
+    [navigate, provisionONU]
+  );
+
+  const handleReject = useCallback(
+    async (onuId: string) => {
+      const reason =
+        window.prompt('Motivo da rejeicao (opcional):') ||
+        'Rejeitada pelo administrador';
+
+      if (!window.confirm('Tem certeza que deseja rejeitar esta ONU?')) {
+        return;
+      }
+
+      try {
+        const success = await rejectONU(onuId, reason);
+        if (!success) {
+          window.alert('Erro ao rejeitar ONU. Tente novamente.');
+        }
+      } catch (err) {
+        console.error('Erro na rejeicao:', err);
+        window.alert('Erro ao processar rejeicao');
+      }
+    },
+    [rejectONU]
+  );
+
+  const handleRefresh = useCallback(() => {
+    void refreshPendingONUs();
+  }, [refreshPendingONUs]);
+
+  const clearSearch = () => setSearchTerm('');
+
+  const columns = useMemo<ColumnDef<PendingONU>[]>(
+    () => [
+      {
+        accessorKey: 'oltName',
+        header: 'OLT',
+        cell: ({ getValue }) => (
+          <Typography variant="body2" fontWeight={600} color="text.primary">
+            {getValue<string>()}
+          </Typography>
+        ),
+      },
+      {
+        id: 'ponType',
+        header: 'PON TYPE',
+        cell: ({ row }) => (
+          <Chip
+            label={row.original.ponType ?? 'GPON'}
+            color="default"
+            size="small"
+            variant="outlined"
+            sx={{ fontWeight: 600 }}
+          />
+        ),
+      },
+      {
+        id: 'slot',
+        header: 'SLOT',
+        cell: ({ row }) => (
+          <Typography variant="body2" color="text.secondary">
+            {row.original.board}
+          </Typography>
+        ),
+      },
+      {
+        id: 'pon',
+        header: 'PON',
+        cell: ({ row }) => (
+          <Typography variant="body2" color="text.secondary">
+            {row.original.port}
+          </Typography>
+        ),
+      },
+      {
+        accessorKey: 'serialNumber',
+        header: 'Serial Number',
+        cell: ({ getValue }) => (
+          <Typography
+            variant="body2"
+            fontFamily="'Roboto Mono', monospace"
+            color="text.primary"
+          >
+            {getValue<string>()}
+          </Typography>
+        ),
+      },
+      {
+        accessorKey: 'onuType',
+        header: 'Type ONU',
+        cell: ({ getValue }) => (
+          <Typography variant="body2" color="text.primary">
+            {getValue<string>()}
+          </Typography>
+        ),
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        enableSorting: false,
+        cell: ({ row }) => (
+          <Stack direction="row" spacing={1} justifyContent="center">
+            <Button
+              size="small"
+              variant="contained"
+              color="primary"
+              startIcon={<CheckCircle fontSize="small" />}
+              onClick={() => handleProvision(row.original.id)}
+              disabled={loading}
+            >
+              Provisionar
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              color="error"
+              onClick={() => handleReject(row.original.id)}
+              disabled={loading}
+              startIcon={<CloseIcon fontSize="small" />}
+            >
+              Rejeitar
+            </Button>
+          </Stack>
+        ),
+      },
+    ],
+    [handleProvision, handleReject, loading]
+  );
 
   return (
-    <Box sx={{ bgcolor: '#fafafa', minHeight: '100vh', py: 3 }}>
+    <Box sx={{ py: 3 }}>
       <Container maxWidth="xl">
-        {/* Header */}
-        <Box sx={{ mb: 4 }}>
-          <Box
+        <Stack spacing={3}>
+          <AnimatedCard
+            delay={100}
             sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              mb: 2,
+              borderRadius: 3,
+              boxShadow: 'none',
+              '&:hover': { transform: 'none', boxShadow: 'none' },
             }}
           >
-            <Box>
-              <Typography
-                variant="h4"
-                fontWeight="700"
-                fontSize="28px"
-                color="#1a1a1a"
+            <Box sx={{ p: 3 }}>
+              <Stack
+                direction={{ xs: 'column', md: 'row' }}
+                spacing={2}
+                alignItems={{ xs: 'stretch', md: 'center' }}
               >
-                Provisionamento
-              </Typography>
-              <Typography
-                variant="body1"
-                color="text.secondary"
-                fontSize="16px"
-              >
-                Gerencie ONUs/ONTs pendentes de autorização na rede
-              </Typography>
-            </Box>
-
-            <Stack direction="row" spacing={2}>
-              <Button
-                variant="outlined"
-                startIcon={<Refresh />}
-                onClick={handleRefresh}
-                sx={{
-                  borderRadius: 3,
-                  textTransform: 'none',
-                  fontWeight: 500,
-                }}
-              >
-                Atualizar
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                sx={{
-                  borderRadius: 3,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  background: 'linear-gradient(135deg, #6366f1, #5855eb)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #5855eb, #4f46e5)',
-                  },
-                }}
-              >
-                Adicionar Manual
-              </Button>
-            </Stack>
-          </Box>
-
-          {/* Toolbar de Filtros */}
-          <AnimatedCard delay={100} sx={{ p: 2, borderRadius: 3, mb: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <FilterList sx={{ mr: 1, color: '#6b7280', fontSize: 20 }} />
-              <Typography variant="body1" fontWeight="600" sx={{ mr: 3 }}>
-                Filtros
-              </Typography>
-              <Chip
-                label={`${filteredONUs.length} resultados`}
-                color="primary"
-                variant="outlined"
-                size="small"
-                sx={{ fontWeight: 600 }}
-              />
-            </Box>
-
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} md={5}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  placeholder="Buscar por S/N, modelo ou OLT..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Search sx={{ color: '#6b7280' }} />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 3,
-                    },
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={3}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Status</InputLabel>
+                <FormControl sx={{ minWidth: 200 }} size="small">
+                  <InputLabel id="olt-filter-label">OLT</InputLabel>
                   <Select
-                    value={statusFilter}
-                    label="Status"
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    sx={{ borderRadius: 3 }}
-                  >
-                    <MenuItem value="all">Todos</MenuItem>
-                    <MenuItem value="pending">Pendente</MenuItem>
-                    <MenuItem value="authorized">Autorizada</MenuItem>
-                    <MenuItem value="failed">Rejeitada</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12} md={4}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>OLT</InputLabel>
-                  <Select
-                    value={oltFilter}
+                    labelId="olt-filter-label"
+                    value={selectedOlt}
                     label="OLT"
-                    onChange={(e) => setOltFilter(e.target.value)}
-                    sx={{ borderRadius: 3 }}
+                    onChange={(event) =>
+                      setSelectedOlt(event.target.value as string)
+                    }
                   >
                     <MenuItem value="all">Todas</MenuItem>
                     {uniqueOlts.map((olt) => (
@@ -259,118 +273,88 @@ const Provisioning: React.FC = () => {
                     ))}
                   </Select>
                 </FormControl>
-              </Grid>
-            </Grid>
-          </AnimatedCard>
 
-          {/* Indicadores de Loading e Error */}
-          {loading && (
-            <AnimatedCard delay={150} sx={{ mb: 3 }}>
-              <Alert
-                severity="info"
-                icon={<LinearProgress sx={{ width: 20, mr: 1 }} />}
-              >
-                Carregando ONUs pendentes do GenieACS...
-              </Alert>
-            </AnimatedCard>
-          )}
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  sx={{ flex: 1, minWidth: 0 }}
+                >
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ whiteSpace: 'nowrap' }}
+                  >
+                    Buscar:
+                  </Typography>
+                  <SearchInput
+                    placeholder="Serial, modelo ou OLT"
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    sx={{ flex: 1, maxWidth: { xs: '100%', md: 360 } }}
+                    endAdornment={
+                      searchTerm ? (
+                        <IconButton
+                          size="small"
+                          onClick={clearSearch}
+                          sx={{ color: 'text.disabled' }}
+                        >
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      ) : undefined
+                    }
+                  />
+                </Stack>
+
+                <Tooltip title="Atualizar lista">
+                  <span>
+                    <Button
+                      variant="outlined"
+                      startIcon={<RefreshIcon />}
+                      onClick={handleRefresh}
+                      disabled={loading}
+                    >
+                      Atualizar
+                    </Button>
+                  </span>
+                </Tooltip>
+              </Stack>
+            </Box>
+          </AnimatedCard>
 
           {error && (
-            <AnimatedCard delay={150} sx={{ mb: 3 }}>
-              <Alert severity="error" sx={{ borderRadius: 3 }}>
-                {error}
-              </Alert>
-            </AnimatedCard>
+            <Alert severity="error" sx={{ borderRadius: 2 }}>
+              {error}
+            </Alert>
           )}
 
-          {/* Estatísticas */}
-          <Grid container spacing={3} sx={{ mb: 3 }}>
-            <Grid item xs={12} sm={6} md={3}>
-              <AnimatedCard delay={200}>
-                <Paper sx={{ p: 3, borderRadius: 3, textAlign: 'center' }}>
-                  <TrendingUp sx={{ fontSize: 40, color: '#6366f1', mb: 1 }} />
-                  <Typography variant="h4" fontWeight="700" color="#1a1a1a">
-                    {stats.total}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Total Descobertas
-                  </Typography>
-                </Paper>
-              </AnimatedCard>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <AnimatedCard delay={300}>
-                <Paper sx={{ p: 3, borderRadius: 3, textAlign: 'center' }}>
-                  <Schedule sx={{ fontSize: 40, color: '#f59e0b', mb: 1 }} />
-                  <Typography variant="h4" fontWeight="700" color="#1a1a1a">
-                    {stats.pending}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Aguardando
-                  </Typography>
-                </Paper>
-              </AnimatedCard>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <AnimatedCard delay={400}>
-                <Paper sx={{ p: 3, borderRadius: 3, textAlign: 'center' }}>
-                  <CheckCircle sx={{ fontSize: 40, color: '#10b981', mb: 1 }} />
-                  <Typography variant="h4" fontWeight="700" color="#1a1a1a">
-                    {stats.authorized}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Autorizadas
-                  </Typography>
-                </Paper>
-              </AnimatedCard>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <AnimatedCard delay={500}>
-                <Paper sx={{ p: 3, borderRadius: 3, textAlign: 'center' }}>
-                  <Warning sx={{ fontSize: 40, color: '#ef4444', mb: 1 }} />
-                  <Typography variant="h4" fontWeight="700" color="#1a1a1a">
-                    {stats.failed}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Rejeitadas
-                  </Typography>
-                </Paper>
-              </AnimatedCard>
-            </Grid>
-          </Grid>
-        </Box>
-
-        {/* Lista de ONUs Pendentes */}
-        {filteredONUs.length === 0 ? (
-          <AnimatedCard delay={600}>
-            <Alert
-              severity="info"
-              sx={{
-                borderRadius: 3,
-                fontSize: '16px',
-                py: 2,
-              }}
-            >
-              {searchTerm || statusFilter !== 'all' || oltFilter !== 'all'
-                ? 'Nenhuma ONU encontrada com os filtros aplicados.'
-                : 'Nenhuma ONU pendente de autorização no momento.'}
-            </Alert>
+          <AnimatedCard
+            delay={150}
+            sx={{
+              borderRadius: 3,
+              boxShadow: 'none',
+              '&:hover': { transform: 'none', boxShadow: 'none' },
+            }}
+          >
+            {loading && <LinearProgress />}
+            <Box sx={{ p: 3 }}>
+              {tableData.length === 0 && !loading ? (
+                <Alert severity="info" sx={{ borderRadius: 2 }}>
+                  {searchTerm || selectedOlt !== 'all'
+                    ? 'Nenhuma ONU encontrada com os filtros aplicados.'
+                    : 'Nenhuma ONU pendente de autorizacao no momento.'}
+                </Alert>
+              ) : (
+                <CustomTable
+                  data={tableData}
+                  columns={columns}
+                  pageSize={TABLE_PAGE_SIZE}
+                  variant="flat"
+                />
+              )}
+            </Box>
           </AnimatedCard>
-        ) : (
-          <Grid container spacing={3}>
-            {filteredONUs.map((onu, index) => (
-              <Grid item xs={12} md={6} lg={4} key={onu.id}>
-                <AnimatedCard delay={600 + index * 100}>
-                  <PendingOnuCard
-                    onu={onu}
-                    onProvision={handleProvision}
-                    onReject={handleReject}
-                  />
-                </AnimatedCard>
-              </Grid>
-            ))}
-          </Grid>
-        )}
+        </Stack>
       </Container>
     </Box>
   );

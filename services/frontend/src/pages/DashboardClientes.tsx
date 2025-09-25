@@ -99,19 +99,7 @@ const DashboardClientes: FC = () => {
   };
 
   return (
-    <Box
-      sx={{ p: 3, backgroundColor: 'background.default', minHeight: '100vh' }}
-    >
-      {/* Header do Dashboard */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" sx={{ mb: 1, fontWeight: 600 }}>
-          Dashboard de Clientes
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Monitoramento em tempo real dos clientes e suas ONTs
-        </Typography>
-      </Box>
-
+    <Box sx={{ p: 3 }}>
       {/* KPIs dos Clientes */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={2}>

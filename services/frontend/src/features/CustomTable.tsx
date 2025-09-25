@@ -34,6 +34,7 @@ interface CustomTableProps<TData = unknown> {
   hidePagination?: boolean;
   showFooter?: boolean;
   pageSize?: number;
+  variant?: 'elevated' | 'flat';
 }
 
 // styled component
@@ -65,8 +66,9 @@ const StyledPagination = styled(Pagination)(({ theme }) => ({
 }));
 
 const CustomTable = <TData = unknown>(props: CustomTableProps<TData>) => {
-  const { data, rowClick, showFooter, columns, hidePagination, pageSize = 10 } = props;
+  const { data, rowClick, showFooter, columns, hidePagination, pageSize = 10, variant = 'elevated' } = props;
   const theme = useTheme();
+  const isFlat = variant === 'flat';
   
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pagination, setPagination] = useState({
@@ -90,11 +92,12 @@ const CustomTable = <TData = unknown>(props: CustomTableProps<TData>) => {
   });
   
   const borderColor = theme.palette.mode === 'light' ? 'text.secondary' : 'divider';
+  const flatBorderColor = theme.palette.divider;
 
   return (
     <Box>
       <ScrollBar>
-        <Table sx={{ borderSpacing: '0 1rem', borderCollapse: 'separate' }}>
+        <Table sx={isFlat ? { borderCollapse: 'collapse' } : { borderSpacing: '0 1rem', borderCollapse: 'separate' }}>
           <TableHead>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -105,7 +108,7 @@ const CustomTable = <TData = unknown>(props: CustomTableProps<TData>) => {
                       paddingY: 0,
                       fontSize: 13,
                       fontWeight: 600,
-                      borderBottom: 0,
+                      borderBottom: isFlat ? `1px solid ${flatBorderColor}` : 0,
                       color: 'text.disabled',
                       '&:last-child': { textAlign: 'center' },
                       cursor: header.column.getCanSort() ? 'pointer' : 'default',
@@ -119,8 +122,8 @@ const CustomTable = <TData = unknown>(props: CustomTableProps<TData>) => {
                           header.getContext()
                         )}
                     {{
-                      asc: ' ↑',
-                      desc: ' ↓',
+                      asc: ' ^',
+                      desc: ' v',
                     }[header.column.getIsSorted() as string] ?? null}
                   </TableCell>
                 ))}
@@ -133,21 +136,36 @@ const CustomTable = <TData = unknown>(props: CustomTableProps<TData>) => {
                 key={row.id}
                 onClick={() => rowClick && rowClick(row.original)}
                 sx={{
-                  backgroundColor: 'background.paper',
+                  backgroundColor: isFlat ? 'transparent' : 'background.paper',
                   cursor: rowClick ? 'pointer' : 'unset',
-                  '& td:first-of-type': {
-                    borderLeft: '1px solid',
-                    borderTopLeftRadius: '8px',
-                    borderBottomLeftRadius: '8px',
-                    borderColor,
-                  },
                   '& td:last-of-type': {
                     textAlign: 'center',
-                    borderRight: '1px solid',
-                    borderTopRightRadius: '8px',
-                    borderBottomRightRadius: '8px',
-                    borderColor,
+                    ...(isFlat
+                      ? {}
+                      : {
+                          borderRight: '1px solid',
+                          borderTopRightRadius: '8px',
+                          borderBottomRightRadius: '8px',
+                          borderColor,
+                        }),
                   },
+                  ...(isFlat
+                    ? {
+                        '& td': {
+                          borderBottom: `1px solid ${flatBorderColor}`,
+                        },
+                        '&:last-of-type td': {
+                          borderBottom: 0,
+                        },
+                      }
+                    : {
+                        '& td:first-of-type': {
+                          borderLeft: '1px solid',
+                          borderTopLeftRadius: '8px',
+                          borderBottomLeftRadius: '8px',
+                          borderColor,
+                        },
+                      }),
                 }}
               >
                 {row.getVisibleCells().map((cell) => (
@@ -156,10 +174,17 @@ const CustomTable = <TData = unknown>(props: CustomTableProps<TData>) => {
                     sx={{
                       fontSize: 13,
                       fontWeight: 500,
-                      color: 'text.disabled',
-                      borderTop: '1px solid',
-                      borderBottom: '1px solid',
+                      color: 'text.primary',
                       borderColor,
+                      ...(isFlat
+                        ? {
+                            borderTop: 'none',
+                            borderBottom: `1px solid ${flatBorderColor}`,
+                          }
+                        : {
+                            borderTop: '1px solid',
+                            borderBottom: '1px solid',
+                          }),
                     }}
                   >
                     {flexRender(
@@ -212,3 +237,5 @@ const CustomTable = <TData = unknown>(props: CustomTableProps<TData>) => {
 };
 
 export default CustomTable;
+
+

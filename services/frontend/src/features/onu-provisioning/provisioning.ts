@@ -8,6 +8,7 @@ export interface PendingONU {
   discoveredAt: string;
   distance: number;
   onuType: string;
+  ponType?: string;
   status: 'pending' | 'authorized' | 'failed';
   rxPower?: number;
   temperature?: number;
@@ -22,8 +23,9 @@ export interface ProvisionedONU {
   onuId: number;
   authorizedAt: string;
   onuType: string;
+  ponType?: string;
 
-  // Informações do cliente
+  // Informacoes do cliente
   clientName: string;
   clientAddress: string;
   comment?: string;
@@ -36,15 +38,15 @@ export interface ProvisionedONU {
   attachedVlans: number[];
   onuMode: 'routing' | 'bridge';
 
-  // Configuração de rede
+  // Configuracao de rede
   tr069Profile: string;
   wanSetupMode: 'dhcp' | 'static' | 'pppoe';
 
-  // Configuração PPPoE (quando aplicável)
+  // Configuracao PPPoE (quando aplicavel)
   pppoeUsername?: string;
   pppoePassword?: string;
 
-  // Configurações de portas LAN
+  // Configuracoes de portas LAN
   lanPorts: {
     id: number;
     enabled: boolean;
@@ -52,7 +54,7 @@ export interface ProvisionedONU {
     description?: string;
   }[];
 
-  // Configurações WiFi
+  // Configuracoes WiFi
   wifiSettings: {
     enabled: boolean;
     ssid: string;
@@ -63,7 +65,7 @@ export interface ProvisionedONU {
     frequency: '2.4GHz' | '5GHz' | 'dual';
   }[];
 
-  // Configurações VoIP
+  // Configuracoes VoIP
   voipEnabled?: boolean;
   voipSettings?: {
     sipServer: string;
