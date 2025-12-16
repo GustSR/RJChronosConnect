@@ -204,6 +204,11 @@ const NetworkStatsCards: FC = () => {
               padding: '24px',
               height: '100%',
               minHeight: '140px',
+              '&:hover': {
+                transform: 'none',
+                boxShadow:
+                  '0px 2px 1px -1px rgba(107, 114, 128, 0.03), 0px 1px 1px 0px rgba(107, 114, 128, 0.04), 0px 1px 3px 0px rgba(107, 114, 128, 0.08)',
+              },
             }}
           >
             <Box

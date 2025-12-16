@@ -4,10 +4,8 @@ import { FC } from 'react';
 
 // Componentes RJ Chronos
 import {
-  OLTGrid,
   OLTMonitoring,
   UserActivity,
-  ONTStatusChart,
   BandwidthAreaChart,
   TopTrafficSources,
   OLTPerformanceChart,
@@ -52,11 +50,6 @@ const Dashboard: FC = () => {
         {/* Coluna Direita - 30% */}
         <Grid item xs={12} lg={4}>
           <Grid container spacing={3}>
-            {/* Status das ONTs */}
-            <Grid item xs={12}>
-              <ONTStatusChart />
-            </Grid>
-
             {/* OLT Monitoring */}
             <Grid item xs={12}>
               <OLTMonitoring />
@@ -67,13 +60,6 @@ const Dashboard: FC = () => {
               <UserActivity />
             </Grid>
           </Grid>
-        </Grid>
-      </Grid>
-
-      {/* Status das OLTs - Largura Total na parte inferior */}
-      <Grid container spacing={3} sx={{ mt: 3 }}>
-        <Grid item xs={12}>
-          <OLTGrid />
         </Grid>
       </Grid>
     </Box>

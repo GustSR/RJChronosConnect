@@ -2,7 +2,6 @@ import {
   Box,
   Grid,
   Typography,
-  Card,
   CardContent,
   Chip,
   LinearProgress,
@@ -15,6 +14,7 @@ import {
   Divider,
 } from '@mui/material';
 import { useTitle } from '@shared/lib/hooks';
+import { AnimatedCard } from '@shared/ui/components';
 import { FC } from 'react';
 import {
   ThermostatAuto,
@@ -24,9 +24,7 @@ import {
   Devices,
   Warning,
   CheckCircle,
-  Error,
   Speed,
-  Router,
   Person,
 } from '@mui/icons-material';
 
@@ -100,22 +98,16 @@ const DashboardClientes: FC = () => {
 
   return (
     <Box
-      sx={{ p: 3, backgroundColor: 'background.default', minHeight: '100vh' }}
+      sx={{ p: 3, backgroundColor: '#fafafa', minHeight: '100vh' }}
     >
-      {/* Header do Dashboard */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" sx={{ mb: 1, fontWeight: 600 }}>
-          Dashboard de Clientes
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Monitoramento em tempo real dos clientes e suas ONTs
-        </Typography>
-      </Box>
-
       {/* KPIs dos Clientes */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={2}>
-          <Card sx={{ boxShadow: 2 }}>
+          <AnimatedCard
+            delay={100}
+            sx={{ height: '100%', boxShadow: 'none !important' }}
+            disableHoverEffect={true}
+          >
             <CardContent sx={{ textAlign: 'center' }}>
               <Person sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
               <Typography variant="h4" sx={{ fontWeight: 600 }}>
@@ -125,11 +117,15 @@ const DashboardClientes: FC = () => {
                 Total de Clientes
               </Typography>
             </CardContent>
-          </Card>
+          </AnimatedCard>
         </Grid>
 
         <Grid item xs={12} sm={6} md={2}>
-          <Card sx={{ boxShadow: 2 }}>
+          <AnimatedCard
+            delay={200}
+            sx={{ height: '100%', boxShadow: 'none !important' }}
+            disableHoverEffect={true}
+          >
             <CardContent sx={{ textAlign: 'center' }}>
               <CheckCircle
                 sx={{ fontSize: 40, color: 'success.main', mb: 1 }}
@@ -141,11 +137,15 @@ const DashboardClientes: FC = () => {
                 Clientes Online
               </Typography>
             </CardContent>
-          </Card>
+          </AnimatedCard>
         </Grid>
 
         <Grid item xs={12} sm={6} md={2}>
-          <Card sx={{ boxShadow: 2 }}>
+          <AnimatedCard
+            delay={300}
+            sx={{ height: '100%', boxShadow: 'none !important' }}
+            disableHoverEffect={true}
+          >
             <CardContent sx={{ textAlign: 'center' }}>
               <Warning sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
               <Typography variant="h4" sx={{ fontWeight: 600 }}>
@@ -155,11 +155,15 @@ const DashboardClientes: FC = () => {
                 Com Problemas
               </Typography>
             </CardContent>
-          </Card>
+          </AnimatedCard>
         </Grid>
 
         <Grid item xs={12} sm={6} md={2}>
-          <Card sx={{ boxShadow: 2 }}>
+          <AnimatedCard
+            delay={400}
+            sx={{ height: '100%', boxShadow: 'none !important' }}
+            disableHoverEffect={true}
+          >
             <CardContent sx={{ textAlign: 'center' }}>
               <ThermostatAuto
                 sx={{ fontSize: 40, color: 'info.main', mb: 1 }}
@@ -171,11 +175,15 @@ const DashboardClientes: FC = () => {
                 Temp. Média
               </Typography>
             </CardContent>
-          </Card>
+          </AnimatedCard>
         </Grid>
 
         <Grid item xs={12} sm={6} md={2}>
-          <Card sx={{ boxShadow: 2 }}>
+          <AnimatedCard
+            delay={500}
+            sx={{ height: '100%', boxShadow: 'none !important' }}
+            disableHoverEffect={true}
+          >
             <CardContent sx={{ textAlign: 'center' }}>
               <Speed sx={{ fontSize: 40, color: 'secondary.main', mb: 1 }} />
               <Typography variant="h4" sx={{ fontWeight: 600 }}>
@@ -185,11 +193,15 @@ const DashboardClientes: FC = () => {
                 Sinal Médio
               </Typography>
             </CardContent>
-          </Card>
+          </AnimatedCard>
         </Grid>
 
         <Grid item xs={12} sm={6} md={2}>
-          <Card sx={{ boxShadow: 2 }}>
+          <AnimatedCard
+            delay={600}
+            sx={{ height: '100%', boxShadow: 'none !important' }}
+            disableHoverEffect={true}
+          >
             <CardContent sx={{ textAlign: 'center' }}>
               <Devices sx={{ fontSize: 40, color: 'primary.dark', mb: 1 }} />
               <Typography variant="h4" sx={{ fontWeight: 600 }}>
@@ -199,7 +211,7 @@ const DashboardClientes: FC = () => {
                 Dispositivos Médio
               </Typography>
             </CardContent>
-          </Card>
+          </AnimatedCard>
         </Grid>
       </Grid>
 
@@ -210,7 +222,7 @@ const DashboardClientes: FC = () => {
           <Grid container spacing={3}>
             {/* Alertas e Status Crítico */}
             <Grid item xs={12}>
-              <Card sx={{ boxShadow: 2 }}>
+              <AnimatedCard delay={700} disableHoverEffect={true}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                     Alertas Críticos de Clientes
@@ -231,12 +243,12 @@ const DashboardClientes: FC = () => {
                     conectados
                   </Alert>
                 </CardContent>
-              </Card>
+              </AnimatedCard>
             </Grid>
 
             {/* Lista de Clientes com Problemas */}
             <Grid item xs={12}>
-              <Card sx={{ boxShadow: 2 }}>
+              <AnimatedCard delay={800} disableHoverEffect={true}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                     Clientes Que Necessitam Atenção
@@ -355,7 +367,7 @@ const DashboardClientes: FC = () => {
                     ))}
                   </List>
                 </CardContent>
-              </Card>
+              </AnimatedCard>
             </Grid>
           </Grid>
         </Grid>
@@ -365,7 +377,7 @@ const DashboardClientes: FC = () => {
           <Grid container spacing={3}>
             {/* Distribuição de Temperatura */}
             <Grid item xs={12}>
-              <Card sx={{ boxShadow: 2 }}>
+              <AnimatedCard delay={900} disableHoverEffect={true}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                     Distribuição de Temperatura
@@ -430,12 +442,12 @@ const DashboardClientes: FC = () => {
                     />
                   </Box>
                 </CardContent>
-              </Card>
+              </AnimatedCard>
             </Grid>
 
             {/* Qualidade do Sinal */}
             <Grid item xs={12}>
-              <Card sx={{ boxShadow: 2 }}>
+              <AnimatedCard delay={1000} disableHoverEffect={true}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                     Qualidade do Sinal
@@ -504,12 +516,12 @@ const DashboardClientes: FC = () => {
                     />
                   </Box>
                 </CardContent>
-              </Card>
+              </AnimatedCard>
             </Grid>
 
             {/* Dispositivos Conectados */}
             <Grid item xs={12}>
-              <Card sx={{ boxShadow: 2 }}>
+              <AnimatedCard delay={1100} disableHoverEffect={true}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                     Dispositivos por Cliente
@@ -572,7 +584,7 @@ const DashboardClientes: FC = () => {
                     />
                   </Box>
                 </CardContent>
-              </Card>
+              </AnimatedCard>
             </Grid>
           </Grid>
         </Grid>

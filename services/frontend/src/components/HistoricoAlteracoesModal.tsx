@@ -146,7 +146,7 @@ const HistoricoAlteracoesModal: React.FC<HistoricoAlteracoesModalProps> = ({
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ px: 3 }}>
+      <DialogContent sx={{ px: 3, pt: 2 }}>
         {/* Campo de Pesquisa */}
         <TextField
           fullWidth
@@ -164,6 +164,7 @@ const HistoricoAlteracoesModal: React.FC<HistoricoAlteracoesModalProps> = ({
           }}
           sx={{
             mb: 3,
+            mt: 1,
             '& .MuiOutlinedInput-root': { borderRadius: 2 },
           }}
         />
@@ -177,7 +178,7 @@ const HistoricoAlteracoesModal: React.FC<HistoricoAlteracoesModalProps> = ({
             </Typography>
           </Box>
         ) : (
-          <TableContainer sx={{ maxHeight: '400px' }}>
+          <TableContainer sx={{ maxHeight: '60vh' }}>
             <Table stickyHeader>
               <TableHead>
                 <TableRow>

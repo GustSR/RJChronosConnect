@@ -22,20 +22,26 @@ interface DashboardNavBarProps {
 }
 
 // custom styled components
-const DashboardNavbarRoot = styled(AppBar)(() => ({
+const DashboardNavbarRoot = styled(AppBar)(({ theme }) => ({
   zIndex: 11,
   boxShadow: 'none',
-  paddingTop: '1rem',
-  paddingBottom: '1rem',
+  paddingTop: 0,
+  paddingBottom: 0,
   backdropFilter: 'blur(6px)',
-  backgroundColor: 'transparent',
+  backgroundColor: '#ffffff',
+  borderBottom: `1px solid ${theme.palette.divider}`,
+  color: theme.palette.text.primary,
+  borderRadius: 0,
 }));
 
 const StyledToolBar = styled(Toolbar)(() => ({
+  minHeight: 64,
+  paddingLeft: 24,
+  paddingRight: 24,
   '@media (min-width: 0px)': {
-    paddingLeft: 0,
-    paddingRight: 0,
-    minHeight: 'auto',
+    paddingLeft: 24,
+    paddingRight: 24,
+    minHeight: 64,
   },
 }));
 

@@ -1,4 +1,4 @@
-asyncio-pika==9.3.1
+aio-pika==9.3.1
 clickhouse-connect==0.6.23
 asyncpg==0.29.0
 sqlalchemy[asyncio]==2.0.23

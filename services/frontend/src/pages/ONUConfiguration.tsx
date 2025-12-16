@@ -689,6 +689,7 @@ const ONUConfiguration: React.FC = () => {
                       }))
                     }
                     sx={{ borderRadius: 2 }}
+                    MenuProps={{ disableScrollLock: true }}
                   >
                     <MenuItem value="Sim">Sim</MenuItem>
                     <MenuItem value="Não">Não</MenuItem>
@@ -811,10 +812,11 @@ const ONUConfiguration: React.FC = () => {
                         border: '1px solid #e0e0e0',
                         boxShadow: 'none',
                         cursor: 'pointer',
-                        transition: 'all 0.2s ease',
+                        transition: 'none !important',
                         '&:hover': {
                           borderColor: 'primary.main',
-                          boxShadow: '0 2px 8px rgba(99, 102, 241, 0.15)',
+                          boxShadow: 'none !important',
+                          transform: 'none !important',
                         },
                       }}
                       onClick={() => setSelectedWifiLan(key)}
@@ -990,6 +992,7 @@ const ONUConfiguration: React.FC = () => {
                                 )
                               }
                               sx={{ borderRadius: 2 }}
+                              MenuProps={{ disableScrollLock: true }}
                             >
                               <MenuItem value="Open">Open</MenuItem>
                               <MenuItem value="WEP">WEP</MenuItem>
@@ -1021,6 +1024,7 @@ const ONUConfiguration: React.FC = () => {
                                 )
                               }
                               sx={{ borderRadius: 2 }}
+                              MenuProps={{ disableScrollLock: true }}
                             >
                               <MenuItem value="Ativo">Ativo</MenuItem>
                               <MenuItem value="Inativo">Inativo</MenuItem>
@@ -1046,6 +1050,7 @@ const ONUConfiguration: React.FC = () => {
                                 )
                               }
                               sx={{ borderRadius: 2 }}
+                              MenuProps={{ disableScrollLock: true }}
                             >
                               <MenuItem value="Sim">Sim</MenuItem>
                               <MenuItem value="Não">Não</MenuItem>
@@ -1071,6 +1076,7 @@ const ONUConfiguration: React.FC = () => {
                                 )
                               }
                               sx={{ borderRadius: 2 }}
+                              MenuProps={{ disableScrollLock: true }}
                             >
                               <MenuItem value="2.4GHz">2.4GHz</MenuItem>
                               <MenuItem value="5GHz">5GHz</MenuItem>
@@ -1096,6 +1102,7 @@ const ONUConfiguration: React.FC = () => {
                                 )
                               }
                               sx={{ borderRadius: 2 }}
+                              MenuProps={{ disableScrollLock: true }}
                             >
                               <MenuItem value="802.11b">802.11b</MenuItem>
                               <MenuItem value="802.11g">802.11g</MenuItem>
@@ -1124,6 +1131,7 @@ const ONUConfiguration: React.FC = () => {
                                 )
                               }
                               sx={{ borderRadius: 2 }}
+                              MenuProps={{ disableScrollLock: true }}
                             >
                               <MenuItem value="Sim">Sim</MenuItem>
                               <MenuItem value="Não">Não</MenuItem>
@@ -1174,6 +1182,7 @@ const ONUConfiguration: React.FC = () => {
                                 )
                               }
                               sx={{ borderRadius: 2 }}
+                              MenuProps={{ disableScrollLock: true }}
                             >
                               <MenuItem value="Sim">Sim</MenuItem>
                               <MenuItem value="Não">Não</MenuItem>
@@ -1199,6 +1208,7 @@ const ONUConfiguration: React.FC = () => {
                                 )
                               }
                               sx={{ borderRadius: 2 }}
+                              MenuProps={{ disableScrollLock: true }}
                             >
                               <MenuItem value="TKIP">TKIP</MenuItem>
                               <MenuItem value="AES">AES</MenuItem>
@@ -1225,6 +1235,7 @@ const ONUConfiguration: React.FC = () => {
                                 )
                               }
                               sx={{ borderRadius: 2 }}
+                              MenuProps={{ disableScrollLock: true }}
                             >
                               <MenuItem value="20MHz">20MHz</MenuItem>
                               <MenuItem value="40MHz">40MHz</MenuItem>
@@ -1252,6 +1263,7 @@ const ONUConfiguration: React.FC = () => {
                                 )
                               }
                               sx={{ borderRadius: 2 }}
+                              MenuProps={{ disableScrollLock: true }}
                             >
                               <MenuItem value="Sim">Sim</MenuItem>
                               <MenuItem value="Não">Não</MenuItem>
@@ -1302,6 +1314,7 @@ const ONUConfiguration: React.FC = () => {
                                 )
                               }
                               sx={{ borderRadius: 2 }}
+                              MenuProps={{ disableScrollLock: true }}
                             >
                               <MenuItem value="BR">BR - Brasil</MenuItem>
                               <MenuItem value="US">
@@ -1331,6 +1344,7 @@ const ONUConfiguration: React.FC = () => {
                                 )
                               }
                               sx={{ borderRadius: 2 }}
+                              MenuProps={{ disableScrollLock: true }}
                             >
                               <MenuItem value="25%">25%</MenuItem>
                               <MenuItem value="50%">50%</MenuItem>
@@ -1661,7 +1675,10 @@ const ONUConfiguration: React.FC = () => {
                   border: '1px solid #e0e0e0',
                   boxShadow: 'none',
                   transition: 'none !important',
-                  '&:hover': { boxShadow: 'none !important' },
+                  '&:hover': {
+                    boxShadow: 'none !important',
+                    transform: 'none !important',
+                  },
                 }}
               >
                 <CardContent sx={{ p: 2 }}>
@@ -2634,6 +2651,7 @@ const ONUConfiguration: React.FC = () => {
                             }))
                           }
                           sx={{ borderRadius: 2 }}
+                          MenuProps={{ disableScrollLock: true }}
                         >
                           <MenuItem value="Enabled">Enabled</MenuItem>
                           <MenuItem value="Disabled">Disabled</MenuItem>
@@ -2658,6 +2676,7 @@ const ONUConfiguration: React.FC = () => {
                             }))
                           }
                           sx={{ borderRadius: 2 }}
+                          MenuProps={{ disableScrollLock: true }}
                         >
                           <MenuItem value="Enabled">Enabled</MenuItem>
                           <MenuItem value="Disabled">Disabled</MenuItem>
@@ -2682,6 +2701,7 @@ const ONUConfiguration: React.FC = () => {
                             }))
                           }
                           sx={{ borderRadius: 2 }}
+                          MenuProps={{ disableScrollLock: true }}
                         >
                           <MenuItem value="Enabled">Enabled</MenuItem>
                           <MenuItem value="Disabled">Disabled</MenuItem>
@@ -2706,6 +2726,7 @@ const ONUConfiguration: React.FC = () => {
                             }))
                           }
                           sx={{ borderRadius: 2 }}
+                          MenuProps={{ disableScrollLock: true }}
                         >
                           <MenuItem value="Enabled">Enabled</MenuItem>
                           <MenuItem value="Disabled">Disabled</MenuItem>
@@ -2730,6 +2751,7 @@ const ONUConfiguration: React.FC = () => {
                             }))
                           }
                           sx={{ borderRadius: 2 }}
+                          MenuProps={{ disableScrollLock: true }}
                         >
                           <MenuItem value="Enabled">Enabled</MenuItem>
                           <MenuItem value="Disabled">Disabled</MenuItem>
@@ -2754,6 +2776,7 @@ const ONUConfiguration: React.FC = () => {
                             }))
                           }
                           sx={{ borderRadius: 2 }}
+                          MenuProps={{ disableScrollLock: true }}
                         >
                           <MenuItem value="Enabled">Enabled</MenuItem>
                           <MenuItem value="Disabled">Disabled</MenuItem>
@@ -2778,6 +2801,7 @@ const ONUConfiguration: React.FC = () => {
                             }))
                           }
                           sx={{ borderRadius: 2 }}
+                          MenuProps={{ disableScrollLock: true }}
                         >
                           <MenuItem value="Enabled">Enabled</MenuItem>
                           <MenuItem value="Disabled">Disabled</MenuItem>
@@ -2802,6 +2826,7 @@ const ONUConfiguration: React.FC = () => {
                             }))
                           }
                           sx={{ borderRadius: 2 }}
+                          MenuProps={{ disableScrollLock: true }}
                         >
                           <MenuItem value="Enabled">Enabled</MenuItem>
                           <MenuItem value="Disabled">Disabled</MenuItem>
@@ -2826,6 +2851,7 @@ const ONUConfiguration: React.FC = () => {
                             }))
                           }
                           sx={{ borderRadius: 2 }}
+                          MenuProps={{ disableScrollLock: true }}
                         >
                           <MenuItem value="Enabled">Enabled</MenuItem>
                           <MenuItem value="Disabled">Disabled</MenuItem>
@@ -2850,6 +2876,7 @@ const ONUConfiguration: React.FC = () => {
                             }))
                           }
                           sx={{ borderRadius: 2 }}
+                          MenuProps={{ disableScrollLock: true }}
                         >
                           <MenuItem value="Enabled">Enabled</MenuItem>
                           <MenuItem value="Disabled">Disabled</MenuItem>
@@ -2900,6 +2927,7 @@ const ONUConfiguration: React.FC = () => {
                             }))
                           }
                           sx={{ borderRadius: 2 }}
+                          MenuProps={{ disableScrollLock: true }}
                         >
                           <MenuItem value="Block">Block</MenuItem>
                           <MenuItem value="Permit">Permit</MenuItem>
@@ -2924,6 +2952,7 @@ const ONUConfiguration: React.FC = () => {
                             }))
                           }
                           sx={{ borderRadius: 2 }}
+                          MenuProps={{ disableScrollLock: true }}
                         >
                           <MenuItem value="Enabled">Enabled</MenuItem>
                           <MenuItem value="Disabled">Disabled</MenuItem>
@@ -2948,6 +2977,7 @@ const ONUConfiguration: React.FC = () => {
                             }))
                           }
                           sx={{ borderRadius: 2 }}
+                          MenuProps={{ disableScrollLock: true }}
                         >
                           <MenuItem value="Enabled">Enabled</MenuItem>
                           <MenuItem value="Disabled">Disabled</MenuItem>
@@ -3077,6 +3107,7 @@ const ONUConfiguration: React.FC = () => {
                                 }))
                               }
                               sx={{ borderRadius: 2 }}
+                              MenuProps={{ disableScrollLock: true }}
                             >
                               <MenuItem value="Enabled">Enabled</MenuItem>
                               <MenuItem value="Disabled">Disabled</MenuItem>
@@ -3161,6 +3192,7 @@ const ONUConfiguration: React.FC = () => {
                                 }))
                               }
                               sx={{ borderRadius: 2 }}
+                              MenuProps={{ disableScrollLock: true }}
                             >
                               <MenuItem value="Enabled">Enabled</MenuItem>
                               <MenuItem value="Disabled">Disabled</MenuItem>

@@ -1,4 +1,4 @@
-asyncio-pika==9.3.1
+aio-pika==9.3.1
 sqlalchemy[asyncio]==2.0.23
 asyncpg==0.29.0
 pydantic==2.5.0

@@ -74,10 +74,13 @@ const MainMenu = styled(Box, {
   },
 }));
 
-const LogoBox = styled(Box)(({ theme }) => ({
+const LogoBox = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'collapsed',
+})<{ collapsed?: boolean }>(({ theme, collapsed }) => ({
   display: 'flex',
   alignItems: 'center',
-  padding: '28px 24px 24px 24px',
+  justifyContent: collapsed ? 'center' : 'flex-start',
+  padding: collapsed ? '20px 0' : '28px 24px 24px 24px',
   marginBottom: 20,
   borderBottom: `1px solid ${
     theme.palette.mode === 'light' ? '#f1f5f9' : '#2d3035'
@@ -94,7 +97,9 @@ const LogoBox = styled(Box)(({ theme }) => ({
   },
 }));
 
-const LogoIcon = styled(Box)(({ theme }) => ({
+const LogoIcon = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'collapsed',
+})<{ collapsed?: boolean }>(({ theme, collapsed }) => ({
   width: 40,
   height: 40,
   background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
@@ -102,7 +107,7 @@ const LogoIcon = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  marginRight: 12,
+  marginRight: collapsed ? 0 : 12,
   color: 'white',
   fontSize: '20px',
   fontWeight: 700,
@@ -147,75 +152,80 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
 }));
 
 const StyledListItemButton = styled(ListItemButton, {
-  shouldForwardProp: (prop) => prop !== 'active' && prop !== 'hasChildren',
-})<{ active?: boolean; hasChildren?: boolean }>(({ theme, active }) => ({
-  margin: '0 16px',
-  borderRadius: '12px',
-  padding: '14px 16px',
-  minHeight: '52px',
-  position: 'relative',
-  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-  cursor: 'pointer',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    left: -16,
-    top: '50%',
-    transform: 'translateY(-50%)',
-    width: '4px',
-    height: active ? '60%' : '0%',
-    backgroundColor: theme.palette.primary.main,
-    borderRadius: '0 4px 4px 0',
-    transition: 'height 0.3s ease',
-  },
-  '&:hover': {
-    backgroundColor: theme.palette.mode === 'light' ? '#f8fafc' : '#2a2d35',
-    transform: 'translateX(4px)',
-    '& .MuiListItemIcon-root': {
-      transform: 'scale(1.1)',
-      color: theme.palette.primary.main,
-    },
+  shouldForwardProp: (prop) =>
+    prop !== 'active' && prop !== 'hasChildren' && prop !== 'collapsed',
+})<{ active?: boolean; hasChildren?: boolean; collapsed?: boolean }>(
+  ({ theme, active, collapsed }) => ({
+    margin: collapsed ? '0 auto 8px auto' : '0 16px',
+    borderRadius: '12px',
+    padding: collapsed ? '12px 0' : '14px 16px',
+    minHeight: '52px',
+    width: collapsed ? '48px' : 'auto',
+    justifyContent: collapsed ? 'center' : 'flex-start',
+    position: 'relative',
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+    cursor: 'pointer',
     '&::before': {
-      height: '40%',
+      content: '""',
+      position: 'absolute',
+      left: collapsed ? -12 : -16,
+      top: '50%',
+      transform: 'translateY(-50%)',
+      width: '4px',
+      height: active && !collapsed ? '60%' : '0%', // Hide indicator when collapsed
+      backgroundColor: theme.palette.primary.main,
+      borderRadius: '0 4px 4px 0',
+      transition: 'height 0.3s ease',
     },
-  },
-  ...(active && {
-    backgroundColor:
-      theme.palette.mode === 'light'
-        ? `${theme.palette.primary.main}08`
-        : `${theme.palette.primary.main}15`,
-    color: theme.palette.primary.main,
-    '&::before': {
-      height: '60%',
+    '&:hover': {
+      backgroundColor: theme.palette.mode === 'light' ? '#f8fafc' : '#2a2d35',
+      transform: collapsed ? 'none' : 'translateX(4px)',
+      '& .MuiListItemIcon-root': {
+        transform: collapsed ? 'scale(1.1)' : 'scale(1.1)',
+        color: theme.palette.primary.main,
+      },
+      '&::before': {
+        height: collapsed ? '0%' : '40%',
+      },
     },
-    '& .MuiListItemIcon-root': {
+    ...(active && {
+      backgroundColor:
+        theme.palette.mode === 'light'
+          ? `${theme.palette.primary.main}08`
+          : `${theme.palette.primary.main}15`,
       color: theme.palette.primary.main,
-      transform: 'scale(1.05)',
+      '&::before': {
+        height: collapsed ? '0%' : '60%',
+      },
+      '& .MuiListItemIcon-root': {
+        color: theme.palette.primary.main,
+        transform: 'scale(1.05)',
+      },
+      '& .MuiListItemText-primary': {
+        color:
+          theme.palette.mode === 'light'
+            ? theme.palette.primary.main
+            : theme.palette.primary.light,
+        fontWeight: 600,
+      },
+    }),
+    '& .MuiListItemIcon-root': {
+      minWidth: collapsed ? 'auto' : 44,
+      color: theme.palette.mode === 'light' ? '#6b7280' : '#9ca3af',
+      transition: 'all 0.2s ease',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     '& .MuiListItemText-primary': {
-      color:
-        theme.palette.mode === 'light'
-          ? theme.palette.primary.main
-          : theme.palette.primary.light,
-      fontWeight: 600,
+      fontSize: '14px',
+      fontWeight: 500,
+      color: theme.palette.mode === 'light' ? '#374151' : '#d1d5db',
+      fontFamily: '"Inter", sans-serif',
+      transition: 'all 0.2s ease',
     },
-  }),
-  '& .MuiListItemIcon-root': {
-    minWidth: 44,
-    color: theme.palette.mode === 'light' ? '#6b7280' : '#9ca3af',
-    transition: 'all 0.2s ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  '& .MuiListItemText-primary': {
-    fontSize: '14px',
-    fontWeight: 500,
-    color: theme.palette.mode === 'light' ? '#374151' : '#d1d5db',
-    fontFamily: '"Inter", sans-serif',
-    transition: 'all 0.2s ease',
-  },
-}));
+  })
+);
 
 const SubMenuItem = styled(ListItemButton, {
   shouldForwardProp: (prop) => prop !== 'active',
@@ -372,6 +382,7 @@ const DashboardSideBar: React.FC<SideNavBarProps> = ({
       <StyledListItemButton
         active={active}
         hasChildren={hasChildren}
+        collapsed={sidebarCollapsed}
         onClick={() => handleItemClick(item)}
       >
         <ListItemIcon>
@@ -529,8 +540,8 @@ const DashboardSideBar: React.FC<SideNavBarProps> = ({
         overflow: 'hidden',
       }}
     >
-      <LogoBox>
-        <LogoIcon>RJ</LogoIcon>
+      <LogoBox collapsed={sidebarCollapsed}>
+        <LogoIcon collapsed={sidebarCollapsed}>RJ</LogoIcon>
         {!sidebarCollapsed && (
           <H6 fontSize={18} fontWeight={600} color="#1e293b">
             RJ Chronos

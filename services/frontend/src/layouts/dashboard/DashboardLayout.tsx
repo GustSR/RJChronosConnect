@@ -15,15 +15,19 @@ const Wrapper = styled(Box, {
 })<{ sidebarCollapsed: boolean }>(({ theme, sidebarCollapsed }) => ({
   width: sidebarCollapsed ? `calc(100% - 80px)` : `calc(100% - 280px)`,
   marginLeft: sidebarCollapsed ? 80 : 280,
-  padding: '0 2rem',
   minHeight: '100vh',
   backgroundColor: theme.palette.grey[50],
   transition: 'margin-left 0.3s ease, width 0.3s ease',
   [theme.breakpoints.down('md')]: {
     width: '100%',
     marginLeft: 0,
-    paddingLeft: '2rem',
-    paddingRight: '2rem',
+  },
+}));
+
+const ContentWrapper = styled(Box)(({ theme }) => ({
+  padding: '0 2rem',
+  [theme.breakpoints.down('md')]: {
+    padding: '0 2rem',
   },
 }));
 
@@ -51,7 +55,7 @@ const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
 
       <Wrapper sidebarCollapsed={sidebarCollapsed}>
         <DashboardNavbar setShowMobileSideBar={toggleSidebar} />
-        {children || <Outlet />}
+        <ContentWrapper>{children || <Outlet />}</ContentWrapper>
       </Wrapper>
     </Fragment>
   );

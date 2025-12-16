@@ -2,11 +2,9 @@ import {
   Box,
   Grid,
   Typography,
-  Card,
   CardContent,
   Chip,
   LinearProgress,
-  Alert,
   List,
   ListItem,
   ListItemText,
@@ -15,23 +13,22 @@ import {
   Divider,
   IconButton,
   Tooltip,
+  Alert,
 } from '@mui/material';
 import { useTitle } from '@shared/lib/hooks';
+import { AnimatedCard } from '@shared/ui/components';
 import { FC } from 'react';
 import {
   Router,
   ThermostatAuto,
   Memory,
-  Speed,
   Security,
   Warning,
   CheckCircle,
-  Error,
-  NetworkCheck,
-  Timeline,
-  Storage,
   SignalCellularAlt,
   Visibility,
+  Storage,
+  Timeline,
 } from '@mui/icons-material';
 
 const DashboardOLTs: FC = () => {
@@ -148,23 +145,16 @@ const DashboardOLTs: FC = () => {
 
   return (
     <Box
-      sx={{ p: 3, backgroundColor: 'background.default', minHeight: '100vh' }}
+      sx={{ p: 3, backgroundColor: '#fafafa', minHeight: '100vh' }}
     >
-      {/* Header do Dashboard */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" sx={{ mb: 1, fontWeight: 600 }}>
-          Dashboard de OLTs
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Monitoramento avançado das OLTs - Saúde, Performance, Segurança e
-          Tráfego
-        </Typography>
-      </Box>
-
       {/* KPIs das OLTs */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3} lg={2}>
-          <Card sx={{ boxShadow: 2 }}>
+          <AnimatedCard
+            delay={100}
+            sx={{ height: '100%', boxShadow: 'none !important' }}
+            disableHoverEffect={true}
+          >
             <CardContent sx={{ textAlign: 'center' }}>
               <Router sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
               <Typography variant="h4" sx={{ fontWeight: 600 }}>
@@ -174,11 +164,15 @@ const DashboardOLTs: FC = () => {
                 Total OLTs
               </Typography>
             </CardContent>
-          </Card>
+          </AnimatedCard>
         </Grid>
 
         <Grid item xs={12} sm={6} md={3} lg={2}>
-          <Card sx={{ boxShadow: 2 }}>
+          <AnimatedCard
+            delay={200}
+            sx={{ height: '100%', boxShadow: 'none !important' }}
+            disableHoverEffect={true}
+          >
             <CardContent sx={{ textAlign: 'center' }}>
               <CheckCircle
                 sx={{ fontSize: 40, color: 'success.main', mb: 1 }}
@@ -190,11 +184,15 @@ const DashboardOLTs: FC = () => {
                 Online
               </Typography>
             </CardContent>
-          </Card>
+          </AnimatedCard>
         </Grid>
 
         <Grid item xs={12} sm={6} md={3} lg={2}>
-          <Card sx={{ boxShadow: 2 }}>
+          <AnimatedCard
+            delay={300}
+            sx={{ height: '100%', boxShadow: 'none !important' }}
+            disableHoverEffect={true}
+          >
             <CardContent sx={{ textAlign: 'center' }}>
               <Warning sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
               <Typography variant="h4" sx={{ fontWeight: 600 }}>
@@ -204,11 +202,15 @@ const DashboardOLTs: FC = () => {
                 Com Problemas
               </Typography>
             </CardContent>
-          </Card>
+          </AnimatedCard>
         </Grid>
 
         <Grid item xs={12} sm={6} md={3} lg={2}>
-          <Card sx={{ boxShadow: 2 }}>
+          <AnimatedCard
+            delay={400}
+            sx={{ height: '100%', boxShadow: 'none !important' }}
+            disableHoverEffect={true}
+          >
             <CardContent sx={{ textAlign: 'center' }}>
               <ThermostatAuto
                 sx={{ fontSize: 40, color: 'info.main', mb: 1 }}
@@ -220,11 +222,15 @@ const DashboardOLTs: FC = () => {
                 Temp. Média
               </Typography>
             </CardContent>
-          </Card>
+          </AnimatedCard>
         </Grid>
 
         <Grid item xs={12} sm={6} md={3} lg={2}>
-          <Card sx={{ boxShadow: 2 }}>
+          <AnimatedCard
+            delay={500}
+            sx={{ height: '100%', boxShadow: 'none !important' }}
+            disableHoverEffect={true}
+          >
             <CardContent sx={{ textAlign: 'center' }}>
               <Memory sx={{ fontSize: 40, color: 'secondary.main', mb: 1 }} />
               <Typography variant="h4" sx={{ fontWeight: 600 }}>
@@ -234,11 +240,15 @@ const DashboardOLTs: FC = () => {
                 CPU Médio
               </Typography>
             </CardContent>
-          </Card>
+          </AnimatedCard>
         </Grid>
 
         <Grid item xs={12} sm={6} md={3} lg={2}>
-          <Card sx={{ boxShadow: 2 }}>
+          <AnimatedCard
+            delay={600}
+            sx={{ height: '100%', boxShadow: 'none !important' }}
+            disableHoverEffect={true}
+          >
             <CardContent sx={{ textAlign: 'center' }}>
               <SignalCellularAlt
                 sx={{ fontSize: 40, color: 'primary.dark', mb: 1 }}
@@ -250,7 +260,7 @@ const DashboardOLTs: FC = () => {
                 Tráfego Total
               </Typography>
             </CardContent>
-          </Card>
+          </AnimatedCard>
         </Grid>
       </Grid>
 
@@ -261,7 +271,7 @@ const DashboardOLTs: FC = () => {
           <Grid container spacing={3}>
             {/* Alertas de Segurança */}
             <Grid item xs={12}>
-              <Card sx={{ boxShadow: 2 }}>
+              <AnimatedCard delay={700} disableHoverEffect={true}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                     Alertas de Segurança Recentes
@@ -337,12 +347,12 @@ const DashboardOLTs: FC = () => {
                     ))}
                   </List>
                 </CardContent>
-              </Card>
+              </AnimatedCard>
             </Grid>
 
             {/* OLTs que Necessitam Atenção */}
             <Grid item xs={12}>
-              <Card sx={{ boxShadow: 2 }}>
+              <AnimatedCard delay={800} disableHoverEffect={true}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                     OLTs que Necessitam Atenção
@@ -513,7 +523,7 @@ const DashboardOLTs: FC = () => {
                     ))}
                   </List>
                 </CardContent>
-              </Card>
+              </AnimatedCard>
             </Grid>
           </Grid>
         </Grid>
@@ -523,7 +533,7 @@ const DashboardOLTs: FC = () => {
           <Grid container spacing={3}>
             {/* Saúde Geral das OLTs */}
             <Grid item xs={12}>
-              <Card sx={{ boxShadow: 2 }}>
+              <AnimatedCard delay={900} disableHoverEffect={true}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                     Saúde Geral das OLTs
@@ -588,12 +598,12 @@ const DashboardOLTs: FC = () => {
                     />
                   </Box>
                 </CardContent>
-              </Card>
+              </AnimatedCard>
             </Grid>
 
             {/* Utilização de CPU */}
             <Grid item xs={12}>
-              <Card sx={{ boxShadow: 2 }}>
+              <AnimatedCard delay={1000} disableHoverEffect={true}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                     Utilização de CPU
@@ -656,12 +666,12 @@ const DashboardOLTs: FC = () => {
                     />
                   </Box>
                 </CardContent>
-              </Card>
+              </AnimatedCard>
             </Grid>
 
             {/* Distribuição de Tráfego */}
             <Grid item xs={12}>
-              <Card sx={{ boxShadow: 2 }}>
+              <AnimatedCard delay={1100} disableHoverEffect={true}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                     Distribuição de Tráfego
@@ -724,12 +734,12 @@ const DashboardOLTs: FC = () => {
                     />
                   </Box>
                 </CardContent>
-              </Card>
+              </AnimatedCard>
             </Grid>
 
             {/* Resumo de Alarmes */}
             <Grid item xs={12}>
-              <Card sx={{ boxShadow: 2 }}>
+              <AnimatedCard delay={1200} disableHoverEffect={true}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                     Resumo de Alarmes (24h)
@@ -747,7 +757,7 @@ const DashboardOLTs: FC = () => {
                     <strong>5</strong> notificações de manutenção
                   </Alert>
                 </CardContent>
-              </Card>
+              </AnimatedCard>
             </Grid>
           </Grid>
         </Grid>

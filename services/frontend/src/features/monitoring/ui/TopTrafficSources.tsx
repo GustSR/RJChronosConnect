@@ -160,7 +160,17 @@ const TopTrafficSources: FC = () => {
   };
 
   return (
-    <AnimatedCard sx={{ padding: '2rem' }} delay={400}>
+    <AnimatedCard
+      sx={{
+        padding: '2rem',
+        '&:hover': {
+          transform: 'none',
+          boxShadow:
+            '0px 2px 1px -1px rgba(107, 114, 128, 0.03), 0px 1px 1px 0px rgba(107, 114, 128, 0.04), 0px 1px 3px 0px rgba(107, 114, 128, 0.08)',
+        },
+      }}
+      delay={400}
+    >
       <Box sx={{ mb: 3 }}>
         <H5>Top Fontes de Tráfego</H5>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>

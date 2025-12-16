@@ -312,6 +312,7 @@ const OLTAdd: React.FC = () => {
                       value={formData.hardware_version}
                       onChange={handleInputChange('hardware_version')}
                       label="Versão de Hardware da OLT"
+                      MenuProps={{ disableScrollLock: true }}
                     >
                       {hardwareVersions.map((version) => (
                         <MenuItem key={version} value={version}>
@@ -329,6 +330,7 @@ const OLTAdd: React.FC = () => {
                       value={formData.software_version}
                       onChange={handleInputChange('software_version')}
                       label="Versão de Software da OLT"
+                      MenuProps={{ disableScrollLock: true }}
                     >
                       {softwareVersions.map((version) => (
                         <MenuItem key={version} value={version}>
@@ -346,6 +348,7 @@ const OLTAdd: React.FC = () => {
                       value={formData.supported_pon_types}
                       onChange={handleInputChange('supported_pon_types')}
                       label="Tipos de PON Suportados"
+                      MenuProps={{ disableScrollLock: true }}
                     >
                       <MenuItem value="GPON">GPON</MenuItem>
                       <MenuItem value="EPON">EPON</MenuItem>

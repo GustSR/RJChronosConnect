@@ -127,79 +127,86 @@ const Provisioning: React.FC = () => {
   return (
     <Box sx={{ bgcolor: '#fafafa', minHeight: '100vh', py: 3 }}>
       <Container maxWidth="xl">
-        {/* Header */}
-        <Box sx={{ mb: 4 }}>
-          <Box
+        {/* Header Removed - Integrated into Filter Card */}
+        <Box sx={{ mb: 1 }}>
+          {/* Espaçamento superior reduzido pois os botões agora estão no card */}
+        </Box>
+
+          {/* Toolbar de Filtros e Ações */}
+          <AnimatedCard
+            delay={100}
             sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              mb: 2,
+              p: 2,
+              borderRadius: 3,
+              mb: 3,
+              '&:hover': {
+                transform: 'translateY(0px)',
+                boxShadow:
+                  '0px 2px 1px -1px rgba(107, 114, 128, 0.03), 0px 1px 1px 0px rgba(107, 114, 128, 0.04), 0px 1px 3px 0px rgba(107, 114, 128, 0.08)',
+              },
             }}
           >
-            <Box>
-              <Typography
-                variant="h4"
-                fontWeight="700"
-                fontSize="28px"
-                color="#1a1a1a"
-              >
-                Provisionamento
-              </Typography>
-              <Typography
-                variant="body1"
-                color="text.secondary"
-                fontSize="16px"
-              >
-                Gerencie ONUs/ONTs pendentes de autorização na rede
-              </Typography>
-            </Box>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 2,
+                mb: 2,
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <FilterList sx={{ mr: 1, color: '#6b7280', fontSize: 20 }} />
+                <Typography variant="body1" fontWeight="600" sx={{ mr: 3 }}>
+                  Filtros
+                </Typography>
+                <Chip
+                  label={`${filteredONUs.length} resultados`}
+                  color="primary"
+                  variant="outlined"
+                  size="small"
+                  sx={{ fontWeight: 600 }}
+                />
+              </Box>
 
-            <Stack direction="row" spacing={2}>
-              <Button
-                variant="outlined"
-                startIcon={<Refresh />}
-                onClick={handleRefresh}
-                sx={{
-                  borderRadius: 3,
-                  textTransform: 'none',
-                  fontWeight: 500,
-                }}
-              >
-                Atualizar
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                sx={{
-                  borderRadius: 3,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  background: 'linear-gradient(135deg, #6366f1, #5855eb)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #5855eb, #4f46e5)',
-                  },
-                }}
-              >
-                Adicionar Manual
-              </Button>
-            </Stack>
-          </Box>
-
-          {/* Toolbar de Filtros */}
-          <AnimatedCard delay={100} sx={{ p: 2, borderRadius: 3, mb: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <FilterList sx={{ mr: 1, color: '#6b7280', fontSize: 20 }} />
-              <Typography variant="body1" fontWeight="600" sx={{ mr: 3 }}>
-                Filtros
-              </Typography>
-              <Chip
-                label={`${filteredONUs.length} resultados`}
-                color="primary"
-                variant="outlined"
-                size="small"
-                sx={{ fontWeight: 600 }}
-              />
+              <Stack direction="row" spacing={2}>
+                <Button
+                  variant="outlined"
+                  startIcon={<Refresh />}
+                  onClick={handleRefresh}
+                  size="small"
+                  sx={{
+                    borderRadius: 3,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    '&:hover': {
+                      transform: 'none',
+                    },
+                  }}
+                >
+                  Atualizar
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<Add />}
+                  size="small"
+                  sx={{
+                    borderRadius: 3,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    background: 'linear-gradient(135deg, #6366f1, #5855eb)',
+                    boxShadow: 'none',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #5855eb, #4f46e5)',
+                      boxShadow: 'none',
+                      transform: 'none',
+                    },
+                  }}
+                >
+                  Adicionar Manual
+                </Button>
+              </Stack>
             </Box>
 
             <Grid container spacing={2} alignItems="center">
@@ -233,6 +240,7 @@ const Provisioning: React.FC = () => {
                     label="Status"
                     onChange={(e) => setStatusFilter(e.target.value)}
                     sx={{ borderRadius: 3 }}
+                    MenuProps={{ disableScrollLock: true }}
                   >
                     <MenuItem value="all">Todos</MenuItem>
                     <MenuItem value="pending">Pendente</MenuItem>
@@ -250,6 +258,7 @@ const Provisioning: React.FC = () => {
                     label="OLT"
                     onChange={(e) => setOltFilter(e.target.value)}
                     sx={{ borderRadius: 3 }}
+                    MenuProps={{ disableScrollLock: true }}
                   >
                     <MenuItem value="all">Todas</MenuItem>
                     {uniqueOlts.map((olt) => (
@@ -286,8 +295,23 @@ const Provisioning: React.FC = () => {
           {/* Estatísticas */}
           <Grid container spacing={3} sx={{ mb: 3 }}>
             <Grid item xs={12} sm={6} md={3}>
-              <AnimatedCard delay={200}>
-                <Paper sx={{ p: 3, borderRadius: 3, textAlign: 'center' }}>
+              <AnimatedCard
+                delay={200}
+                disableHoverEffect={true}
+                sx={{
+                  boxShadow: 'none !important',
+                  bgcolor: 'transparent !important',
+                }}
+              >
+                <Paper
+                  sx={{
+                    p: 3,
+                    borderRadius: 3,
+                    textAlign: 'center',
+                    boxShadow: 'none',
+                    border: '1px solid #f0f0f0',
+                  }}
+                >
                   <TrendingUp sx={{ fontSize: 40, color: '#6366f1', mb: 1 }} />
                   <Typography variant="h4" fontWeight="700" color="#1a1a1a">
                     {stats.total}
@@ -299,8 +323,23 @@ const Provisioning: React.FC = () => {
               </AnimatedCard>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <AnimatedCard delay={300}>
-                <Paper sx={{ p: 3, borderRadius: 3, textAlign: 'center' }}>
+              <AnimatedCard
+                delay={300}
+                disableHoverEffect={true}
+                sx={{
+                  boxShadow: 'none !important',
+                  bgcolor: 'transparent !important',
+                }}
+              >
+                <Paper
+                  sx={{
+                    p: 3,
+                    borderRadius: 3,
+                    textAlign: 'center',
+                    boxShadow: 'none',
+                    border: '1px solid #f0f0f0',
+                  }}
+                >
                   <Schedule sx={{ fontSize: 40, color: '#f59e0b', mb: 1 }} />
                   <Typography variant="h4" fontWeight="700" color="#1a1a1a">
                     {stats.pending}
@@ -312,8 +351,23 @@ const Provisioning: React.FC = () => {
               </AnimatedCard>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <AnimatedCard delay={400}>
-                <Paper sx={{ p: 3, borderRadius: 3, textAlign: 'center' }}>
+              <AnimatedCard
+                delay={400}
+                disableHoverEffect={true}
+                sx={{
+                  boxShadow: 'none !important',
+                  bgcolor: 'transparent !important',
+                }}
+              >
+                <Paper
+                  sx={{
+                    p: 3,
+                    borderRadius: 3,
+                    textAlign: 'center',
+                    boxShadow: 'none',
+                    border: '1px solid #f0f0f0',
+                  }}
+                >
                   <CheckCircle sx={{ fontSize: 40, color: '#10b981', mb: 1 }} />
                   <Typography variant="h4" fontWeight="700" color="#1a1a1a">
                     {stats.authorized}
@@ -325,8 +379,23 @@ const Provisioning: React.FC = () => {
               </AnimatedCard>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <AnimatedCard delay={500}>
-                <Paper sx={{ p: 3, borderRadius: 3, textAlign: 'center' }}>
+              <AnimatedCard
+                delay={500}
+                disableHoverEffect={true}
+                sx={{
+                  boxShadow: 'none !important',
+                  bgcolor: 'transparent !important',
+                }}
+              >
+                <Paper
+                  sx={{
+                    p: 3,
+                    borderRadius: 3,
+                    textAlign: 'center',
+                    boxShadow: 'none',
+                    border: '1px solid #f0f0f0',
+                  }}
+                >
                   <Warning sx={{ fontSize: 40, color: '#ef4444', mb: 1 }} />
                   <Typography variant="h4" fontWeight="700" color="#1a1a1a">
                     {stats.failed}
@@ -338,7 +407,6 @@ const Provisioning: React.FC = () => {
               </AnimatedCard>
             </Grid>
           </Grid>
-        </Box>
 
         {/* Lista de ONUs Pendentes */}
         {filteredONUs.length === 0 ? (
@@ -360,7 +428,14 @@ const Provisioning: React.FC = () => {
           <Grid container spacing={3}>
             {filteredONUs.map((onu, index) => (
               <Grid item xs={12} md={6} lg={4} key={onu.id}>
-                <AnimatedCard delay={600 + index * 100}>
+                <AnimatedCard
+                  delay={600 + index * 100}
+                  disableHoverEffect={true}
+                  sx={{
+                    boxShadow: 'none !important',
+                    bgcolor: 'transparent !important',
+                  }}
+                >
                   <PendingOnuCard
                     onu={onu}
                     onProvision={handleProvision}

@@ -185,7 +185,17 @@ const ONTStatusChart: FC = () => {
   ];
 
   return (
-    <AnimatedCard sx={{ padding: '1.5rem' }} delay={100}>
+    <AnimatedCard
+      sx={{
+        padding: '1.5rem',
+        '&:hover': {
+          transform: 'none',
+          boxShadow:
+            '0px 2px 1px -1px rgba(107, 114, 128, 0.03), 0px 1px 1px 0px rgba(107, 114, 128, 0.04), 0px 1px 3px 0px rgba(107, 114, 128, 0.08)',
+        },
+      }}
+      delay={100}
+    >
       <H5 mb={2}>Status das ONTs</H5>
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

@@ -190,7 +190,17 @@ const BandwidthAreaChart: FC = () => {
   };
 
   return (
-    <AnimatedCard sx={{ padding: '2rem' }} delay={300}>
+    <AnimatedCard
+      sx={{
+        padding: '2rem',
+        '&:hover': {
+          transform: 'none',
+          boxShadow:
+            '0px 2px 1px -1px rgba(107, 114, 128, 0.03), 0px 1px 1px 0px rgba(107, 114, 128, 0.04), 0px 1px 3px 0px rgba(107, 114, 128, 0.08)',
+        },
+      }}
+      delay={300}
+    >
       {/* Título e descrição */}
       <Box sx={{ mb: 3 }}>
         <H5>Tráfego de Banda</H5>

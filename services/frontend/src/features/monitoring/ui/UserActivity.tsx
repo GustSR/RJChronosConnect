@@ -127,14 +127,14 @@ const UserActivity: FC = () => {
       <AnimatedCard
         sx={{
           padding: '2rem',
-          height: '400px',
+          height: '600px',
           display: 'flex',
           flexDirection: 'column',
         }}
         delay={700}
       >
         <H5>Atividades Recentes dos Usuários</H5>
-        <ScrollBar style={{ flex: 1, maxHeight: '320px' }}>
+        <ScrollBar style={{ flex: 1, maxHeight: '520px' }}>
           <Table>
             <TableHead
               sx={{ borderBottom: '1.5px solid', borderColor: 'divider' }}
@@ -184,7 +184,7 @@ const UserActivity: FC = () => {
       <AnimatedCard
         sx={{
           padding: '2rem',
-          height: '400px',
+          height: '600px',
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -202,15 +202,20 @@ const UserActivity: FC = () => {
     <AnimatedCard
       sx={{
         padding: '2rem',
-        height: '400px',
+        height: '600px',
         display: 'flex',
         flexDirection: 'column',
+        '&:hover': {
+          transform: 'none',
+          boxShadow:
+            '0px 2px 1px -1px rgba(107, 114, 128, 0.03), 0px 1px 1px 0px rgba(107, 114, 128, 0.04), 0px 1px 3px 0px rgba(107, 114, 128, 0.08)',
+        },
       }}
       delay={700}
     >
       <H5>Atividades Recentes dos Usuários</H5>
 
-      <ScrollBar style={{ flex: 1, maxHeight: '320px' }}>
+      <ScrollBar style={{ flex: 1, maxHeight: '520px' }}>
         <Table>
           <TableHead
             sx={{ borderBottom: '1.5px solid', borderColor: 'divider' }}

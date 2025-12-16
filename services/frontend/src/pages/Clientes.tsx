@@ -787,6 +787,7 @@ const Clientes: React.FC = () => {
                             py: 0.5,
                           },
                         }}
+                        MenuProps={{ disableScrollLock: true }}
                       >
                         <MenuItem value={5}>5</MenuItem>
                         <MenuItem value={10}>10</MenuItem>
@@ -867,6 +868,7 @@ const Clientes: React.FC = () => {
                             py: 0.5,
                           },
                         }}
+                        MenuProps={{ disableScrollLock: true }}
                       >
                         <MenuItem value={6}>6</MenuItem>
                         <MenuItem value={12}>12</MenuItem>

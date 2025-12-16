@@ -27,9 +27,11 @@ Thumbs.db
 # Ignorar diretórios específicos do projeto
 .local/
 
-# Ignorar arquivos do Gemini/Claude
+# Ignorar arquivos do Gemini/Claude/Codex
 GEMINI.md
 .claude
 
 .gemini/
 gha-creds-*.json
+
+AGENTS.md

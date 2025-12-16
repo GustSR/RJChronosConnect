@@ -85,12 +85,6 @@ const OLTManagement: React.FC = () => {
     <Container maxWidth="xl" sx={{ py: 4, px: 2 }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight="600" sx={{ mb: 1 }}>
-          Gerenciamento de OLTs
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Gerencie suas Optical Line Terminals
-        </Typography>
         <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
           <Button
             variant="contained"
@@ -105,7 +99,11 @@ const OLTManagement: React.FC = () => {
       {/* Estatísticas rápidas */}
       <Grid container spacing={3} mb={3}>
         <Grid item xs={12} sm={6} md={3}>
-          <AnimatedCard delay={100} sx={{ p: 2, textAlign: 'center' }}>
+          <AnimatedCard
+            delay={100}
+            sx={{ p: 2, textAlign: 'center' }}
+            disableHoverEffect={true}
+          >
             <DeviceHubIcon color="primary" sx={{ fontSize: 40, mb: 1 }} />
             <H6>Total de OLTs</H6>
             <Typography variant="h4" color="primary">
@@ -114,7 +112,11 @@ const OLTManagement: React.FC = () => {
           </AnimatedCard>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <AnimatedCard delay={200} sx={{ p: 2, textAlign: 'center' }}>
+          <AnimatedCard
+            delay={200}
+            sx={{ p: 2, textAlign: 'center' }}
+            disableHoverEffect={true}
+          >
             <DeviceHubIcon color="success" sx={{ fontSize: 40, mb: 1 }} />
             <H6>OLTs Online</H6>
             <Typography variant="h4" color="success.main">
@@ -123,7 +125,11 @@ const OLTManagement: React.FC = () => {
           </AnimatedCard>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <AnimatedCard delay={300} sx={{ p: 2, textAlign: 'center' }}>
+          <AnimatedCard
+            delay={300}
+            sx={{ p: 2, textAlign: 'center' }}
+            disableHoverEffect={true}
+          >
             <DeviceHubIcon color="error" sx={{ fontSize: 40, mb: 1 }} />
             <H6>OLTs Offline</H6>
             <Typography variant="h4" color="error.main">
@@ -132,7 +138,11 @@ const OLTManagement: React.FC = () => {
           </AnimatedCard>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <AnimatedCard delay={400} sx={{ p: 2, textAlign: 'center' }}>
+          <AnimatedCard
+            delay={400}
+            sx={{ p: 2, textAlign: 'center' }}
+            disableHoverEffect={true}
+          >
             <DeviceHubIcon color="info" sx={{ fontSize: 40, mb: 1 }} />
             <H6>Taxa de Disponibilidade</H6>
             <Typography variant="h4" color="info.main">
@@ -165,7 +175,11 @@ const OLTManagement: React.FC = () => {
       )}
 
       {/* OLTs Table */}
-      <AnimatedCard delay={500} sx={{ borderRadius: 3, boxShadow: 2, mt: 2 }}>
+      <AnimatedCard
+        delay={500}
+        sx={{ borderRadius: 3, mt: 2 }}
+        disableHoverEffect={true}
+      >
         <Box sx={{ p: 0 }}>
           {loading ? (
             <Box p={2}>

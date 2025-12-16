@@ -88,12 +88,11 @@ const PendingOnuCard: React.FC<PendingOnuCardProps> = ({
     <Card
       sx={{
         borderRadius: 4,
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+        boxShadow: 'none',
         border: '1px solid #f0f0f0',
-        transition: 'all 0.3s ease',
         '&:hover': {
-          transform: 'translateY(-2px)',
-          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.12)',
+          transform: 'none',
+          boxShadow: 'none',
         },
       }}
     >

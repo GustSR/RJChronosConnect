@@ -238,7 +238,15 @@ const ClienteDetalhes: React.FC = () => {
       </Box>
 
       {/* Informações Básicas do Cliente */}
-      <AnimatedCard delay={100} sx={{ mb: 4 }}>
+      <AnimatedCard
+        delay={100}
+        disableHoverEffect={true}
+        sx={{
+          mb: 4,
+          boxShadow: 'none !important',
+          border: '1px solid #f0f0f0',
+        }}
+      >
         <CardContent sx={{ p: 4 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
             <Avatar
@@ -533,6 +541,7 @@ const ClienteDetalhes: React.FC = () => {
                         | 'suspenso',
                     })
                   }
+                  MenuProps={{ disableScrollLock: true }}
                 >
                   <MenuItem value="ativo">Ativo</MenuItem>
                   <MenuItem value="suspenso">Suspenso</MenuItem>

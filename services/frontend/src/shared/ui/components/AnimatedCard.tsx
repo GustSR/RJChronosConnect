@@ -5,16 +5,20 @@ interface AnimatedCardProps extends CardProps {
   children: ReactNode;
   delay?: number;
   duration?: number;
+  disableHoverEffect?: boolean;
 }
 
 const StyledCard = styled(Card, {
   shouldForwardProp: (prop) =>
-    !['isVisible', 'delay', 'duration'].includes(prop as string),
+    !['isVisible', 'delay', 'duration', 'disableHoverEffect'].includes(
+      prop as string
+    ),
 })<{
   isVisible: boolean;
   delay: number;
   duration: number;
-}>(({ theme: _theme, isVisible, delay, duration }) => ({
+  disableHoverEffect?: boolean;
+}>(({ theme: _theme, isVisible, delay, duration, disableHoverEffect }) => ({
   backgroundColor: 'rgb(255, 255, 255)',
   color: 'rgb(17, 24, 39)',
   boxShadow:
@@ -34,17 +38,27 @@ const StyledCard = styled(Card, {
     `,
 
   // Hover effect
-  '&:hover': {
-    transform: isVisible ? 'translateY(-4px)' : 'translateY(24px)',
-    boxShadow:
-      '0px 4px 8px -2px rgba(107, 114, 128, 0.08), 0px 2px 4px -1px rgba(107, 114, 128, 0.06), 0px 1px 6px 0px rgba(107, 114, 128, 0.12)',
-  },
+  ...(disableHoverEffect
+    ? {
+        '&:hover': {
+          transform: 'none !important',
+          transition: 'none !important',
+        },
+      }
+    : {
+        '&:hover': {
+          transform: isVisible ? 'translateY(-4px)' : 'translateY(24px)',
+          boxShadow:
+            '0px 4px 8px -2px rgba(107, 114, 128, 0.08), 0px 2px 4px -1px rgba(107, 114, 128, 0.06), 0px 1px 6px 0px rgba(107, 114, 128, 0.12)',
+        },
+      }),
 }));
 
 const AnimatedCard: FC<AnimatedCardProps> = ({
   children,
   delay = 0,
   duration = 600,
+  disableHoverEffect = false,
   sx,
   ...props
 }) => {
@@ -64,6 +78,7 @@ const AnimatedCard: FC<AnimatedCardProps> = ({
       isVisible={isVisible}
       delay={delay}
       duration={duration}
+      disableHoverEffect={disableHoverEffect}
       sx={sx}
       {...props}
     >

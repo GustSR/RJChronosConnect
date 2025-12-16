@@ -3,27 +3,38 @@ import {
   Box,
   Button,
   Card,
-  Divider,
   FormControlLabel,
   FormHelperText,
   Switch,
+  styled,
 } from '@mui/material';
-import { SocialIconButton, TextFieldWrapper } from '@shared/ui/authentication';
 import {
   FlexBox,
   LightTextField,
   H1,
-  H3,
   Paragraph,
   Small,
 } from '@shared/ui/components';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '@shared/lib/hooks';
-import FacebookIcon from 'icons/FacebookIcon';
-import GoogleIcon from 'icons/GoogleIcon';
 import { FC, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-// Validação nativa do react-hook-form, sem dependências extras
+
+// Styled component for the Logo (similar to sidebar)
+const LogoIcon = styled(Box)(({ theme }) => ({
+  width: 48,
+  height: 48,
+  background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+  borderRadius: '12px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: 'white',
+  fontSize: '24px',
+  fontWeight: 700,
+  boxShadow: `0 4px 20px ${theme.palette.primary.main}40`,
+  marginBottom: theme.spacing(2),
+}));
 
 const Login: FC = () => {
   const { login } = useAuth();
@@ -70,140 +81,129 @@ const Login: FC = () => {
         alignItems: 'center',
         flexDirection: 'column',
         justifyContent: 'center',
-        height: { sm: '100%' },
+        height: '100vh',
+        bgcolor: 'background.default',
       }}
     >
-      <Card sx={{ padding: 4, maxWidth: 600, boxShadow: 1 }}>
+      <Card
+        sx={{
+          padding: 4,
+          maxWidth: 500,
+          width: '100%',
+          boxShadow: 2,
+          '&:hover': {
+            boxShadow: 2,
+            transform: 'none',
+          },
+        }}
+      >
         <FlexBox
           alignItems="center"
           flexDirection="column"
           justifyContent="center"
-          mb={5}
+          mb={4}
         >
-          <Box width={38} mb={1}>
-            <img src="/static/logo/logo.svg" width="100%" alt="Uko Logo" />
-          </Box>
+          <LogoIcon>RJ</LogoIcon>
           <H1 fontSize={24} fontWeight={700}>
-            Sign In to Uko
+            RJ Chronos
           </H1>
+          <Paragraph color="text.secondary" mt={1}>
+            Gerenciamento de OLTs e Provisionamento
+          </Paragraph>
         </FlexBox>
 
-        <FlexBox justifyContent="space-between" flexWrap="wrap" my="1rem">
-          <SocialIconButton
-            // onClick={loginWithGoogle}
-            startIcon={<GoogleIcon sx={{ mr: 1 }} />}
-          >
-            Sign in with Google
-          </SocialIconButton>
-          <SocialIconButton
-            // onClick={loginWithFacebook}
-            startIcon={<FacebookIcon sx={{ mr: 1 }} />}
-          >
-            Sign in with Facebook
-          </SocialIconButton>
+        <form
+          noValidate
+          onSubmit={handleSubmit(onSubmit)}
+          style={{ width: '100%' }}
+        >
+          <Box mb={2} sx={{ width: '100%' }}>
+            <Paragraph fontWeight={600} mb={1}>
+              Email
+            </Paragraph>
+            <LightTextField
+              fullWidth
+              type="email"
+              error={Boolean(errors.email)}
+              helperText={errors.email?.message}
+              {...register('email', {
+                required: 'Email é obrigatório',
+                pattern: {
+                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                  message: 'Deve ser um email válido',
+                },
+              })}
+            />
+          </Box>
 
-          <Divider sx={{ my: 3, width: '100%', alignItems: 'flex-start' }}>
-            <H3 color="text.disabled" px={1}>
-              Or
-            </H3>
-          </Divider>
+          <Box mb={2} sx={{ width: '100%' }}>
+            <Paragraph fontWeight={600} mb={1}>
+              Senha
+            </Paragraph>
+            <LightTextField
+              fullWidth
+              type="password"
+              error={Boolean(errors.password)}
+              helperText={errors.password?.message}
+              {...register('password', {
+                required: 'Senha é obrigatória',
+                minLength: {
+                  value: 6,
+                  message: 'A senha deve ter no mínimo 6 caracteres',
+                },
+              })}
+            />
+          </Box>
 
-          <form
-            noValidate
-            onSubmit={handleSubmit(onSubmit)}
-            style={{ width: '100%' }}
-          >
-            <FlexBox justifyContent="space-between" flexWrap="wrap">
-              <TextFieldWrapper>
-                <Paragraph fontWeight={600} mb={1}>
-                  Email
-                </Paragraph>
-                <LightTextField
-                  fullWidth
-                  type="email"
-                  error={Boolean(errors.email)}
-                  helperText={errors.email?.message}
-                  {...register('email', {
-                    required: 'Email is required',
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Must be a valid email',
-                    },
-                  })}
+          <FlexBox mt={2} alignItems="center" justifyContent="space-between">
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={watchedValues.remember}
+                  {...register('remember')}
                 />
-              </TextFieldWrapper>
-
-              <TextFieldWrapper>
-                <Paragraph fontWeight={600} mb={1}>
-                  Password
-                </Paragraph>
-                <LightTextField
-                  fullWidth
-                  type="password"
-                  error={Boolean(errors.password)}
-                  helperText={errors.password?.message}
-                  {...register('password', {
-                    required: 'Password is required',
-                    minLength: {
-                      value: 6,
-                      message:
-                        'Password should be of minimum 6 characters length',
-                    },
-                  })}
-                />
-              </TextFieldWrapper>
-            </FlexBox>
-
-            <FlexBox mt={2} alignItems="center" justifyContent="space-between">
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={watchedValues.remember}
-                    {...register('remember')}
-                  />
-                }
-                label="Remember Me"
-                sx={{ '& .MuiTypography-root': { fontWeight: 600 } }}
-              />
-              <Link to="/forget-password">
-                <Small color="secondary.red">Forgot Password?</Small>
-              </Link>
-            </FlexBox>
-
-            {error && (
-              <FormHelperText
-                error
-                sx={{
-                  mt: 2,
-                  fontSize: 13,
-                  fontWeight: 500,
-                  textAlign: 'center',
-                }}
-              >
-                {error}
-              </FormHelperText>
-            )}
-
-            <Box sx={{ mt: 4 }}>
-              {loading ? (
-                <LoadingButton loading fullWidth variant="contained">
-                  Sign In
-                </LoadingButton>
-              ) : (
-                <Button fullWidth type="submit" variant="contained">
-                  Sign In
-                </Button>
-              )}
-            </Box>
-          </form>
-
-          <Small margin="auto" mt={3} color="text.disabled">
-            Don't have an account?{' '}
-            <Link to="/register">
-              <Small color="primary.main">Create an account</Small>
+              }
+              label="Lembrar-me"
+              sx={{ '& .MuiTypography-root': { fontWeight: 600 } }}
+            />
+            <Link to="/forget-password">
+              <Small color="secondary.red">Esqueceu a senha?</Small>
             </Link>
-          </Small>
-        </FlexBox>
+          </FlexBox>
+
+          {error && (
+            <FormHelperText
+              error
+              sx={{
+                mt: 2,
+                fontSize: 13,
+                fontWeight: 500,
+                textAlign: 'center',
+              }}
+            >
+              {error}
+            </FormHelperText>
+          )}
+
+          <Box sx={{ mt: 4 }}>
+            {loading ? (
+              <LoadingButton loading fullWidth variant="contained">
+                Entrar
+              </LoadingButton>
+            ) : (
+              <Button fullWidth type="submit" variant="contained">
+                Entrar
+              </Button>
+            )}
+          </Box>
+        </form>
+
+        {/* <Small margin="auto" mt={3} color="text.disabled">
+            Não tem uma conta?{' '}
+            <Link to="/register">
+              <Small color="primary.main">Criar uma conta</Small>
+            </Link>
+          </Small> */}
       </Card>
     </FlexBox>
   );
