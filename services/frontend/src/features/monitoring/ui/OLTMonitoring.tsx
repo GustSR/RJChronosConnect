@@ -1,41 +1,12 @@
-import {
-  Box,
-  Chip,
-  LinearProgress,
-  Typography,
-  Skeleton,
-  Alert,
-} from '@mui/material';
+import { Box, Chip, LinearProgress, Typography, Skeleton, Alert } from '@mui/material';
 import { H5, Small } from '@shared/ui/components/Typography';
-import { FC, useEffect, useState } from 'react';
+import { FC } from 'react';
 import { AnimatedCard } from '@shared/ui/components';
 import { Thermostat, AccessTime, LocationOn } from '@mui/icons-material';
-import { genieacsApi } from '@shared/api/genieacsApi';
-import { OLT } from '@shared/api/types';
+import { useOlts } from '../model';
 
 const OLTMonitoring: FC = () => {
-  const [olts, setOLTs] = useState<OLT[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchOLTData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const oltList = await genieacsApi.getOLTs();
-      setOLTs(oltList);
-    } catch (error) {
-      console.error('Erro ao carregar dados dos OLTs:', error);
-      setError('Erro ao carregar dados');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchOLTData();
-  }, []);
+  const { olts, loading, error } = useOlts();
 
   // Loading state
   if (loading) {

@@ -1,57 +1,12 @@
-import {
-  Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-  LinearProgress,
-  Avatar,
-  Skeleton,
-  Alert,
-  Chip,
-} from '@mui/material';
+import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, LinearProgress, Avatar, Skeleton, Alert, Chip } from '@mui/material';
 import { H5 } from '@shared/ui/components/Typography';
-import { FC, useEffect, useState } from 'react';
+import { FC } from 'react';
 import { AnimatedCard } from '@shared/ui/components';
-import {
-  Router as RouterIcon,
-  TrendingUp,
-  TrendingDown,
-  Remove,
-  Settings,
-  Hub,
-} from '@mui/icons-material';
-import { genieacsApi } from '@shared/api/genieacsApi';
-import { TrafficSourcesStats } from '@shared/api/types';
+import { Router as RouterIcon, TrendingUp, TrendingDown, Remove, Settings, Hub } from '@mui/icons-material';
+import { useTrafficSources } from '../model';
 
 const TopTrafficSources: FC = () => {
-  const [trafficStats, setTrafficStats] = useState<TrafficSourcesStats | null>(
-    null
-  );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchTrafficSources = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const stats = await genieacsApi.getTrafficSources();
-      setTrafficStats(stats);
-    } catch (error) {
-      console.error('Erro ao carregar fontes de tráfego:', error);
-      setError('Erro ao carregar dados');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTrafficSources();
-  }, []);
+  const { trafficStats, loading, error } = useTrafficSources();
 
   // Loading state
   if (loading) {

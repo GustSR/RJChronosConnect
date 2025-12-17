@@ -1,17 +1,17 @@
+import { Box } from '@mui/material';
+import type { ColumnDef } from '@tanstack/react-table';
 import FlexBox from '@shared/ui/components/FlexBox';
 import { H6, Small, Tiny } from '@shared/ui/components/Typography';
 import UkoAvatar from '@shared/ui/components/UkoAvatar';
+import type { UserListItem } from './types';
 
-const UserListColumnShape = [
+export const userListColumns: ColumnDef<UserListItem>[] = [
   {
-    Header: 'Name',
-    accessor: 'name',
-    minWidth: 200,
-    Cell: ({
-      row,
-    }: {
-      row: { original: { avatar: string; name: string; address: string } };
-    }) => {
+    id: 'name',
+    header: 'Name',
+    accessorKey: 'name',
+    minSize: 200,
+    cell: ({ row }) => {
       const { avatar, name, address } = row.original;
       return (
         <FlexBox alignItems="center">
@@ -25,10 +25,11 @@ const UserListColumnShape = [
     },
   },
   {
-    Header: 'Role',
-    accessor: 'role',
-    minWidth: 200,
-    Cell: ({ value }: { value: string }) => (
+    id: 'role',
+    header: 'Role',
+    accessorKey: 'role',
+    minSize: 200,
+    cell: ({ getValue }) => (
       <Small
         sx={{
           borderRadius: 10,
@@ -37,26 +38,29 @@ const UserListColumnShape = [
           backgroundColor: '#A798FF',
         }}
       >
-        {value}
+        {getValue<string>()}
       </Small>
     ),
   },
   {
-    Header: 'Company',
-    accessor: 'company',
-    minWidth: 150,
+    id: 'company',
+    header: 'Company',
+    accessorKey: 'company',
+    minSize: 150,
   },
   {
-    Header: 'Project',
-    accessor: 'project',
-    minWidth: 150,
+    id: 'project',
+    header: 'Project',
+    accessorKey: 'project',
+    minSize: 150,
   },
   {
-    Header: 'Verified',
-    accessor: 'verified',
-    minWidth: 100,
-    maxWidth: 100,
+    id: 'verified',
+    header: 'Verified',
+    accessorKey: 'verified',
+    minSize: 100,
+    maxSize: 100,
+    cell: ({ getValue }) => <Box>{getValue<string>()}</Box>,
   },
 ];
 
-export default UserListColumnShape;

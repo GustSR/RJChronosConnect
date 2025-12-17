@@ -1,29 +1,10 @@
-import {
-  Box,
-  Avatar,
-  styled,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Skeleton,
-  Alert,
-} from '@mui/material';
+import { Box, Avatar, styled, Table, TableBody, TableCell, TableHead, TableRow, Skeleton, Alert } from '@mui/material';
 import { H5, Small } from '@shared/ui/components/Typography';
-import { FC, useEffect, useState } from 'react';
+import { FC } from 'react';
 import ScrollBar from 'simplebar-react';
 import { AnimatedCard } from '@shared/ui/components';
-import {
-  Router,
-  Settings,
-  Visibility,
-  DeviceHub,
-  Assignment,
-  Person,
-} from '@mui/icons-material';
-import { genieacsApi } from '@shared/api/genieacsApi';
-import { ActivityLog } from '@shared/api/types';
+import { Router, Settings, Visibility, DeviceHub, Assignment, Person } from '@mui/icons-material';
+import { useActivityLogs } from '../model';
 
 const commonCSS = {
   minWidth: 120,
@@ -97,29 +78,7 @@ const formatTimeAgo = (dateString: string): string => {
 };
 
 const UserActivity: FC = () => {
-  const [activities, setActivities] = useState<ActivityLog[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchActivities = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Buscar logs de atividade do GenieACS
-      const logs = await genieacsApi.getActivityLogs({ limit: 5 });
-      setActivities(logs);
-    } catch (error) {
-      console.error('Erro ao carregar atividades:', error);
-      setError('Erro ao carregar dados');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchActivities();
-  }, []);
+  const { activities, loading, error } = useActivityLogs({ limit: 5 });
 
   // Loading state
   if (loading) {

@@ -9,6 +9,8 @@ const mockHandlers: Record<string, Record<string, (config: any) => any>> = {
   DELETE: {},
 };
 
+const originalAdapter = axios.defaults.adapter;
+
 // Custom axios adapter for mocking
 const mockAdapter = (config: any) => {
   const method = config.method?.toUpperCase() || 'GET';
@@ -70,7 +72,15 @@ const mockAdapter = (config: any) => {
 
   console.log('No mock handler, using default adapter');
   // Use default adapter for non-mocked requests
-  return axios.defaults.adapter!(config);
+  if (!originalAdapter) {
+    return Promise.reject(new Error('No axios adapter available'));
+  }
+
+  const adapter = Array.isArray(originalAdapter)
+    ? originalAdapter[0]
+    : originalAdapter;
+
+  return adapter(config);
 };
 
 // Set the mock adapter

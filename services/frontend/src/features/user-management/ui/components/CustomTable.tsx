@@ -1,42 +1,19 @@
 import { ArrowRightAlt } from '@mui/icons-material';
-import {
-  Box,
-  ButtonBase,
-  Pagination,
-  Stack,
-  styled,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  useTheme,
-} from '@mui/material';
+import { Box, ButtonBase, Pagination, Stack, styled, Table, TableBody, TableCell, TableHead, TableRow, useTheme } from '@mui/material';
 import { FlexBox, H5 } from '@shared/ui/components';
-import { FC, useMemo, useState } from 'react';
-import {
-  useReactTable,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
-  flexRender,
-  ColumnDef,
-  SortingState,
-} from '@tanstack/react-table';
+import { useState } from 'react';
+import { ColumnDef, SortingState, flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
 import ScrollBar from 'simplebar-react';
 
-// component props interface
-interface CustomTableProps<TData = unknown> {
+type Props<TData> = {
   columns: ColumnDef<TData>[];
   data: TData[];
   rowClick?: (rowData: TData) => void;
   hidePagination?: boolean;
   showFooter?: boolean;
   pageSize?: number;
-}
+};
 
-// styled component
 const StyledPagination = styled(Pagination)(({ theme }) => ({
   '& .MuiPaginationItem-root': {
     fontSize: 12,
@@ -64,16 +41,17 @@ const StyledPagination = styled(Pagination)(({ theme }) => ({
   },
 }));
 
-const CustomTable = <TData = unknown>(props: CustomTableProps<TData>) => {
-  const { data, rowClick, showFooter, columns, hidePagination, pageSize = 10 } = props;
+const CustomTable = <TData,>(props: Props<TData>) => {
+  const { data, rowClick, showFooter, columns, hidePagination, pageSize = 10 } =
+    props;
   const theme = useTheme();
-  
+
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pagination, setPagination] = useState({
     pageIndex: 0,
-    pageSize: pageSize,
+    pageSize,
   });
-  
+
   const table = useReactTable({
     data,
     columns,
@@ -88,8 +66,9 @@ const CustomTable = <TData = unknown>(props: CustomTableProps<TData>) => {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
   });
-  
-  const borderColor = theme.palette.mode === 'light' ? 'text.secondary' : 'divider';
+
+  const borderColor =
+    theme.palette.mode === 'light' ? 'text.secondary' : 'divider';
 
   return (
     <Box>
@@ -108,7 +87,9 @@ const CustomTable = <TData = unknown>(props: CustomTableProps<TData>) => {
                       borderBottom: 0,
                       color: 'text.disabled',
                       '&:last-child': { textAlign: 'center' },
-                      cursor: header.column.getCanSort() ? 'pointer' : 'default',
+                      cursor: header.column.getCanSort()
+                        ? 'pointer'
+                        : 'default',
                     }}
                     onClick={header.column.getToggleSortingHandler()}
                   >
@@ -131,7 +112,7 @@ const CustomTable = <TData = unknown>(props: CustomTableProps<TData>) => {
             {table.getRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}
-                onClick={() => rowClick && rowClick(row.original)}
+                onClick={() => rowClick?.(row.original)}
                 sx={{
                   backgroundColor: 'background.paper',
                   cursor: rowClick ? 'pointer' : 'unset',
@@ -162,10 +143,7 @@ const CustomTable = <TData = unknown>(props: CustomTableProps<TData>) => {
                       borderColor,
                     }}
                   >
-                    {flexRender(
-                      cell.column.columnDef.cell,
-                      cell.getContext()
-                    )}
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
               </TableRow>
@@ -174,7 +152,7 @@ const CustomTable = <TData = unknown>(props: CustomTableProps<TData>) => {
         </Table>
       </ScrollBar>
 
-      {!hidePagination && (
+      {!hidePagination ? (
         <Stack alignItems="flex-end" marginY={1}>
           <StyledPagination
             count={table.getPageCount()}
@@ -183,16 +161,22 @@ const CustomTable = <TData = unknown>(props: CustomTableProps<TData>) => {
             shape="rounded"
           />
         </Stack>
-      )}
+      ) : null}
 
-      {showFooter && (
+      {showFooter ? (
         <FlexBox alignItems="center" justifyContent="space-between">
           <H5 color="text.disabled">
-            Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}-
+            Showing{' '}
+            {table.getState().pagination.pageIndex *
+              table.getState().pagination.pageSize +
+              1}
+            -
             {Math.min(
-              (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+              (table.getState().pagination.pageIndex + 1) *
+                table.getState().pagination.pageSize,
               table.getFilteredRowModel().rows.length
-            )} of {table.getFilteredRowModel().rows.length} results
+            )}{' '}
+            of {table.getFilteredRowModel().rows.length} results
           </H5>
           <ButtonBase
             disableRipple
@@ -206,7 +190,7 @@ const CustomTable = <TData = unknown>(props: CustomTableProps<TData>) => {
             <ArrowRightAlt sx={{ marginLeft: 0.5 }} />
           </ButtonBase>
         </FlexBox>
-      )}
+      ) : null}
     </Box>
   );
 };

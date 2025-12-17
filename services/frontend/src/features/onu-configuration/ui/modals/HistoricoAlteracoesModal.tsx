@@ -1,32 +1,30 @@
 import React, { useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
+  Avatar,
   Box,
+  Button,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   IconButton,
+  InputAdornment,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
-  Avatar,
-  Stack,
-  Divider,
   TextField,
-  InputAdornment,
+  Typography,
 } from '@mui/material';
 import {
   Close,
-  Search,
-  PersonOutline,
-  CalendarToday,
   Edit,
+  PersonOutline,
+  Search,
   Visibility,
 } from '@mui/icons-material';
 
@@ -42,7 +40,7 @@ interface HistoricoAlteracao {
   descricao: string;
 }
 
-interface HistoricoAlteracoesModalProps {
+export interface HistoricoAlteracoesModalProps {
   open: boolean;
   onClose: () => void;
   equipamentoId: string;
@@ -50,7 +48,7 @@ interface HistoricoAlteracoesModalProps {
   historico: HistoricoAlteracao[];
 }
 
-const HistoricoAlteracoesModal: React.FC<HistoricoAlteracoesModalProps> = ({
+export const HistoricoAlteracoesModal: React.FC<HistoricoAlteracoesModalProps> = ({
   open,
   onClose,
   equipamentoId,
@@ -59,14 +57,12 @@ const HistoricoAlteracoesModal: React.FC<HistoricoAlteracoesModalProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Filtrar histórico baseado no termo de pesquisa
   const historicoFiltrado = historico.filter(
     (item) =>
       item.usuario.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.acao.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.campo &&
-        item.campo.toLowerCase().includes(searchTerm.toLowerCase()))
+      (item.campo && item.campo.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const getAcaoIcon = (acao: string) => {
@@ -137,8 +133,7 @@ const HistoricoAlteracoesModal: React.FC<HistoricoAlteracoesModalProps> = ({
             Histórico de Alterações
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Equipamento: <strong>{equipamentoNome}</strong> (ID: {equipamentoId}
-            )
+            Equipamento: <strong>{equipamentoNome}</strong> (ID: {equipamentoId})
           </Typography>
         </Box>
         <IconButton onClick={handleClose} size="small">
@@ -147,7 +142,6 @@ const HistoricoAlteracoesModal: React.FC<HistoricoAlteracoesModalProps> = ({
       </DialogTitle>
 
       <DialogContent sx={{ px: 3, pt: 2 }}>
-        {/* Campo de Pesquisa */}
         <TextField
           fullWidth
           size="small"
@@ -189,16 +183,13 @@ const HistoricoAlteracoesModal: React.FC<HistoricoAlteracoesModalProps> = ({
                 </TableRow>
               </TableHead>
               <TableBody>
-                {historicoFiltrado.map((item, index) => {
+                {historicoFiltrado.map((item) => {
                   const { date, time } = formatDateTime(item.dataHora);
                   return (
                     <TableRow key={item.id} hover>
                       <TableCell>
                         <Stack direction="row" spacing={1} alignItems="center">
-                          <Avatar
-                            src={item.usuarioAvatar}
-                            sx={{ width: 32, height: 32 }}
-                          >
+                          <Avatar src={item.usuarioAvatar} sx={{ width: 32, height: 32 }}>
                             <PersonOutline />
                           </Avatar>
                           <Typography variant="body2" fontWeight="500">
@@ -219,12 +210,9 @@ const HistoricoAlteracoesModal: React.FC<HistoricoAlteracoesModalProps> = ({
                       <TableCell>
                         <Chip
                           icon={getAcaoIcon(item.acao)}
-                          label={
-                            item.acao.charAt(0).toUpperCase() +
-                            item.acao.slice(1)
-                          }
+                          label={item.acao.charAt(0).toUpperCase() + item.acao.slice(1)}
                           size="small"
-                          color={getAcaoColor(item.acao) as any}
+                          color={getAcaoColor(item.acao) as 'default'}
                           variant="outlined"
                         />
                       </TableCell>
@@ -235,19 +223,12 @@ const HistoricoAlteracoesModal: React.FC<HistoricoAlteracoesModalProps> = ({
                           </Typography>
                           {item.campo && (
                             <Box sx={{ mt: 1 }}>
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                              >
+                              <Typography variant="caption" color="text.secondary">
                                 Campo: <strong>{item.campo}</strong>
                               </Typography>
                               {item.valorAnterior && item.valorNovo && (
                                 <Box sx={{ mt: 0.5 }}>
-                                  <Stack
-                                    direction="row"
-                                    spacing={1}
-                                    alignItems="center"
-                                  >
+                                  <Stack direction="row" spacing={1} alignItems="center">
                                     <Chip
                                       label={item.valorAnterior}
                                       size="small"
@@ -255,10 +236,7 @@ const HistoricoAlteracoesModal: React.FC<HistoricoAlteracoesModalProps> = ({
                                       color="error"
                                       sx={{ fontSize: '10px', height: 20 }}
                                     />
-                                    <Typography
-                                      variant="caption"
-                                      color="text.secondary"
-                                    >
+                                    <Typography variant="caption" color="text.secondary">
                                       →
                                     </Typography>
                                     <Chip
@@ -285,16 +263,10 @@ const HistoricoAlteracoesModal: React.FC<HistoricoAlteracoesModalProps> = ({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button
-          onClick={handleClose}
-          variant="outlined"
-          sx={{ borderRadius: 2 }}
-        >
+        <Button onClick={handleClose} variant="outlined" sx={{ borderRadius: 2 }}>
           Fechar
         </Button>
       </DialogActions>
     </Dialog>
   );
 };
-
-export default HistoricoAlteracoesModal;

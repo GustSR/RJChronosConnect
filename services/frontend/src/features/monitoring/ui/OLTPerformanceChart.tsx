@@ -1,36 +1,13 @@
 import { Box, Typography, Skeleton, Alert } from '@mui/material';
 import { H5 } from '@shared/ui/components/Typography';
-import { FC, useEffect, useState } from 'react';
+import { FC } from 'react';
 import Chart from 'react-apexcharts';
 import { ApexOptions } from 'apexcharts';
 import { AnimatedCard } from '@shared/ui/components';
-import { genieacsApi } from '@shared/api/genieacsApi';
-import { OLTPerformanceStats } from '@shared/api/types';
+import { useOltPerformanceStats } from '../model';
 
 const OLTPerformanceChart: FC = () => {
-  const [performanceStats, setPerformanceStats] =
-    useState<OLTPerformanceStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchPerformanceData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const stats = await genieacsApi.getOLTPerformanceStats();
-      setPerformanceStats(stats);
-    } catch (error) {
-      console.error('Erro ao carregar dados de performance:', error);
-      setError('Erro ao carregar dados');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPerformanceData();
-  }, []);
+  const { performanceStats, loading, error } = useOltPerformanceStats();
 
   // Loading state
   if (loading) {

@@ -1,4 +1,6 @@
-export const userListFakeData = [
+import type { UserListItem } from './types';
+
+export const userListFakeData: UserListItem[] = [
   {
     id: '615193a4c7e1363df77b9929',
     name: 'Natalie Dormer',
@@ -30,3 +32,4 @@ export const userListFakeData = [
     project: 'Project X',
   },
 ];
+

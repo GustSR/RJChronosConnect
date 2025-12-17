@@ -1,21 +1,12 @@
 import { Box, Card, Divider, Grid, IconButton, styled } from '@mui/material';
 import { H3, H6, Small, Tiny, UkoAvatar } from '@shared/ui/components';
-import React, { FC } from 'react';
+import type { FC } from 'react';
+import type { UserGridItem } from '../../model';
 
-// component props interface
-interface UserCardProps {
-  user: {
-    cover: string;
-    avatar: string;
-    name: string;
-    position: string;
-    post: number;
-    follower: number;
-    following: number;
-  };
-}
+type Props = {
+  user: UserGridItem;
+};
 
-// styled components
 const ImageWrapper = styled(Box)(({ theme }) => ({
   height: 100,
   position: 'relative',
@@ -44,7 +35,7 @@ const StyledAvatar = styled(UkoAvatar)(({ theme }) => ({
   borderColor: theme.palette.background.paper,
 }));
 
-const UserCard: FC<UserCardProps> = ({ user }) => {
+const UserCard: FC<Props> = ({ user }) => {
   return (
     <Card>
       <ImageWrapper>
@@ -103,3 +94,4 @@ const UserCard: FC<UserCardProps> = ({ user }) => {
 };
 
 export default UserCard;
+

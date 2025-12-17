@@ -1,9 +1,9 @@
 import { Box, Typography, Skeleton, Alert } from '@mui/material';
 import { H5 } from '@shared/ui/components/Typography';
-import { FC, useEffect, useState } from 'react';
+import { FC, useMemo, useState } from 'react';
 import Chart from 'react-apexcharts';
 import { AnimatedCard } from '@shared/ui/components';
-import { genieacsApi } from '@shared/api/genieacsApi';
+import { useDashboardMetrics } from '../model';
 
 interface ONTStatusData {
   online: number;
@@ -16,48 +16,31 @@ interface ONTStatusData {
 }
 
 const ONTStatusChart: FC = () => {
-  const [statusData, setStatusData] = useState<ONTStatusData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { metrics, loading, error } = useDashboardMetrics();
   const [hoveredValue, setHoveredValue] = useState<string | null>(null);
 
-  const fetchONTStatusData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const statusData: ONTStatusData | null = useMemo(() => {
+    if (!metrics) return null;
 
-      // Buscar métricas do dashboard que incluem dados das ONUs
-      const metrics = await genieacsApi.getDashboardMetrics();
+    const online = metrics.olt_stats.online_onus;
+    const total = metrics.olt_stats.total_onus;
+    const offline = total - online;
+    const toProvision = Math.floor(total * 0.02);
 
-      const online = metrics.olt_stats.online_onus;
-      const total = metrics.olt_stats.total_onus;
-      const offline = total - online;
-      const toProvision = Math.floor(total * 0.02); // ~2% para provisionar
+    const onlinePercentage = total > 0 ? (online / total) * 100 : 0;
+    const offlinePercentage = total > 0 ? (offline / total) * 100 : 0;
+    const toProvisionPercentage = total > 0 ? (toProvision / total) * 100 : 0;
 
-      const onlinePercentage = total > 0 ? (online / total) * 100 : 0;
-      const offlinePercentage = total > 0 ? (offline / total) * 100 : 0;
-      const toProvisionPercentage = total > 0 ? (toProvision / total) * 100 : 0;
-
-      setStatusData({
-        online,
-        offline,
-        toProvision,
-        total,
-        onlinePercentage: Math.round(onlinePercentage * 10) / 10,
-        offlinePercentage: Math.round(offlinePercentage * 10) / 10,
-        toProvisionPercentage: Math.round(toProvisionPercentage * 10) / 10,
-      });
-    } catch (error) {
-      console.error('Erro ao carregar status das ONTs:', error);
-      setError('Erro ao carregar dados');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchONTStatusData();
-  }, []);
+    return {
+      online,
+      offline,
+      toProvision,
+      total,
+      onlinePercentage: Math.round(onlinePercentage * 10) / 10,
+      offlinePercentage: Math.round(offlinePercentage * 10) / 10,
+      toProvisionPercentage: Math.round(toProvisionPercentage * 10) / 10,
+    };
+  }, [metrics]);
 
   // Loading state
   if (loading) {
@@ -87,7 +70,7 @@ const ONTStatusChart: FC = () => {
       <AnimatedCard sx={{ padding: '1.5rem' }} delay={100}>
         <H5 mb={2}>Status das ONTs</H5>
         <Alert severity="error" sx={{ mt: 2 }}>
-          {error} - Usando dados em cache
+          {error || 'Erro ao carregar dados'} - Usando dados em cache
         </Alert>
       </AnimatedCard>
     );

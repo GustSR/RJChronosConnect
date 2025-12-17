@@ -1,6 +1,7 @@
 import { LoadingScreen } from '@shared/ui/components';
 import { createContext, ReactNode, useEffect, useReducer } from 'react';
 import { axios } from '@shared/lib/utils';
+import { devConfig } from '@shared/api/api';
 
 // All types
 // =============================================
@@ -121,37 +122,69 @@ type AuthProviderProps = {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [state, dispatch] = useReducer(reducer, initialState);
 
+  const extractUser = (data: unknown) => {
+    if (data && typeof data === 'object' && 'user' in data) {
+      // @ts-expect-error - runtime guard for unknown payload
+      return data.user;
+    }
+    return data;
+  };
+
+  const loginWithBackend = async (email: string, password: string) => {
+    const form = new URLSearchParams();
+    form.set('username', email);
+    form.set('password', password);
+
+    const tokenResponse = await axios.post('/api/auth/token', form, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+
+    // Backend returns { access_token, token_type }
+    // @ts-expect-error - response data typing
+    const { access_token } = tokenResponse.data;
+
+    setSession(access_token);
+
+    const meResponse = await axios.get('/api/auth/me');
+    const user = extractUser(meResponse.data);
+
+    dispatch({
+      type: Types.Login,
+      payload: { user },
+    });
+  };
+
+  const loginWithMock = async (email: string, password: string) => {
+    const response = await axios.post('/api/auth/login', {
+      email,
+      password,
+    });
+
+    //@ts-expect-error - response data typing
+    const { accessToken, user } = response.data;
+
+    setSession(accessToken);
+    dispatch({
+      type: Types.Login,
+      payload: { user },
+    });
+  };
+
   const login = async (email: string, password: string) => {
-    console.log('Login called with:', { email, password });
-
     try {
-      const response = await axios.post('/api/auth/login', {
-        email,
-        password,
-      });
+      if (devConfig.useMockData && import.meta.env.DEV) {
+        await loginWithMock(email, password);
+        return;
+      }
 
-      console.log('Login response:', response);
-      console.log('Login response.data:', response.data);
-      console.log('Login response.status:', response.status);
-
-      //@ts-expect-error - response data typing
-      const { accessToken, user } = response.data;
-
-      console.log('Extracted accessToken:', accessToken);
-      console.log('Extracted user:', user);
-
-      setSession(accessToken);
-      dispatch({
-        type: Types.Login,
-        payload: {
-          user,
-        },
-      });
-
-      console.log('Login successful, user set');
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
+      await loginWithBackend(email, password);
+    } catch (backendError) {
+      // Dev fallback for demo/dev flows (fake API)
+      if (import.meta.env.DEV) {
+        await loginWithMock(email, password);
+        return;
+      }
+      throw backendError;
     }
   };
 
@@ -191,14 +224,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (accessToken && isValidToken(accessToken)) {
           setSession(accessToken);
 
-          const response = await axios.get('/api/auth/profile');
-          //@ts-expect-error - response data typing
-          const { user } = response.data;
+          let user: AuthUser = null;
+          try {
+            if (devConfig.useMockData && import.meta.env.DEV) {
+              const response = await axios.get('/api/auth/profile');
+              user = extractUser(response.data) as AuthUser;
+            } else {
+              const response = await axios.get('/api/auth/me');
+              user = extractUser(response.data) as AuthUser;
+            }
+          } catch (err) {
+            // Fallback between backend/mock endpoints (e.g. backend down in dev)
+            const response = await axios.get('/api/auth/profile');
+            user = extractUser(response.data) as AuthUser;
+          }
 
           dispatch({
             type: Types.Init,
             payload: {
-              user,
+              user: user as AuthUser,
               isAuthenticated: true,
             },
           });

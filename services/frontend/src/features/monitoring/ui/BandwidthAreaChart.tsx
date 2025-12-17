@@ -1,37 +1,13 @@
 import { Box, Typography, Skeleton, Alert } from '@mui/material';
 import { H5 } from '@shared/ui/components/Typography';
-import { FC, useEffect, useState } from 'react';
+import { FC } from 'react';
 import Chart from 'react-apexcharts';
 import { ApexOptions } from 'apexcharts';
 import { AnimatedCard } from '@shared/ui/components';
-import { genieacsApi } from '@shared/api/genieacsApi';
-import { BandwidthStats } from '@shared/api/types';
+import { useBandwidthStats } from '../model';
 
 const BandwidthAreaChart: FC = () => {
-  const [bandwidthStats, setBandwidthStats] = useState<BandwidthStats | null>(
-    null
-  );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchBandwidthData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const stats = await genieacsApi.getBandwidthStats('24h');
-      setBandwidthStats(stats);
-    } catch (error) {
-      console.error('Erro ao carregar dados de bandwidth:', error);
-      setError('Erro ao carregar dados');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchBandwidthData();
-  }, []);
+  const { bandwidthStats, loading, error } = useBandwidthStats('24h');
 
   // Loading state
   if (loading) {

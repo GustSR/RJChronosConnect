@@ -1,17 +1,8 @@
 import { Box, Typography, Grid, Skeleton, Alert } from '@mui/material';
-import { FC, useEffect, useState } from 'react';
-import {
-  TrendingUp,
-  TrendingDown,
-  DeviceHub,
-  CloudDownload,
-  Router,
-  Warning,
-  SignalWifiOff,
-} from '@mui/icons-material';
+import { FC } from 'react';
+import { TrendingUp, TrendingDown, DeviceHub, CloudDownload, Router, Warning, SignalWifiOff } from '@mui/icons-material';
 import { AnimatedCard } from '@shared/ui';
-import { genieacsApi } from '@shared/api/genieacsApi';
-import { DashboardMetrics } from '@shared/api/types';
+import { useDashboardMetrics } from '../model';
 
 interface StatCardData {
   id: number;
@@ -24,31 +15,7 @@ interface StatCardData {
 }
 
 const NetworkStatsCards: FC = () => {
-  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchMetrics = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await genieacsApi.getDashboardMetrics();
-        setMetrics(data);
-      } catch (err) {
-        console.error('Erro ao carregar métricas:', err);
-        setError('Não foi possível carregar as métricas');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMetrics();
-
-    // Atualizar a cada 30 segundos
-    const interval = setInterval(fetchMetrics, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  const { metrics, loading, error } = useDashboardMetrics({ pollIntervalMs: 30000 });
 
   // Calcular taxa de crescimento ou mostrar valores padrão durante loading/erro
   const calculateTrend = (
