@@ -18,6 +18,27 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+
+def _build_fallback_metrics(db: Session) -> dict:
+    devices = crud_device.get_devices(db)
+    olts = crud_olt.get_olts(db)
+    total_devices = len(devices) + len(olts)
+    online_devices = len([d for d in devices if d.status_id == 1]) + len(
+        [o for o in olts if o.status_id == 1]
+    )
+    offline_devices = total_devices - online_devices
+    return {
+        "total_devices": total_devices,
+        "online_devices": online_devices,
+        "offline_devices": offline_devices,
+        "critical_alerts": crud_alert.get_critical_alerts_count(db),
+        "uptime_percentage": 95.0,
+        "avg_signal_strength": -42.5,
+        "avg_latency": 15.2,
+        "sla_compliance": 99.8,
+    }
+
+
 @router.get("/alerts", response_model=List[Alert])
 async def get_alerts():
     """
@@ -66,34 +87,10 @@ async def get_dashboard_metrics(db: Session = Depends(get_db)):
         
         if not devices:
             logger.warning("Nenhum dispositivo encontrado, usando métricas do banco de dados")
-            total_devices = len(crud_device.get_devices(db)) + len(crud_olt.get_olts(db))
-            online_devices = len([d for d in crud_device.get_devices(db) if d.status_id == 1]) + len([o for o in crud_olt.get_olts(db) if o.status_id == 1])
-            offline_devices = total_devices - online_devices
-            return {
-                "total_devices": total_devices,
-                "online_devices": online_devices,
-                "offline_devices": offline_devices,
-                "critical_alerts": crud_alert.get_critical_alerts_count(db),
-                "uptime_percentage": 95.0,
-                "avg_signal_strength": -42.5,
-                "avg_latency": 15.2,
-                "sla_compliance": 99.8
-            }
+            return _build_fallback_metrics(db)
         
         return metrics
             
     except Exception as e:
         logger.error(f"Erro ao calcular métricas do GenieACS: {e}")
-        total_devices = len(crud_device.get_devices(db)) + len(crud_olt.get_olts(db))
-        online_devices = len([d for d in crud_device.get_devices(db) if d.status_id == 1]) + len([o for o in crud_olt.get_olts(db) if o.status_id == 1])
-        offline_devices = total_devices - online_devices
-        return {
-            "total_devices": total_devices,
-            "online_devices": online_devices,
-            "offline_devices": offline_devices,
-            "critical_alerts": crud_alert.get_critical_alerts_count(db),
-            "uptime_percentage": 95.0,
-            "avg_signal_strength": -42.5,
-            "avg_latency": 15.2,
-            "sla_compliance": 99.8
-        }
+        return _build_fallback_metrics(db)

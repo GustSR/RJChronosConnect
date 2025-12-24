@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.device import Device
 from app.schemas.device import DeviceCreate, DeviceUpdate
+from app.crud.utils import apply_updates
 
 
 def get_device(db: Session, device_id: int):
@@ -26,9 +27,7 @@ def create_device(db: Session, device: DeviceCreate):
 def update_device(db: Session, device_id: int, device: DeviceUpdate):
     db_device = get_device(db, device_id)
     if db_device:
-        update_data = device.dict(exclude_unset=True)
-        for key, value in update_data.items():
-            setattr(db_device, key, value)
+        apply_updates(db_device, device)
         db.commit()
         db.refresh(db_device)
     return db_device

@@ -30,6 +30,24 @@ class GenieACSClient:
         
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.client.aclose()
+
+    async def _get_json(
+        self,
+        endpoint: str,
+        params: Optional[Dict[str, Any]],
+        error_context: str,
+        unexpected_context: str,
+    ) -> Optional[Any]:
+        try:
+            response = await self.client.get(endpoint, params=params)
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            logger.error(f"{error_context}: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"{unexpected_context}: {e}")
+            return None
     
     async def get_devices(self, query: Dict[str, Any] = None, projection: Dict[str, Any] = None) -> List[Dict[str, Any]]:
         """
@@ -42,28 +60,25 @@ class GenieACSClient:
         Returns:
             Lista de dispositivos
         """
-        try:
-            params = {}
-            
-            if query:
-                params["query"] = json.dumps(query)
-                
-            if projection:
-                params["projection"] = ",".join(projection) if isinstance(projection, list) else projection
-            
-            response = await self.client.get(f"{self.base_url}/devices", params=params)
-            response.raise_for_status()
-            
-            devices = response.json()
-            logger.info(f"Recuperados {len(devices)} dispositivos do GenieACS")
-            return devices
-            
-        except httpx.HTTPError as e:
-            logger.error(f"Erro ao buscar dispositivos: {e}")
+        params: Dict[str, Any] = {}
+
+        if query:
+            params["query"] = json.dumps(query)
+
+        if projection:
+            params["projection"] = ",".join(projection) if isinstance(projection, list) else projection
+
+        devices = await self._get_json(
+            f"{self.base_url}/devices",
+            params,
+            "Erro ao buscar dispositivos",
+            "Erro inesperado ao buscar dispositivos",
+        )
+        if devices is None:
             return []
-        except Exception as e:
-            logger.error(f"Erro inesperado ao buscar dispositivos: {e}")
-            return []
+
+        logger.info(f"Recuperados {len(devices)} dispositivos do GenieACS")
+        return devices
     
     async def get_device_by_id(self, device_id: str) -> Optional[Dict[str, Any]]:
         """
@@ -75,28 +90,25 @@ class GenieACSClient:
         Returns:
             Dados do dispositivo ou None se não encontrado
         """
-        try:
-            # GenieACS não suporta /devices/{id}, então fazemos query na lista completa
-            query = {"_id": device_id}
-            params = {"query": json.dumps(query)}
-            
-            response = await self.client.get(f"{self.base_url}/devices", params=params)
-            response.raise_for_status()
-            devices = response.json()
-            
-            if devices and len(devices) > 0:
-                logger.info(f"Dispositivo {device_id} encontrado")
-                return devices[0]
-            else:
-                logger.warning(f"Dispositivo {device_id} não encontrado")
-                return None
-            
-        except httpx.HTTPStatusError as e:
-            logger.error(f"Erro HTTP ao buscar dispositivo {device_id}: {e}")
+        # GenieACS não suporta /devices/{id}, então fazemos query na lista completa
+        query = {"_id": device_id}
+        params = {"query": json.dumps(query)}
+
+        devices = await self._get_json(
+            f"{self.base_url}/devices",
+            params,
+            f"Erro HTTP ao buscar dispositivo {device_id}",
+            f"Erro inesperado ao buscar dispositivo {device_id}",
+        )
+        if devices is None:
             return None
-        except Exception as e:
-            logger.error(f"Erro inesperado ao buscar dispositivo {device_id}: {e}")
-            return None
+
+        if devices and len(devices) > 0:
+            logger.info(f"Dispositivo {device_id} encontrado")
+            return devices[0]
+
+        logger.warning(f"Dispositivo {device_id} não encontrado")
+        return None
     
     async def get_faults(self, query: Dict[str, Any] = None) -> List[Dict[str, Any]]:
         """
@@ -108,24 +120,21 @@ class GenieACSClient:
         Returns:
             Lista de faults
         """
-        try:
-            params = {}
-            if query:
-                params["query"] = json.dumps(query)
-                
-            response = await self.client.get(f"{self.base_url}/faults", params=params)
-            response.raise_for_status()
-            
-            faults = response.json()
-            logger.info(f"Recuperados {len(faults)} faults do GenieACS")
-            return faults
-            
-        except httpx.HTTPError as e:
-            logger.error(f"Erro ao buscar faults: {e}")
+        params: Dict[str, Any] = {}
+        if query:
+            params["query"] = json.dumps(query)
+
+        faults = await self._get_json(
+            f"{self.base_url}/faults",
+            params,
+            "Erro ao buscar faults",
+            "Erro inesperado ao buscar faults",
+        )
+        if faults is None:
             return []
-        except Exception as e:
-            logger.error(f"Erro inesperado ao buscar faults: {e}")
-            return []
+
+        logger.info(f"Recuperados {len(faults)} faults do GenieACS")
+        return faults
     
     async def get_tasks(self, device_id: str = None) -> List[Dict[str, Any]]:
         """
@@ -137,25 +146,22 @@ class GenieACSClient:
         Returns:
             Lista de tasks
         """
-        try:
-            if device_id:
-                endpoint = f"{self.base_url}/devices/{device_id}/tasks"
-            else:
-                endpoint = f"{self.base_url}/tasks"
-                
-            response = await self.client.get(endpoint)
-            response.raise_for_status()
-            
-            tasks = response.json()
-            logger.info(f"Recuperadas {len(tasks)} tasks do GenieACS")
-            return tasks
-            
-        except httpx.HTTPError as e:
-            logger.error(f"Erro ao buscar tasks: {e}")
+        if device_id:
+            endpoint = f"{self.base_url}/devices/{device_id}/tasks"
+        else:
+            endpoint = f"{self.base_url}/tasks"
+
+        tasks = await self._get_json(
+            endpoint,
+            None,
+            "Erro ao buscar tasks",
+            "Erro inesperado ao buscar tasks",
+        )
+        if tasks is None:
             return []
-        except Exception as e:
-            logger.error(f"Erro inesperado ao buscar tasks: {e}")
-            return []
+
+        logger.info(f"Recuperadas {len(tasks)} tasks do GenieACS")
+        return tasks
     
     async def set_parameter(self, device_id: str, parameter: str, value: Any, immediate: bool = True) -> bool:
         """

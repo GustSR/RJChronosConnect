@@ -4,17 +4,19 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
 from ..schemas.provisioning import (
-    PendingONUModel, 
-    ProvisionedDevice, 
-    ONUProvisionRequest, 
-    ClientConfigurationUpdate
+    PendingONUModel,
+    ProvisionedDevice,
+    ONUProvisionRequest,
+    ClientConfigurationUpdate,
 )
+from ..schemas.device import DeviceCreate
 from ..services.genieacs_client import get_genieacs_client
 # from ..crud.activity import log_activity
 from ..crud import device as crud_device
 from ..crud import subscriber as crud_subscriber
 from ..crud import olt as crud_olt
 from ..database.database import get_db
+from .helpers import ensure_device_exists
 from ..models.subscriber import Subscriber
 from ..models.olt import Olt
 from ..models.olt_port import OltPort
@@ -137,6 +139,8 @@ async def authorize_onu(onu_id: str, provision_data: ONUProvisionRequest, db: Se
         
         return {"success": True, "message": f"ONU {onu_id} autorizada com sucesso"}
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Erro ao autorizar ONU {onu_id}: {e}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
@@ -167,9 +171,7 @@ async def get_client_configuration(onu_id: int, db: Session = Depends(get_db)):
     """
     Retorna configuração de um cliente provisionado específico
     """
-    device = crud_device.get_device(db, onu_id)
-    if not device:
-        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    device = ensure_device_exists(db, onu_id, detail="Cliente não encontrado")
     return device
 
 @router.put("/clients/{onu_id}")
@@ -177,9 +179,7 @@ async def update_client_configuration(onu_id: int, updates: ClientConfigurationU
     """
     Atualiza configuração de um cliente provisionado
     """
-    device = crud_device.get_device(db, onu_id)
-    if not device:
-        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    device = ensure_device_exists(db, onu_id, detail="Cliente não encontrado")
     
     update_data = updates.dict(exclude_unset=True)
     for key, value in update_data.items():

@@ -30,6 +30,117 @@ class OLTDiscoveryService:
     
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.client.aclose()
+
+    def _existing_olt_response(self, existing_olt, ip_address: str) -> OLTDiscoveryResult:
+        return OLTDiscoveryResult(
+            success=False,
+            message=f"OLT com IP {ip_address} já existe (ID: {existing_olt.id})",
+            duration_seconds=0,
+        )
+
+    def _create_setup_log(
+        self,
+        db: Session,
+        discovery_request: OLTDiscoveryRequest,
+        user_id: Optional[int],
+    ):
+        return crud_olt.create_setup_log(db, OltSetupLogCreate(
+            olt_id=0,  # Será atualizado quando a OLT for criada
+            action="discovery",
+            status="in_progress",
+            message=f"Iniciando descoberta da OLT {discovery_request.ip_address}",
+            executed_by_user_id=user_id,
+            details={
+                "ip_address": discovery_request.ip_address,
+                "ssh_port": discovery_request.ssh_port,
+                "auto_configure": discovery_request.auto_configure,
+            },
+        ))
+
+    def _create_olt_from_discovery(
+        self,
+        db: Session,
+        discovery_request: OLTDiscoveryRequest,
+        discovery_result: Dict[str, Any],
+    ):
+        olt_data = OLTCreate(
+            name=discovery_result.get("name", f"OLT-{discovery_request.ip_address}"),
+            ip_address=discovery_request.ip_address,
+            vendor=discovery_result.get("vendor"),
+            model=discovery_result.get("model"),
+            ssh_username=discovery_request.ssh_username,
+            ssh_password=discovery_request.ssh_password,
+            ssh_port=discovery_request.ssh_port,
+        )
+        new_olt = crud_olt.create_olt(db, olt_data)
+        crud_olt.mark_olt_as_discovered(
+            db,
+            new_olt.id,
+            discovery_result.get("vendor"),
+            discovery_result.get("model"),
+        )
+        return new_olt
+
+    def _build_success_response(
+        self,
+        new_olt,
+        discovery_result: Dict[str, Any],
+        setup_log_id: int,
+        duration: int,
+    ) -> OLTDiscoveryResult:
+        return OLTDiscoveryResult(
+            success=True,
+            olt_id=new_olt.id,
+            vendor=discovery_result.get("vendor"),
+            model=discovery_result.get("model"),
+            system_info=discovery_result.get("system_info"),
+            setup_log_id=setup_log_id,
+            message="OLT descoberta e cadastrada com sucesso",
+            duration_seconds=duration,
+        )
+
+    def _build_failure_response(
+        self,
+        discovery_result: Dict[str, Any],
+        setup_log_id: int,
+        duration: int,
+    ) -> OLTDiscoveryResult:
+        return OLTDiscoveryResult(
+            success=False,
+            setup_log_id=setup_log_id,
+            message=discovery_result.get("message", "Falha na descoberta da OLT"),
+            duration_seconds=duration,
+        )
+
+    def _build_exception_response(
+        self,
+        error: Exception,
+        setup_log_id: Optional[int],
+        duration: int,
+    ) -> OLTDiscoveryResult:
+        return OLTDiscoveryResult(
+            success=False,
+            setup_log_id=setup_log_id,
+            message=f"Erro interno durante descoberta: {str(error)}",
+            duration_seconds=duration,
+        )
+
+    def _update_setup_log(
+        self,
+        db: Session,
+        setup_log_id: int,
+        status: str,
+        message: str,
+        duration_seconds: int,
+        details: Dict[str, Any],
+    ) -> None:
+        crud_olt.update_setup_log(db, setup_log_id, OltSetupLogUpdate(
+            status=status,
+            message=message,
+            completed_at=datetime.now(),
+            duration_seconds=duration_seconds,
+            details=details,
+        ))
     
     async def discover_olt(
         self, 
@@ -55,101 +166,48 @@ class OLTDiscoveryService:
             # Verifica se OLT já existe pelo IP
             existing_olt = crud_olt.get_olt_by_ip(db, discovery_request.ip_address)
             if existing_olt:
-                return OLTDiscoveryResult(
-                    success=False,
-                    message=f"OLT com IP {discovery_request.ip_address} já existe (ID: {existing_olt.id})",
-                    duration_seconds=0
-                )
+                return self._existing_olt_response(existing_olt, discovery_request.ip_address)
             
             # Cria log de descoberta
-            setup_log = crud_olt.create_setup_log(db, OltSetupLogCreate(
-                olt_id=0,  # Será atualizado quando a OLT for criada
-                action="discovery",
-                status="in_progress",
-                message=f"Iniciando descoberta da OLT {discovery_request.ip_address}",
-                executed_by_user_id=user_id,
-                details={
-                    "ip_address": discovery_request.ip_address,
-                    "ssh_port": discovery_request.ssh_port,
-                    "auto_configure": discovery_request.auto_configure
-                }
-            ))
+            setup_log = self._create_setup_log(db, discovery_request, user_id)
             setup_log_id = setup_log.id
             
             # Chama serviço de descoberta no OLT Manager
             discovery_result = await self._call_olt_manager_discovery(discovery_request)
             
+            duration = int((datetime.now() - start_time).total_seconds())
+
             if discovery_result["success"]:
-                # Cria OLT no banco de dados
-                olt_data = OLTCreate(
-                    name=discovery_result.get("name", f"OLT-{discovery_request.ip_address}"),
-                    ip_address=discovery_request.ip_address,
-                    vendor=discovery_result.get("vendor"),
-                    model=discovery_result.get("model"),
-                    ssh_username=discovery_request.ssh_username,
-                    ssh_password=discovery_request.ssh_password,
-                    ssh_port=discovery_request.ssh_port
-                )
-                
-                new_olt = crud_olt.create_olt(db, olt_data)
-                
-                # Atualiza OLT como descoberta
-                crud_olt.mark_olt_as_discovered(
-                    db, 
-                    new_olt.id, 
-                    discovery_result.get("vendor"), 
-                    discovery_result.get("model")
-                )
-                
-                # Atualiza log com sucesso
-                duration = int((datetime.now() - start_time).total_seconds())
-                crud_olt.update_setup_log(db, setup_log_id, OltSetupLogUpdate(
+                new_olt = self._create_olt_from_discovery(db, discovery_request, discovery_result)
+                self._update_setup_log(
+                    db,
+                    setup_log_id,
                     status="success",
                     message="OLT descoberta com sucesso",
-                    completed_at=datetime.now(),
                     duration_seconds=duration,
                     details={
                         **setup_log.details,
                         "olt_id": new_olt.id,
-                        "discovery_result": discovery_result
-                    }
-                ))
-                
-                # Atualiza o olt_id no log agora que temos a OLT criada
+                        "discovery_result": discovery_result,
+                    },
+                )
                 setup_log.olt_id = new_olt.id
                 db.commit()
-                
-                return OLTDiscoveryResult(
-                    success=True,
-                    olt_id=new_olt.id,
-                    vendor=discovery_result.get("vendor"),
-                    model=discovery_result.get("model"),
-                    system_info=discovery_result.get("system_info"),
-                    setup_log_id=setup_log_id,
-                    message="OLT descoberta e cadastrada com sucesso",
-                    duration_seconds=duration
-                )
-            else:
-                # Falha na descoberta
-                duration = int((datetime.now() - start_time).total_seconds())
-                crud_olt.update_setup_log(db, setup_log_id, OltSetupLogUpdate(
-                    status="failed",
-                    message=f"Falha na descoberta: {discovery_result.get('message', 'Erro desconhecido')}",
-                    completed_at=datetime.now(),
-                    duration_seconds=duration,
-                    details={
-                        **setup_log.details,
-                        "error": discovery_result.get("error"),
-                        "discovery_result": discovery_result
-                    }
-                ))
-                
-                return OLTDiscoveryResult(
-                    success=False,
-                    setup_log_id=setup_log_id,
-                    message=discovery_result.get("message", "Falha na descoberta da OLT"),
-                    duration_seconds=duration
-                )
+                return self._build_success_response(new_olt, discovery_result, setup_log_id, duration)
+
+            self._update_setup_log(
+                db,
+                setup_log_id,
+                status="failed",
+                message=f"Falha na descoberta: {discovery_result.get('message', 'Erro desconhecido')}",
+                duration_seconds=duration,
+                details={
+                    **setup_log.details,
+                    "error": discovery_result.get("error"),
+                    "discovery_result": discovery_result,
+                },
+            )
+            return self._build_failure_response(discovery_result, setup_log_id, duration)
                 
         except Exception as e:
             logger.error(f"Erro durante descoberta da OLT {discovery_request.ip_address}: {e}")
@@ -157,23 +215,20 @@ class OLTDiscoveryService:
             # Atualiza log com erro
             if setup_log_id:
                 duration = int((datetime.now() - start_time).total_seconds())
-                crud_olt.update_setup_log(db, setup_log_id, OltSetupLogUpdate(
+                self._update_setup_log(
+                    db,
+                    setup_log_id,
                     status="failed",
                     message=f"Erro interno durante descoberta: {str(e)}",
-                    completed_at=datetime.now(),
                     duration_seconds=duration,
                     details={
                         "error": str(e),
-                        "error_type": type(e).__name__
-                    }
-                ))
+                        "error_type": type(e).__name__,
+                    },
+                )
             
-            return OLTDiscoveryResult(
-                success=False,
-                setup_log_id=setup_log_id,
-                message=f"Erro interno durante descoberta: {str(e)}",
-                duration_seconds=int((datetime.now() - start_time).total_seconds())
-            )
+            duration = int((datetime.now() - start_time).total_seconds())
+            return self._build_exception_response(e, setup_log_id, duration)
     
     async def discover_network_range(
         self, 

@@ -59,6 +59,8 @@ async def get_device_wifi_config(device_id: str, band: str = "2.4GHz"):
         
         return wifi_config
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Erro ao buscar configuração WiFi do dispositivo {device_id}: {e}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
@@ -97,6 +99,8 @@ async def update_device_wifi_config(device_id: str, updates: WiFiConfigUpdate, b
         
         return {"success": True, "message": f"Configurações WiFi atualizadas"}
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Erro ao atualizar WiFi do dispositivo {device_id}: {e}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")

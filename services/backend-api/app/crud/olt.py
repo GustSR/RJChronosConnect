@@ -8,6 +8,7 @@ from app.models.olt_port import OltPort
 from app.models.olt_setup_log import OltSetupLog
 from app.schemas.olt import OLTCreate, OLTUpdate
 from app.schemas.olt_setup import OltSetupLogCreate, OltSetupLogUpdate
+from app.crud.utils import apply_updates
 
 
 def get_olt(db: Session, olt_id: int):
@@ -52,9 +53,7 @@ def create_olt(db: Session, olt: OLTCreate):
 def update_olt(db: Session, olt_id: int, olt: OLTUpdate):
     db_olt = get_olt(db, olt_id)
     if db_olt:
-        update_data = olt.dict(exclude_unset=True)
-        for key, value in update_data.items():
-            setattr(db_olt, key, value)
+        apply_updates(db_olt, olt)
         db.commit()
         db.refresh(db_olt)
     return db_olt
@@ -111,9 +110,7 @@ def update_setup_log(db: Session, log_id: int, setup_log: OltSetupLogUpdate) -> 
     """Atualiza um log de configuração existente."""
     db_log = db.query(OltSetupLog).filter(OltSetupLog.id == log_id).first()
     if db_log:
-        update_data = setup_log.dict(exclude_unset=True)
-        for key, value in update_data.items():
-            setattr(db_log, key, value)
+        apply_updates(db_log, setup_log)
         db.commit()
         db.refresh(db_log)
     return db_log

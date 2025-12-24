@@ -9,6 +9,7 @@ from ..services.genieacs_transformers import transform_genieacs_to_cpe, transfor
 from ..database.database import get_db
 from ..crud import olt as crud_olt
 from ..crud import device as crud_device
+from .helpers import ensure_olt_exists
 
 
 import logging
@@ -57,9 +58,7 @@ async def get_olt_stats(olt_id: int, db: Session = Depends(get_db)):
     """
     Retorna estatísticas de uma OLT específica
     """
-    olt = crud_olt.get_olt(db, olt_id)
-    if not olt:
-        raise HTTPException(status_code=404, detail="OLT não encontrada")
+    ensure_olt_exists(db, olt_id)
     
     devices = crud_device.get_devices(db)
     
