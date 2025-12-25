@@ -1,5 +1,6 @@
 import { LoadingScreen } from '@shared/ui/components';
 import { createContext, ReactNode, useEffect, useReducer } from 'react';
+import { createAuthClient } from 'better-auth/client';
 import { axios } from '@shared/lib/utils';
 import { devConfig } from '@shared/api/api';
 
@@ -50,6 +51,14 @@ const initialState: AuthState = {
   user: null,
 };
 
+const authClient = createAuthClient(
+  import.meta.env.VITE_BETTER_AUTH_BASE_URL
+    ? { baseURL: import.meta.env.VITE_BETTER_AUTH_BASE_URL }
+    : {}
+);
+
+const isUsingMockAuth = () => devConfig.useMockData && import.meta.env.DEV;
+
 const isValidToken = (accessToken: string) => {
   if (!accessToken) return false;
 
@@ -58,7 +67,7 @@ const isValidToken = (accessToken: string) => {
   return true;
 };
 
-const setSession = (accessToken: string | null) => {
+const setMockSession = (accessToken: string | null) => {
   if (accessToken) {
     localStorage.setItem('accessToken', accessToken);
     axios.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
@@ -130,23 +139,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return data;
   };
 
-  const loginWithBackend = async (email: string, password: string) => {
-    const form = new URLSearchParams();
-    form.set('username', email);
-    form.set('password', password);
-
-    const tokenResponse = await axios.post('/api/auth/token', form, {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  const loginWithBetterAuth = async (email: string, password: string) => {
+    setMockSession(null);
+    const { data, error } = await authClient.signIn.email({
+      email,
+      password,
+      rememberMe: true,
     });
 
-    // Backend returns { access_token, token_type }
-    // @ts-expect-error - response data typing
-    const { access_token } = tokenResponse.data;
+    if (error) {
+      throw new Error(error.message || 'Falha ao autenticar');
+    }
 
-    setSession(access_token);
+    const user = extractUser(data);
 
-    const meResponse = await axios.get('/api/auth/me');
-    const user = extractUser(meResponse.data);
+    if (!user) {
+      throw new Error('Sessao nao encontrada apos login');
+    }
 
     dispatch({
       type: Types.Login,
@@ -163,7 +172,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     //@ts-expect-error - response data typing
     const { accessToken, user } = response.data;
 
-    setSession(accessToken);
+    setMockSession(accessToken);
     dispatch({
       type: Types.Login,
       payload: { user },
@@ -172,12 +181,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const login = async (email: string, password: string) => {
     try {
-      if (devConfig.useMockData && import.meta.env.DEV) {
+      if (isUsingMockAuth()) {
         await loginWithMock(email, password);
         return;
       }
 
-      await loginWithBackend(email, password);
+      await loginWithBetterAuth(email, password);
     } catch (backendError) {
       // Dev fallback for demo/dev flows (fake API)
       if (import.meta.env.DEV) {
@@ -193,15 +202,41 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     username: string,
     password: string
   ) => {
-    const response = await axios.post('/api/auth/register', {
+    if (isUsingMockAuth()) {
+      const response = await axios.post('/api/auth/register', {
+        email,
+        username,
+        password,
+      });
+      // @ts-expect-error - response data typing
+      const { accessToken, user } = response.data;
+      setMockSession(accessToken);
+
+      dispatch({
+        type: Types.Register,
+        payload: {
+          user,
+        },
+      });
+      return;
+    }
+
+    setMockSession(null);
+    const { data, error } = await authClient.signUp.email({
       email,
-      username,
       password,
+      name: username,
     });
-    // @ts-expect-error - response data typing
-    const { accessToken, user } = response.data;
-    setSession(accessToken);
-    console.log(response.data);
+
+    if (error) {
+      throw new Error(error.message || 'Falha ao registrar');
+    }
+
+    const user = extractUser(data);
+
+    if (!user) {
+      throw new Error('Sessao nao encontrada apos cadastro');
+    }
 
     dispatch({
       type: Types.Register,
@@ -212,41 +247,44 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const logout = () => {
-    setSession(null);
-    dispatch({ type: Types.Logout });
+    if (isUsingMockAuth()) {
+      setMockSession(null);
+      dispatch({ type: Types.Logout });
+      return;
+    }
+
+    authClient.signOut().finally(() => {
+      dispatch({ type: Types.Logout });
+    });
   };
 
   useEffect(() => {
     (async () => {
       try {
-        const accessToken = window.localStorage.getItem('accessToken');
+        if (isUsingMockAuth()) {
+          const accessToken = window.localStorage.getItem('accessToken');
 
-        if (accessToken && isValidToken(accessToken)) {
-          setSession(accessToken);
+          if (accessToken && isValidToken(accessToken)) {
+            setMockSession(accessToken);
 
-          let user: AuthUser = null;
-          try {
-            if (devConfig.useMockData && import.meta.env.DEV) {
+            let user: AuthUser = null;
+            try {
               const response = await axios.get('/api/auth/profile');
               user = extractUser(response.data) as AuthUser;
-            } else {
-              const response = await axios.get('/api/auth/me');
-              user = extractUser(response.data) as AuthUser;
+            } catch (err) {
+              user = null;
             }
-          } catch (err) {
-            // Fallback between backend/mock endpoints (e.g. backend down in dev)
-            const response = await axios.get('/api/auth/profile');
-            user = extractUser(response.data) as AuthUser;
+
+            dispatch({
+              type: Types.Init,
+              payload: {
+                user: user as AuthUser,
+                isAuthenticated: true,
+              },
+            });
+            return;
           }
 
-          dispatch({
-            type: Types.Init,
-            payload: {
-              user: user as AuthUser,
-              isAuthenticated: true,
-            },
-          });
-        } else {
           dispatch({
             type: Types.Init,
             payload: {
@@ -254,7 +292,32 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               isAuthenticated: false,
             },
           });
+          return;
         }
+
+        setMockSession(null);
+        const { data, error } = await authClient.getSession();
+
+        if (error || !data) {
+          dispatch({
+            type: Types.Init,
+            payload: {
+              user: null,
+              isAuthenticated: false,
+            },
+          });
+          return;
+        }
+
+        const user = extractUser(data) as AuthUser;
+
+        dispatch({
+          type: Types.Init,
+          payload: {
+            user,
+            isAuthenticated: Boolean(user),
+          },
+        });
       } catch (err) {
         console.error(err);
         dispatch({

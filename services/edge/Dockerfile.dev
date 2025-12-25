@@ -1,0 +1,9 @@
+FROM oven/bun:latest
+
+WORKDIR /app
+
+COPY services/edge/package.json ./
+RUN bun install
+
+EXPOSE 8081
+CMD ["bun", "--hot", "src/index.ts"]

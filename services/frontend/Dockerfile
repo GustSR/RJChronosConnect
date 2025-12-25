@@ -1,17 +1,17 @@
 # --- Estágio 1: Build da Aplicação React ---
-FROM node:20-alpine AS builder
+FROM oven/bun:latest AS builder
 
 WORKDIR /app
 
 # Copia os arquivos de dependência e instala
-COPY package*.json ./
-RUN npm install --legacy-peer-deps
+COPY package.json ./
+RUN bun install
 
 # Copia o resto do código-fonte
 COPY . .
 
 # Executa o build de produção
-RUN npm run build
+RUN bun run build
 
 
 # --- Estágio 2: Servidor de Produção Nginx ---

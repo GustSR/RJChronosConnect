@@ -1,9 +1,9 @@
-import { genieacsApi } from '@shared/api/genieacsApi';
-import type { OLT } from '@shared/api/types';
+import { oltManagementApi } from '@shared/api/oltManagementApi';
+import type { ManagedOLT } from '@shared/api/oltManagementTypes';
 import { useCallback, useEffect, useState } from 'react';
 
 type State = {
-  olts: OLT[];
+  olts: ManagedOLT[];
   loading: boolean;
   error: string | null;
 };
@@ -18,7 +18,7 @@ export function useOlts() {
   const load = useCallback(async () => {
     try {
       setState((prev) => ({ ...prev, loading: true, error: null }));
-      const data = await genieacsApi.getOLTs();
+      const data = await oltManagementApi.getOlts({ connectedOnly: true });
       setState({ olts: data, loading: false, error: null });
     } catch (err) {
       console.error('Erro ao carregar OLTs:', err);
@@ -36,4 +36,3 @@ export function useOlts() {
 
   return { ...state, reload: load };
 }
-

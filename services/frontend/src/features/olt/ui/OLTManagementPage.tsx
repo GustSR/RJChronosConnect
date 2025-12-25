@@ -15,16 +15,20 @@ import {
   TableHead,
   TableRow,
   Typography,
+  Tooltip,
+  CircularProgress,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
   DeviceHub as DeviceHubIcon,
   Visibility as ViewIcon,
+  NetworkCheck as NetworkCheckIcon,
 } from '@mui/icons-material';
 import { H6 } from '@shared/ui/components/Typography';
 import { AnimatedCard, ConfirmDialog } from '@shared/ui/components';
-import type { OLT } from '@shared/api/types';
+import type { ManagedOLT } from '@shared/api/oltManagementTypes';
+import { oltManagementApi } from '@shared/api/oltManagementApi';
 import { useOlts } from '../model';
 
 type Props = {
@@ -36,6 +40,18 @@ export const OLTManagementPage: React.FC<Props> = ({ onAdd, onViewDetails }) => 
   const { olts, loading, error, reload } = useOlts();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [oltIdToDelete, setOltIdToDelete] = useState<string>('');
+  const [connectionStatus, setConnectionStatus] = useState<
+    Record<
+      string,
+      {
+        loading?: boolean;
+        reachable?: boolean;
+        error?: string | null;
+        sysname?: string | null;
+        version?: string | null;
+      }
+    >
+  >({});
 
   const handleRequestDeleteOLT = useCallback((oltId: string) => {
     setOltIdToDelete(oltId);
@@ -59,20 +75,109 @@ export const OLTManagementPage: React.FC<Props> = ({ onAdd, onViewDetails }) => 
     }
   }, [handleCloseDeleteDialog, oltIdToDelete, reload]);
 
-  const getStatusChip = (status: string) => {
-    const color = status === 'online' ? 'success' : 'error';
+  const handleTestConnection = useCallback(async (olt: ManagedOLT) => {
+    const key = String(olt.id);
+    setConnectionStatus((prev) => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        loading: true,
+        error: null,
+      },
+    }));
+
+    try {
+      const liveInfo = await oltManagementApi.getOltLiveInfo(olt.id);
+      if (!liveInfo) {
+        throw new Error('Dados ao vivo indisponíveis');
+      }
+      setConnectionStatus((prev) => ({
+        ...prev,
+        [key]: {
+          loading: false,
+          reachable: liveInfo.reachable,
+          sysname: liveInfo.sysname ?? null,
+          version: liveInfo.version ?? null,
+          error: null,
+        },
+      }));
+    } catch (caught: unknown) {
+      const message =
+        caught instanceof Error ? caught.message : 'Falha ao testar conexão';
+      setConnectionStatus((prev) => ({
+        ...prev,
+        [key]: {
+          loading: false,
+          reachable: false,
+          sysname: null,
+          version: null,
+          error: message,
+        },
+      }));
+    }
+  }, []);
+
+  const getSetupStatusChip = (status: string, isConfigured: boolean) => {
+    const normalized = status || (isConfigured ? 'configured' : 'pending');
+    const labels: Record<string, string> = {
+      configured: 'Configurada',
+      in_progress: 'Em progresso',
+      pending: 'Pendente',
+      failed: 'Falhou',
+    };
+    const colors: Record<string, 'default' | 'success' | 'warning' | 'error'> = {
+      configured: 'success',
+      in_progress: 'warning',
+      pending: 'default',
+      failed: 'error',
+    };
+
     return (
       <Chip
-        label={status === 'online' ? 'Online' : 'Offline'}
-        color={color}
+        label={labels[normalized] || normalized}
+        color={colors[normalized] || 'default'}
         size="small"
       />
     );
   };
 
+  const formatDate = (value?: string | null) =>
+    value ? new Date(value).toLocaleString('pt-BR') : 'N/A';
+
+  const renderConnectionChip = (oltId: string) => {
+    const status = connectionStatus[oltId];
+    if (!status) {
+      return <Chip label="Não testado" size="small" />;
+    }
+
+    if (status.loading) {
+      return <Chip label="Testando..." size="small" color="warning" />;
+    }
+
+    const label = status.reachable ? 'Conectada' : 'Sem resposta';
+    const color = status.reachable ? 'success' : 'error';
+    const details = status.reachable
+      ? `Sysname: ${status.sysname || 'N/A'} | Versão: ${status.version || 'N/A'}`
+      : status.error || 'Falha ao conectar';
+
+    return (
+      <Tooltip title={details}>
+        <Box component="span">
+          <Chip label={label} size="small" color={color} />
+        </Box>
+      </Tooltip>
+    );
+  };
+
+  const configuredCount = olts.filter(
+    (olt) => olt.setup_status === 'configured' || olt.is_configured
+  ).length;
+  const inProgressCount = olts.filter((olt) => olt.setup_status === 'in_progress').length;
+  const failedCount = olts.filter((olt) => olt.setup_status === 'failed').length;
+
   const handleAddClick = useCallback(() => onAdd?.(), [onAdd]);
   const handleViewClick = useCallback(
-    (olt: OLT) => onViewDetails?.(olt.id),
+    (olt: ManagedOLT) => onViewDetails?.(String(olt.id)),
     [onViewDetails]
   );
 
@@ -95,7 +200,7 @@ export const OLTManagementPage: React.FC<Props> = ({ onAdd, onViewDetails }) => 
         <Grid item xs={12} sm={6} md={3}>
           <AnimatedCard delay={100} sx={{ p: 2, textAlign: 'center' }} disableHoverEffect>
             <DeviceHubIcon color="primary" sx={{ fontSize: 40, mb: 1 }} />
-            <H6>Total de OLTs</H6>
+            <H6>OLTs conectadas</H6>
             <Typography variant="h4" color="primary">
               {olts.length}
             </Typography>
@@ -104,33 +209,27 @@ export const OLTManagementPage: React.FC<Props> = ({ onAdd, onViewDetails }) => 
         <Grid item xs={12} sm={6} md={3}>
           <AnimatedCard delay={200} sx={{ p: 2, textAlign: 'center' }} disableHoverEffect>
             <DeviceHubIcon color="success" sx={{ fontSize: 40, mb: 1 }} />
-            <H6>OLTs Online</H6>
+            <H6>Configuradas</H6>
             <Typography variant="h4" color="success.main">
-              {olts.filter((olt) => olt.status === 'online').length}
+              {configuredCount}
             </Typography>
           </AnimatedCard>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <AnimatedCard delay={300} sx={{ p: 2, textAlign: 'center' }} disableHoverEffect>
-            <DeviceHubIcon color="error" sx={{ fontSize: 40, mb: 1 }} />
-            <H6>OLTs Offline</H6>
-            <Typography variant="h4" color="error.main">
-              {olts.filter((olt) => olt.status !== 'online').length}
+            <DeviceHubIcon color="warning" sx={{ fontSize: 40, mb: 1 }} />
+            <H6>Em progresso</H6>
+            <Typography variant="h4" color="warning.main">
+              {inProgressCount}
             </Typography>
           </AnimatedCard>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <AnimatedCard delay={400} sx={{ p: 2, textAlign: 'center' }} disableHoverEffect>
-            <DeviceHubIcon color="info" sx={{ fontSize: 40, mb: 1 }} />
-            <H6>Taxa de Disponibilidade</H6>
-            <Typography variant="h4" color="info.main">
-              {olts.length > 0
-                ? Math.round(
-                    (olts.filter((olt) => olt.status === 'online').length / olts.length) *
-                      100
-                  )
-                : 0}
-              %
+            <DeviceHubIcon color="error" sx={{ fontSize: 40, mb: 1 }} />
+            <H6>Com falha</H6>
+            <Typography variant="h4" color="error.main">
+              {failedCount}
             </Typography>
           </AnimatedCard>
         </Grid>
@@ -163,11 +262,11 @@ export const OLTManagementPage: React.FC<Props> = ({ onAdd, onViewDetails }) => 
                     <TableCell>ID</TableCell>
                     <TableCell>Nome</TableCell>
                     <TableCell>IP da OLT</TableCell>
-                    <TableCell>Porta Telnet/SSH</TableCell>
-                    <TableCell>IPTV</TableCell>
-                    <TableCell>Hardware Version</TableCell>
-                    <TableCell>Software Version</TableCell>
+                    <TableCell>Fabricante</TableCell>
+                    <TableCell>Modelo</TableCell>
                     <TableCell>Status</TableCell>
+                    <TableCell>Conexão</TableCell>
+                    <TableCell>Descoberta em</TableCell>
                     <TableCell align="center">Ações</TableCell>
                   </TableRow>
                 </TableHead>
@@ -191,20 +290,18 @@ export const OLTManagementPage: React.FC<Props> = ({ onAdd, onViewDetails }) => 
                       </TableCell>
                     </TableRow>
                   ) : (
-                    olts.map((olt, index) => (
+                    olts.map((olt) => (
                       <TableRow key={olt.id} hover>
-                        <TableCell>{index + 1}</TableCell>
+                        <TableCell>{olt.id}</TableCell>
                         <TableCell>
-                          <Typography fontWeight={500}>{olt.serial_number}</Typography>
+                          <Typography fontWeight={500}>{olt.name}</Typography>
                         </TableCell>
                         <TableCell>{olt.ip_address}</TableCell>
-                        <TableCell>23</TableCell>
-                        <TableCell>
-                          <Chip label="Desabilitado" color="default" size="small" />
-                        </TableCell>
-                        <TableCell>{olt.hardware_version || 'N/A'}</TableCell>
-                        <TableCell>{olt.software_version || 'N/A'}</TableCell>
-                        <TableCell>{getStatusChip(olt.status)}</TableCell>
+                        <TableCell>{olt.vendor || 'N/A'}</TableCell>
+                        <TableCell>{olt.model || 'N/A'}</TableCell>
+                        <TableCell>{getSetupStatusChip(olt.setup_status, olt.is_configured)}</TableCell>
+                        <TableCell>{renderConnectionChip(String(olt.id))}</TableCell>
+                        <TableCell>{formatDate(olt.discovered_at)}</TableCell>
                         <TableCell align="center">
                           <IconButton
                             color="primary"
@@ -214,9 +311,28 @@ export const OLTManagementPage: React.FC<Props> = ({ onAdd, onViewDetails }) => 
                           >
                             <ViewIcon />
                           </IconButton>
+                          <Tooltip title="Testar conexão">
+                            <span>
+                              <IconButton
+                                color={
+                                  connectionStatus[String(olt.id)]?.reachable
+                                    ? 'success'
+                                    : 'default'
+                                }
+                                onClick={() => handleTestConnection(olt)}
+                                disabled={connectionStatus[String(olt.id)]?.loading}
+                              >
+                                {connectionStatus[String(olt.id)]?.loading ? (
+                                  <CircularProgress size={18} />
+                                ) : (
+                                  <NetworkCheckIcon />
+                                )}
+                              </IconButton>
+                            </span>
+                          </Tooltip>
                           <IconButton
                             color="error"
-                            onClick={() => handleRequestDeleteOLT(olt.id)}
+                            onClick={() => handleRequestDeleteOLT(String(olt.id))}
                             title="Excluir OLT"
                           >
                             <DeleteIcon />
@@ -245,4 +361,3 @@ export const OLTManagementPage: React.FC<Props> = ({ onAdd, onViewDetails }) => 
     </Container>
   );
 };
-

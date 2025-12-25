@@ -20,6 +20,7 @@
     "apexcharts": "^4.0.0",
     "aws-amplify": "^6.15.5",
     "axios": "^1.12.0",
+    "better-auth": "^1.3.4",
     "date-fns": "^2.23.0",
     "firebase": "^12.2.1",
     "i18next": "^21.3.3",
@@ -45,13 +46,13 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "tsc",
-    "lint": "npx eslint \"src/**/*.{js,jsx,ts,tsx}\"",
-    "lint:fix": "npx eslint --fix \"src/**/*.{js,jsx,ts,tsx}\"",
-    "fm:check": "npx prettier --check \"src/**/*.{js,jsx,ts,tsx}\"",
-    "fm:fix": "npx prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
-    "fix:all": "npm run fm:fix && npm run lint:fix",
+    "lint": "bunx eslint \"src/**/*.{js,jsx,ts,tsx}\"",
+    "lint:fix": "bunx eslint --fix \"src/**/*.{js,jsx,ts,tsx}\"",
+    "fm:check": "bunx prettier --check \"src/**/*.{js,jsx,ts,tsx}\"",
+    "fm:fix": "bunx prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
+    "fix:all": "bun run fm:fix && bun run lint:fix",
     "test": "vitest",
-    "fix:prettier": "prettier --write ."
+    "fix:prettier": "bunx prettier --write ."
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",

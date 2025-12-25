@@ -39,7 +39,7 @@ O diagrama abaixo ilustra os principais serviços e como eles se conectam no amb
 ```mermaid
 graph TD
     subgraph "Máquina do Desenvolvedor"
-        U["👨‍💻 Usuário"] -- "Porta 8081" --> RP
+        U["👨‍💻 Usuário"] -- "Porta 8081" --> EDGE
         U -- "psql://localhost:5432" --> DB_APP[PostgreSQL]
         U -- "RabbitMQ UI @ 15672" --> RMQ
         U -- "Redis CLI @ 6379" --> REDIS
@@ -48,7 +48,7 @@ graph TD
     end
 
     subgraph "Ambiente Docker (Rede rjchronos-net)"
-        RP[Nginx Reverse Proxy]
+        EDGE[Edge Bun + Elysia]
 
         subgraph "Aplicação"
             F[Frontend]
@@ -68,8 +68,8 @@ graph TD
             RMQ[RabbitMQ]
         end
 
-        RP -- "Requisições Web" --> F
-        RP -- "/api" --> B
+        EDGE -- "Web/SPA" --> F
+        EDGE -- "/api" --> B
 
         B -- "Busca/Grava dados" --> DB_APP
         B -- "Comandos ACS" --> G
@@ -90,15 +90,15 @@ graph TD
     style DB_ACS fill:#47A248
     style REDIS fill:#DC382D
     style RMQ fill:#FF6600
-    style RP fill:#269539
+    style EDGE fill:#269539
 ```
 
 ## 5. Detalhes dos Serviços e Portas (Ambiente DEV)
 
 | Serviço         | Build (Dockerfile) | Volumes (Live-Reload)      | Portas (Host) | Propósito                                     |
 | --------------- | ------------------ | -------------------------- | ------------- | ---------------------------------------------------- |
-| `reverse-proxy` | -                  | -                          | 8081          | Ponto de entrada único (Nginx) para todos os serviços. |
-| `frontend`      | `Dockerfile.dev`   | `./services/frontend:/app` | -             | Interface de usuário em React.                |
+| `edge`          | `Dockerfile.dev`   | `./services/edge:/app`     | 8081          | Ponto de entrada único (Bun + Elysia + Better Auth). |
+| `frontend`      | `Dockerfile.dev`   | `./services/frontend:/app` | 3000          | Vite dev server (proxyado pelo Edge).         |
 | `backend`       | `Dockerfile.dev`   | `./services/backend-api:/app` | -             | API principal em FastAPI.                     |
 | `works`         | `Dockerfile.dev`   | `./services/works:/app`    | -             | Worker para processamento de tarefas assíncronas.    |
 | `genieacs`      | `Dockerfile`       | -                          | 7547, 7557    | Servidor TR-069 (configuração igual à prod).  |
@@ -112,9 +112,9 @@ graph TD
 
 Esta seção detalha cada serviço (contêiner) que compõe o ambiente de desenvolvimento.
 
-### 6.1 `reverse-proxy` (Nginx)
-- **O que é?** Um servidor web Nginx que atua como um proxy reverso. É o único ponto de entrada para o ambiente a partir da sua máquina.
-- **Por que utilizar?** Simplifica o acesso aos múltiplos serviços. Em vez de decorar a porta de cada serviço (`frontend`, `backend`, `genieacs-ui`), você acessa tudo pela porta `8081`. Ele direciona sua requisição para o contêiner correto com base no caminho (URL).
+### 6.1 `edge` (Bun + Elysia)
+- **O que é?** O serviço de entrada público da aplicação. Ele serve o frontend e encaminha chamadas para o `backend`.
+- **Por que utilizar?** Centraliza autenticação (Better Auth), proxy interno e servir estáticos em um único ponto de entrada (`8081`).
 - **Formas de utilizar:**
   - Acessar a interface principal: `http://localhost:8081`
   - Enviar requisições para a API: `http://localhost:8081/api/...`
@@ -122,13 +122,13 @@ Esta seção detalha cada serviço (contêiner) que compõe o ambiente de desenv
 
 ### 6.2 `frontend`
 - **O que é?** A aplicação de interface de usuário (UI), construída com React.
-- **Por que utilizar?** É a camada de apresentação com a qual o usuário final interage. O uso de React com Vite permite um desenvolvimento moderno, rápido e uma experiência de usuário rica e reativa.
-- **Formas de utilizar:** É a interface gráfica principal do sistema, acessada pelo navegador.
+- **Por que utilizar?** É a camada de apresentação com a qual o usuário final interage. Em DEV, o Vite roda separado e o `edge` faz o proxy para ele.
+- **Formas de utilizar:** A interface principal é acessada via `http://localhost:8081`.
 
 ### 6.3 `backend`
 - **O que é?** A API principal, construída com Python e FastAPI. É o cérebro da aplicação.
 - **Por que utilizar?** FastAPI oferece altíssima performance e é ideal para aplicações com muitas operações de I/O (rede, banco de dados), como é o caso do RJChronos. Ele gerencia a lógica de negócio, autenticação e a comunicação com os outros serviços.
-- **Formas de utilizar:** O `frontend` consome esta API para exibir dados e executar ações. Você também pode interagir diretamente com ela para testes ou integrações via `http://localhost:8081/api`.
+- **Formas de utilizar:** O `frontend` consome esta API via `http://localhost:8081/api`.
 
 ### 6.4 `works`
 - **O que é?** Um novo serviço "trabalhador" (worker) em Python.

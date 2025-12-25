@@ -3,24 +3,23 @@
 ## 🚀 Como Executar o Projeto
 
 ### Pré-requisitos
-- Node.js instalado (v12 ou superior)
-- npm ou yarn
+- Bun instalado (versão recente)
 
 ### Instalação e Execução
 
 1. **Instalar dependências:**
 ```bash
-npm install
+bun install
 ```
 
 2. **Executar em modo desenvolvimento:**
 ```bash
-npm start
+bun run dev
 ```
 
 3. **Fazer build para produção:**
 ```bash
-npm run build
+bun run build
 ```
 
 ## 🎨 Modificações Implementadas

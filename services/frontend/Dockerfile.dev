@@ -2,21 +2,19 @@
 # Dockerfile de DESENVOLVIMENTO para o Frontend (Vite + React)
 # =================================================================
 
-# Estágio 1: Usar uma imagem base do Node.js leve e específica
-# Usamos a versão 20, conforme indicado pelas dependências de desenvolvimento.
-# 'alpine' é uma versão mínima, ideal para desenvolvimento e produção.
-FROM node:20-alpine AS development
+# Estágio 1: Usar uma imagem base do Bun leve e específica
+FROM oven/bun:latest AS development
 
 # Definir o diretório de trabalho dentro do contêiner
 WORKDIR /app
 
 # Copiar os arquivos de manifesto de pacote PRIMEIRO
-# Isso otimiza o cache do Docker. A instalação do NPM só será
+# Isso otimiza o cache do Docker. A instalação do Bun só será
 # executada novamente se estes arquivos mudarem.
-COPY package*.json ./
+COPY package.json ./
 
 # Instalar as dependências do projeto
-RUN npm install --legacy-peer-deps
+RUN bun install
 
 # Copiar todo o resto do código-fonte do frontend
 # COPY . . # Removido para usar bind mounts no docker-compose.dev.yml
@@ -27,4 +25,4 @@ EXPOSE 3000
 
 # Comando para iniciar o servidor de desenvolvimento do Vite
 # O script "dev" já contém o "--host" necessário para o Docker.
-CMD ["npm", "run", "dev"]
+CMD ["bun", "run", "dev"]

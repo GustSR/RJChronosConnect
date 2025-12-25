@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Alert,
   Box,
@@ -7,8 +7,6 @@ import {
   Container,
   Grid,
   IconButton,
-  Tab,
-  Tabs,
   Table,
   TableBody,
   TableCell,
@@ -18,15 +16,11 @@ import {
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
-  Backup as BackupIcon,
   DeviceHub as DeviceHubIcon,
   Edit as EditIcon,
-  History as HistoryIcon,
-  Schedule as ScheduleIcon,
-  Terminal as TerminalIcon,
 } from '@mui/icons-material';
 import { AnimatedCard } from '@shared/ui/components';
-import { H3, H5, H6 } from '@shared/ui/components/Typography';
+import { H3, H5 } from '@shared/ui/components/Typography';
 import FlexBox from '@shared/ui/components/FlexBox';
 import { useOltDetails } from '../model';
 
@@ -36,43 +30,44 @@ type Props = {
   onEdit?: () => void;
 };
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  );
-}
-
 export const OLTDetailsPage: React.FC<Props> = ({ oltId, onBack, onEdit }) => {
-  const { olt, loading, error } = useOltDetails(oltId);
-  const [tabValue, setTabValue] = useState(0);
-  const uptime = '124 days, 23:11, 35°C';
+  const { olt, liveInfo, loading, error, liveError } = useOltDetails(oltId);
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-  };
+  const formatDate = (value?: string | null) =>
+    value ? new Date(value).toLocaleString('pt-BR') : 'N/A';
 
-  const getStatusChip = (status: string) => {
-    const color = status === 'online' ? 'success' : 'error';
+  const getSetupStatusChip = (status: string, isConfigured: boolean) => {
+    const normalized = status || (isConfigured ? 'configured' : 'pending');
+    const labels: Record<string, string> = {
+      configured: 'Configurada',
+      in_progress: 'Em progresso',
+      pending: 'Pendente',
+      failed: 'Falhou',
+    };
+    const colors: Record<string, 'default' | 'success' | 'warning' | 'error'> = {
+      configured: 'success',
+      in_progress: 'warning',
+      pending: 'default',
+      failed: 'error',
+    };
+
     return (
       <Chip
-        label={status === 'online' ? 'Online' : 'Offline'}
-        color={color}
+        label={labels[normalized] || normalized}
+        color={colors[normalized] || 'default'}
+        size="small"
+      />
+    );
+  };
+
+  const getReachabilityChip = () => {
+    if (!liveInfo) {
+      return <Chip label="Indisponível" size="small" />;
+    }
+    return (
+      <Chip
+        label={liveInfo.reachable ? 'Conectada' : 'Sem resposta'}
+        color={liveInfo.reachable ? 'success' : 'error'}
         size="small"
       />
     );
@@ -120,7 +115,7 @@ export const OLTDetailsPage: React.FC<Props> = ({ oltId, onBack, onEdit }) => {
             </IconButton>
             <Box sx={{ flexGrow: 1 }}>
               <Typography variant="h4" fontWeight="700" sx={{ mb: 1 }}>
-                {olt.serial_number}
+                {olt.name}
               </Typography>
               <Typography variant="body1" color="text.secondary">
                 {olt.ip_address}
@@ -152,174 +147,96 @@ export const OLTDetailsPage: React.FC<Props> = ({ oltId, onBack, onEdit }) => {
                   <DeviceHubIcon sx={{ fontSize: 60, display: 'none', color: 'grey.400' }} />
                 </Grid>
                 <Grid item flexGrow={1}>
-                  <FlexBox alignItems="center" gap={2} mb={1}>
-                    <ScheduleIcon color="action" />
-                    <Typography>
-                      <strong>Uptime:</strong> {uptime}
-                    </Typography>
-                  </FlexBox>
                   <FlexBox alignItems="center" gap={1}>
                     <Typography variant="body2" color="text.secondary">
-                      Status:
+                      Configuração:
                     </Typography>
-                    {getStatusChip(olt.status)}
+                    {getSetupStatusChip(olt.setup_status, olt.is_configured)}
+                  </FlexBox>
+                  <FlexBox alignItems="center" gap={1} mt={1}>
+                    <Typography variant="body2" color="text.secondary">
+                      Conexão:
+                    </Typography>
+                    {getReachabilityChip()}
                   </FlexBox>
                 </Grid>
               </Grid>
             </Box>
           </AnimatedCard>
 
-          <AnimatedCard delay={200}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-              <Tabs value={tabValue} onChange={handleTabChange}>
-                <Tab label="Detalhes da OLT" />
-                <Tab label="Placas da OLT" />
-                <Tab label="Portas PON" />
-                <Tab label="Uplink" />
-                <Tab label="VLANs" />
-                <Tab label="IPs de Gerenciamento de ONU" />
-                <Tab label="ACLs Remotas" />
-                <Tab label="Perfis VoIP" />
-                <Tab label="Avançado" />
-              </Tabs>
-            </Box>
-
-            <TabPanel value={tabValue} index={0}>
-              <FlexBox justifyContent="space-between" alignItems="center" mb={3}>
-                <H5>Configurações da OLT</H5>
-                <FlexBox gap={1}>
-                  <Button variant="outlined" startIcon={<EditIcon />} size="small">
-                    Editar configurações da OLT
-                  </Button>
-                  <Button variant="outlined" startIcon={<HistoryIcon />} size="small">
-                    Ver histórico
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<TerminalIcon />}
-                    size="small"
-                    color="success"
-                  >
-                    _Cli
-                  </Button>
-                  <Button variant="outlined" startIcon={<BackupIcon />} size="small">
-                    Backup de configurações
-                  </Button>
-                </FlexBox>
+          <AnimatedCard delay={200} sx={{ mb: 3 }}>
+            <Box p={3}>
+              <FlexBox justifyContent="space-between" alignItems="center" mb={2}>
+                <H5>Informações cadastradas</H5>
               </FlexBox>
+              <Table size="small">
+                <TableBody>
+                  {[
+                    { label: 'Nome', value: olt.name },
+                    { label: 'IP da OLT', value: olt.ip_address },
+                    { label: 'Fabricante', value: olt.vendor || 'N/A' },
+                    { label: 'Modelo', value: olt.model || 'N/A' },
+                    { label: 'Porta SSH', value: olt.ssh_port ?? 'N/A' },
+                    {
+                      label: 'Status de configuração',
+                      value: getSetupStatusChip(olt.setup_status, olt.is_configured),
+                    },
+                    { label: 'Configurada', value: olt.is_configured ? 'Sim' : 'Não' },
+                    { label: 'Descoberta em', value: formatDate(olt.discovered_at) },
+                    { label: 'Última sincronização', value: formatDate(olt.last_sync_at) },
+                    { label: 'Criada em', value: formatDate(olt.created_at) },
+                    { label: 'Atualizada em', value: formatDate(olt.updated_at) },
+                  ].map((setting) => (
+                    <TableRow key={setting.label}>
+                      <TableCell
+                        component="th"
+                        scope="row"
+                        sx={{ fontWeight: 500, width: '40%' }}
+                      >
+                        {setting.label}
+                      </TableCell>
+                      <TableCell>{setting.value}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
+          </AnimatedCard>
 
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <DeviceHubIcon sx={{ mr: 1, fontSize: 20 }} />
-                    <Typography variant="h6">Informações Técnicas</Typography>
-                  </Box>
-
-                  {(() => {
-                    const oltSettings = [
-                      { label: 'Name', value: olt.serial_number },
-                      { label: 'OLT IP', value: olt.ip_address },
-                      { label: 'Reachable via VPN tunnel', value: 'yes' },
-                      { label: 'Telnet TCP port', value: '23' },
-                      { label: 'OLT telnet username', value: '**********' },
-                      { label: 'OLT telnet password', value: '**********' },
-                      { label: 'SNMP read-only community', value: '**********' },
-                      { label: 'SNMP read-write community', value: '**********' },
-                      { label: 'SNMP UDP port', value: '161' },
-                      { label: 'IPTV module', value: 'disabled' },
-                      {
-                        label: 'OLT hardware version',
-                        value: olt.hardware_version || 'Huawei-MA5800-X2',
-                      },
-                      {
-                        label: 'OLT software version',
-                        value: olt.software_version || 'R019',
-                      },
-                      { label: 'Supported PON types', value: 'GPON' },
-                    ];
-
-                    return (
-                      <Table size="small">
-                        <TableBody>
-                          {oltSettings.map((setting, index) => (
-                            <TableRow key={index}>
-                              <TableCell
-                                component="th"
-                                scope="row"
-                                sx={{ fontWeight: 500, width: '40%' }}
-                              >
-                                {setting.label}
-                              </TableCell>
-                              <TableCell>{setting.value}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    );
-                  })()}
-                </Grid>
-              </Grid>
-            </TabPanel>
-
-            <TabPanel value={tabValue} index={1}>
-              <H6>Placas da OLT</H6>
-              <Typography color="text.secondary">
-                Em desenvolvimento - Informações sobre as placas instaladas na OLT
-              </Typography>
-            </TabPanel>
-
-            <TabPanel value={tabValue} index={2}>
-              <H6>Portas PON</H6>
-              <Typography color="text.secondary">
-                Em desenvolvimento - Configuração das portas PON
-              </Typography>
-            </TabPanel>
-
-            <TabPanel value={tabValue} index={3}>
-              <H6>Uplink</H6>
-              <Typography color="text.secondary">
-                Em desenvolvimento - Configuração do uplink
-              </Typography>
-            </TabPanel>
-
-            <TabPanel value={tabValue} index={4}>
-              <H6>VLANs</H6>
-              <Typography color="text.secondary">
-                Em desenvolvimento - Configuração de VLANs
-              </Typography>
-            </TabPanel>
-
-            <TabPanel value={tabValue} index={5}>
-              <H6>IPs de Gerenciamento de ONU</H6>
-              <Typography color="text.secondary">
-                Em desenvolvimento - Configuração de IPs de gerenciamento
-              </Typography>
-            </TabPanel>
-
-            <TabPanel value={tabValue} index={6}>
-              <H6>ACLs Remotas</H6>
-              <Typography color="text.secondary">
-                Em desenvolvimento - Configuração de ACLs
-              </Typography>
-            </TabPanel>
-
-            <TabPanel value={tabValue} index={7}>
-              <H6>Perfis VoIP</H6>
-              <Typography color="text.secondary">
-                Em desenvolvimento - Configuração de perfis VoIP
-              </Typography>
-            </TabPanel>
-
-            <TabPanel value={tabValue} index={8}>
-              <H6>Configurações Avançadas</H6>
-              <Typography color="text.secondary">
-                Em desenvolvimento - Configurações avançadas da OLT
-              </Typography>
-            </TabPanel>
+          <AnimatedCard delay={300}>
+            <Box p={3}>
+              <FlexBox justifyContent="space-between" alignItems="center" mb={2}>
+                <H5>Informações ao vivo</H5>
+              </FlexBox>
+              {liveError && !liveInfo && (
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  {liveError}
+                </Alert>
+              )}
+              <Table size="small">
+                <TableBody>
+                  {[
+                    { label: 'Conexão', value: getReachabilityChip() },
+                    { label: 'Sysname', value: liveInfo?.sysname || 'N/A' },
+                    { label: 'Versão da OLT', value: liveInfo?.version || 'N/A' },
+                  ].map((setting) => (
+                    <TableRow key={setting.label}>
+                      <TableCell
+                        component="th"
+                        scope="row"
+                        sx={{ fontWeight: 500, width: '40%' }}
+                      >
+                        {setting.label}
+                      </TableCell>
+                      <TableCell>{setting.value}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
           </AnimatedCard>
         </>
       )}
     </Container>
   );
 };
-

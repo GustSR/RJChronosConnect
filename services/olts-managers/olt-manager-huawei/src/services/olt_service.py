@@ -69,7 +69,7 @@ def _get_olt_credentials(olt_id: int) -> dict:
     e, como fallback, no arquivo olt_config.yaml.
     """
     try:
-        endpoint = f"{settings.backend_api_url}/api/v1/olts/{olt_id}/credentials"
+        endpoint = f"{settings.backend_api_url}/internal/olts/{olt_id}/credentials"
         logger.info(f"Buscando credenciais para OLT ID {olt_id} em {endpoint}")
         response = requests.get(endpoint, timeout=5)
         response.raise_for_status()

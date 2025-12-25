@@ -5,24 +5,29 @@ version: '3.8'
 # a todos os ambientes (desenvolvimento, produção, etc.).
 
 services:
-  reverse-proxy:
-    image: nginx:stable-alpine
+  edge:
+    build:
+      context: .
+      dockerfile: services/edge/Dockerfile
     ports:
-      - "80:80"
-    volumes:
-      - ./infrastructure/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - "8081:8081"
+    environment:
+      - EDGE_HOST=0.0.0.0
+      - EDGE_PORT=8081
+      - BACKEND_INTERNAL_URL=http://backend:8000
+      - GENIEACS_UI_INTERNAL_URL=http://genieacs:3000
+      - BETTER_AUTH_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
+      - BETTER_AUTH_BASE_PATH=/api/auth
+      - BETTER_AUTH_BASE_URL=${BETTER_AUTH_BASE_URL}
+      - BETTER_AUTH_TRUSTED_ORIGINS=${BETTER_AUTH_TRUSTED_ORIGINS}
+      - EDGE_LEGACY_AUTH_PROXY_ENABLED=${EDGE_LEGACY_AUTH_PROXY_ENABLED}
+      - EDGE_LEGACY_AUTH_PROXY_HEADER=${EDGE_LEGACY_AUTH_PROXY_HEADER}
+      - EDGE_LEGACY_AUTH_PROXY_TOKEN=${EDGE_LEGACY_AUTH_PROXY_TOKEN}
     networks:
       - rjchronos-net
     depends_on:
-      - frontend
       - backend
-      - genieacs
-
-  frontend:
-    build:
-      context: ./services/frontend
-    networks:
-      - rjchronos-net
+      - db-app
 
   backend:
     build:

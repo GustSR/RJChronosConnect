@@ -7,6 +7,7 @@ from .discovery import router as discovery_router
 from .setup import router as setup_router
 from .logs import router as logs_router
 from .stats import router as stats_router
+from .live import router as live_router
 
 router = APIRouter()
 router.include_router(base_router)
@@ -14,5 +15,6 @@ router.include_router(discovery_router)
 router.include_router(setup_router)
 router.include_router(logs_router)
 router.include_router(stats_router)
+router.include_router(live_router)
 
 __all__ = ["router"]

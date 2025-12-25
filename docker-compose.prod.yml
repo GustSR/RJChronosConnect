@@ -3,21 +3,15 @@ version: '3.8'
 # Arquivo de override para o ambiente de produção.
 
 services:
-  reverse-proxy:
-    container_name: rjchronos_proxy_prod
+  edge:
+    container_name: rjchronos_edge_prod
     restart: always
     networks:
       - rjchronos-net
-
-  frontend:
-    container_name: rjchronos_frontend_prod
-    build:
-      dockerfile: Dockerfile
-    restart: always
-    networks:
-      - rjchronos-net
+    environment:
+      - GENIEACS_UI_INTERNAL_URL=http://genieacs:3000
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      test: ["CMD", "curl", "-f", "http://localhost:8081/"]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -4,7 +4,7 @@ import time
 import asyncio
 from contextlib import asynccontextmanager
 
-from .api import auth, devices, monitoring, provisioning, tasks, wifi, olt_management
+from .api import auth, devices, monitoring, provisioning, tasks, wifi, olt_management, internal_olts
 from .core.logging import init_logging, cleanup_logging, log_api_request, log_error
 
 
@@ -105,3 +105,4 @@ app.include_router(provisioning.router, prefix="/api/provisioning", tags=["Provi
 app.include_router(tasks.router, prefix="/api/activity-history", tags=["Activity History"])
 app.include_router(wifi.router, prefix="/api/wifi", tags=["WiFi"])
 app.include_router(olt_management.router, prefix="/api/olts", tags=["OLT Management"])
+app.include_router(internal_olts.router, prefix="/internal/olts", tags=["Internal OLT"])

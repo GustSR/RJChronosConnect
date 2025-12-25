@@ -1,40 +1,75 @@
-import { genieacsApi } from '@shared/api/genieacsApi';
-import type { OLT } from '@shared/api/types';
+import { oltManagementApi } from '@shared/api/oltManagementApi';
+import type { ManagedOLT, OltLiveInfo } from '@shared/api/oltManagementTypes';
 import { useCallback, useEffect, useState } from 'react';
 
 type State = {
-  olt: OLT | null;
+  olt: ManagedOLT | null;
+  liveInfo: OltLiveInfo | null;
   loading: boolean;
   error: string | null;
+  liveError: string | null;
 };
 
 export function useOltDetails(oltId?: string) {
   const [state, setState] = useState<State>({
     olt: null,
+    liveInfo: null,
     loading: false,
     error: null,
+    liveError: null,
   });
 
   const load = useCallback(async () => {
     if (!oltId) {
-      setState({ olt: null, loading: false, error: 'OLT não encontrada' });
+      setState({
+        olt: null,
+        liveInfo: null,
+        loading: false,
+        error: 'OLT não encontrada',
+        liveError: null,
+      });
       return;
     }
 
     try {
-      setState((prev) => ({ ...prev, loading: true, error: null }));
-      const olts = await genieacsApi.getOLTs();
-      const found = olts.find((o) => o.id === oltId) || null;
+      setState((prev) => ({
+        ...prev,
+        loading: true,
+        error: null,
+        liveError: null,
+      }));
+      const [olt, liveInfo] = await Promise.all([
+        oltManagementApi.getOltById(oltId),
+        oltManagementApi.getOltLiveInfo(oltId).catch(() => null),
+      ]);
 
-      if (!found) {
-        setState({ olt: null, loading: false, error: 'OLT não encontrada' });
+      if (!olt) {
+        setState({
+          olt: null,
+          liveInfo: null,
+          loading: false,
+          error: 'OLT não encontrada',
+          liveError: null,
+        });
         return;
       }
 
-      setState({ olt: found, loading: false, error: null });
+      setState({
+        olt,
+        liveInfo,
+        loading: false,
+        error: null,
+        liveError: liveInfo ? null : 'Dados ao vivo indisponíveis',
+      });
     } catch (err) {
       console.error('Erro ao carregar detalhes da OLT:', err);
-      setState({ olt: null, loading: false, error: 'Erro ao carregar detalhes da OLT' });
+      setState({
+        olt: null,
+        liveInfo: null,
+        loading: false,
+        error: 'Erro ao carregar detalhes da OLT',
+        liveError: null,
+      });
     }
   }, [oltId]);
 
@@ -44,4 +79,3 @@ export function useOltDetails(oltId?: string) {
 
   return { ...state, reload: load };
 }
-
