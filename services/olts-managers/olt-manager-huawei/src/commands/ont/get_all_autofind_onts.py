@@ -1,8 +1,8 @@
 import re
 from typing import List, Dict, Any
 
-from .base_command import OLTCommand
-from .get_board_cli import GetBoardCliCommand
+from ..base_command import OLTCommand
+from ..olt.get_board_cli import GetBoardCliCommand
 from .get_ont_autofind_cli import GetOntAutofindCliCommand
 
 

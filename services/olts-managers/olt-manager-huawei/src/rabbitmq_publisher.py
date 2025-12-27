@@ -22,6 +22,8 @@ class RabbitMQPublisher:
         """
         self.host = settings.rabbitmq_host
         self.port = settings.rabbitmq_port
+        self.username = settings.rabbitmq_user
+        self.password = settings.rabbitmq_password
         self.connection = None
         self.channel = None
         self.max_retries = max_retries
@@ -32,7 +34,12 @@ class RabbitMQPublisher:
         retries = 0
         while retries < self.max_retries:
             try:
-                params = pika.ConnectionParameters(host=self.host, port=self.port)
+                credentials = pika.PlainCredentials(self.username, self.password)
+                params = pika.ConnectionParameters(
+                    host=self.host,
+                    port=self.port,
+                    credentials=credentials,
+                )
                 self.connection = pika.BlockingConnection(params)
                 self.channel = self.connection.channel()
                 logger.info("Conectado com sucesso ao RabbitMQ.")

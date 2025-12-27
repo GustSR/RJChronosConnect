@@ -3,7 +3,7 @@ import { useTitle } from '@shared/lib/hooks';
 import type { FC } from 'react';
 
 const ForgetPassword: FC = () => {
-  useTitle('Recuperar Senha - RJ Chronos');
+  useTitle('Recuperar Senha');
   return <ForgetPasswordPage />;
 };
 

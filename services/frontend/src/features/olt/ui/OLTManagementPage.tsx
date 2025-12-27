@@ -29,6 +29,7 @@ import { H6 } from '@shared/ui/components/Typography';
 import { AnimatedCard, ConfirmDialog } from '@shared/ui/components';
 import type { ManagedOLT } from '@shared/api/oltManagementTypes';
 import { oltManagementApi } from '@shared/api/oltManagementApi';
+import { oltManagerApi } from '@shared/api/oltManagerApi';
 import { useOlts } from '../model';
 
 type Props = {
@@ -65,8 +66,7 @@ export const OLTManagementPage: React.FC<Props> = ({ onAdd, onViewDetails }) => 
 
   const handleConfirmDeleteOLT = useCallback(async () => {
     try {
-      // TODO: Implementar API de delete
-      // await genieacsApi.deleteOLT(oltIdToDelete);
+      await oltManagementApi.deleteOlt(oltIdToDelete);
       await reload();
     } catch (err) {
       console.error('Erro ao excluir OLT:', err);
@@ -87,17 +87,31 @@ export const OLTManagementPage: React.FC<Props> = ({ onAdd, onViewDetails }) => 
     }));
 
     try {
-      const liveInfo = await oltManagementApi.getOltLiveInfo(olt.id);
-      if (!liveInfo) {
-        throw new Error('Dados ao vivo indisponíveis');
+      const liveInfo = await oltManagementApi.getOltLiveInfo(olt.id).catch(
+        () => null
+      );
+      if (liveInfo?.reachable) {
+        setConnectionStatus((prev) => ({
+          ...prev,
+          [key]: {
+            loading: false,
+            reachable: true,
+            sysname: liveInfo.sysname ?? null,
+            version: liveInfo.version ?? null,
+            error: null,
+          },
+        }));
+        return;
       }
+
+      const snmpInfo = await oltManagerApi.getOltSnmpInfo(olt.id);
       setConnectionStatus((prev) => ({
         ...prev,
         [key]: {
           loading: false,
-          reachable: liveInfo.reachable,
-          sysname: liveInfo.sysname ?? null,
-          version: liveInfo.version ?? null,
+          reachable: true,
+          sysname: snmpInfo.sys_name ?? null,
+          version: snmpInfo.sys_descr ?? null,
           error: null,
         },
       }));

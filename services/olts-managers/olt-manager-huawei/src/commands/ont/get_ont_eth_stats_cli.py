@@ -1,6 +1,6 @@
 import re
 from typing import Dict, Any
-from .base_command import OLTCommand
+from ..base_command import OLTCommand
 
 class GetOntEthStatsCliCommand(OLTCommand):
     """Command to execute 'display statistics ont-eth' and parse its output."""

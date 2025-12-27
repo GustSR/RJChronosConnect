@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
 class OntPortAttribute(BaseModel):
@@ -7,5 +7,4 @@ class OntPortAttribute(BaseModel):
     speed: str
     duplex: str
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

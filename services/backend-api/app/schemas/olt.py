@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 from datetime import datetime
 
@@ -13,6 +13,7 @@ class OLTCreate(OLTBase):
     ssh_username: Optional[str] = None
     ssh_password: Optional[str] = None
     ssh_port: Optional[int] = Field(default=22, ge=1, le=65535)
+    snmp_community: Optional[str] = None
 
 class OLTUpdate(OLTBase):
     # Todos os campos opcionais para update
@@ -21,7 +22,8 @@ class OLTUpdate(OLTBase):
     ssh_username: Optional[str] = None
     ssh_password: Optional[str] = None
     ssh_port: Optional[int] = Field(default=None, ge=1, le=65535)
-    setup_status: Optional[str] = Field(default=None, regex=r'^(pending|configured|failed)$')
+    snmp_community: Optional[str] = None
+    setup_status: Optional[str] = Field(default=None, pattern=r'^(pending|configured|failed)$')
     is_configured: Optional[bool] = None
 
 class OLT(OLTBase):
@@ -35,8 +37,7 @@ class OLT(OLTBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Schemas específicos para operações de descoberta e configuração
 class OLTDiscoveryRequest(BaseModel):

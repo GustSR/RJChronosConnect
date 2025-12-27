@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
 class ONTOpticalInfo(BaseModel):
@@ -8,5 +8,4 @@ class ONTOpticalInfo(BaseModel):
     voltage: Optional[float]
     tx_bias_current: Optional[float]
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

@@ -3,11 +3,11 @@
 Comandos para backup e restore de configuração da OLT.
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from datetime import datetime
 import json
-from .base_command import BaseCommand
-from ..core.logging import get_logger
+from ..base_command import BaseCommand
+from ...core.logging import get_logger
 
 logger = get_logger(__name__)
 

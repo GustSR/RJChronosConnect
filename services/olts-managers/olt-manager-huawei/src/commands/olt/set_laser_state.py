@@ -1,6 +1,6 @@
 import re
 from typing import Dict, Any
-from .base_command import OLTCommand
+from ..base_command import OLTCommand
 
 class SetLaserStateCommand(OLTCommand):
     """Command to execute 'laser' and parse its output."""

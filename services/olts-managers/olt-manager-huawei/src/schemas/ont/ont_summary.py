@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class ONTSummary(BaseModel):
     port: str
@@ -8,5 +8,4 @@ class ONTSummary(BaseModel):
     run_state: str
     config_state: str
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

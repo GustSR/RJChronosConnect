@@ -1,7 +1,6 @@
-from pysnmp.hlapi import (
-    getCmd, SnmpEngine, CommunityData, UdpTransportTarget, ContextData, ObjectType, ObjectIdentity
-)
-from .base_command import OLTCommand
+import asyncio
+from pysnmp.hlapi import v3arch
+from ..base_command import OLTCommand
 from typing import List, Dict, Any
 
 class GetOntTrafficSnmpCommand(OLTCommand):
@@ -26,52 +25,58 @@ class GetOntTrafficSnmpCommand(OLTCommand):
         """
         Executes the SNMP GET commands to retrieve traffic stats for each ethernet port.
         """
-        traffic_stats = []
+        async def _execute_async() -> List[Dict[str, Any]]:
+            traffic_stats = []
+            snmp_engine = v3arch.SnmpEngine()
+            auth = v3arch.CommunityData(self.community, mpModel=0)
+            transport = await v3arch.UdpTransportTarget.create((self.host, 161))
+            context = v3arch.ContextData()
 
-        for eth_port_index in range(1, self.eth_port_count + 1):
-            try:
-                if_index = self._calculate_if_index(eth_port_index)
-            except ValueError as e:
-                print(f"[Error] {e}")
-                continue
+            for eth_port_index in range(1, self.eth_port_count + 1):
+                try:
+                    if_index = self._calculate_if_index(eth_port_index)
+                except ValueError as e:
+                    print(f"[Error] {e}")
+                    continue
 
-            oid_in = f"{self.OID_IF_IN_OCTETS}.{if_index}"
-            oid_out = f"{self.OID_IF_OUT_OCTETS}.{if_index}"
+                oid_in = f"{self.OID_IF_IN_OCTETS}.{if_index}"
+                oid_out = f"{self.OID_IF_OUT_OCTETS}.{if_index}"
 
-            error_indication, error_status, error_index, var_binds = next(
-                getCmd(
-                    SnmpEngine(),
-                    CommunityData(self.community, mpModel=0),
-                    UdpTransportTarget((self.host, 161)),
-                    ContextData(),
-                    ObjectType(ObjectIdentity(oid_in)),
-                    ObjectType(ObjectIdentity(oid_out))
+                error_indication, error_status, error_index, var_binds = await v3arch.get_cmd(
+                    snmp_engine,
+                    auth,
+                    transport,
+                    context,
+                    v3arch.ObjectType(v3arch.ObjectIdentity(oid_in)),
+                    v3arch.ObjectType(v3arch.ObjectIdentity(oid_out))
                 )
-            )
 
-            if error_indication:
-                print(f"[SNMP Error for port {eth_port_index}] {error_indication}")
-                continue
-            elif error_status:
-                print(f"[SNMP Error for port {eth_port_index}] {error_status.prettyPrint()} at {error_index and var_binds[int(error_index) - 1][0] or '??'}")
-                continue
-            
-            ingress_bytes = 0
-            egress_bytes = 0
-            for var_bind in var_binds:
-                oid, value = var_bind
-                if str(oid).startswith(self.OID_IF_IN_OCTETS):
-                    ingress_bytes = int(value)
-                elif str(oid).startswith(self.OID_IF_OUT_OCTETS):
-                    egress_bytes = int(value)
+                if error_indication:
+                    print(f"[SNMP Error for port {eth_port_index}] {error_indication}")
+                    continue
+                elif error_status:
+                    error_status_text = error_status.prettyPrint() if hasattr(error_status, "prettyPrint") else str(error_status)
+                    print(f"[SNMP Error for port {eth_port_index}] {error_status_text} at {error_index and var_binds[int(error_index) - 1][0] or '??'}")
+                    continue
+                
+                ingress_bytes = 0
+                egress_bytes = 0
+                for var_bind in var_binds:
+                    oid, value = var_bind
+                    if str(oid).startswith(self.OID_IF_IN_OCTETS):
+                        ingress_bytes = int(value)
+                    elif str(oid).startswith(self.OID_IF_OUT_OCTETS):
+                        egress_bytes = int(value)
 
-            traffic_stats.append({
-                "port_index": eth_port_index,
-                "ingress_bytes": ingress_bytes,
-                "egress_bytes": egress_bytes
-            })
-            
-        return traffic_stats
+                traffic_stats.append({
+                    "port_index": eth_port_index,
+                    "ingress_bytes": ingress_bytes,
+                    "egress_bytes": egress_bytes
+                })
+                
+            return traffic_stats
+
+        return asyncio.run(_execute_async())
 
     def _calculate_if_index(self, eth_port_index: int) -> int:
         """

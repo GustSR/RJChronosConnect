@@ -4,7 +4,7 @@ import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Register: FC = () => {
-  useTitle('Register - RJ Chronos');
+  useTitle('Register');
 
   const navigate = useNavigate();
   return <RegisterPage onSuccess={() => navigate('/dashboard')} />;

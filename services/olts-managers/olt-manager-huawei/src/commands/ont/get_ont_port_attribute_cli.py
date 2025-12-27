@@ -1,6 +1,6 @@
 import re
 from typing import Dict, Any
-from .base_command import OLTCommand
+from ..base_command import OLTCommand
 
 class GetOntPortAttributeCliCommand(OLTCommand):
     """Command to execute 'display ont port attribute' and parse its output."""

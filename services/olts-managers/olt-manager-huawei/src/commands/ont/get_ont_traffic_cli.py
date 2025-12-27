@@ -6,7 +6,7 @@ Este módulo contém o comando para obter estatísticas de tráfego de uma ONT.
 import re
 from typing import List, Dict, Any
 
-from .base_command import OLTCommand
+from ..base_command import OLTCommand
 
 class GetOntTrafficCliCommand(OLTCommand):
     """Executa 'display ont traffic' e faz o parsing do resultado."""

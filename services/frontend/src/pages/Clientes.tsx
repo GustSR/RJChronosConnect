@@ -7,7 +7,7 @@ import type { ProvisionedONU } from '@features/onu-provisioning/provisioning';
 import { useTitle } from '@shared/lib/hooks';
 
 const Clientes: React.FC = () => {
-  useTitle('Clientes - RJ Chronos');
+  useTitle('Clientes');
 
   const navigate = useNavigate();
   const { provisionedONUs } = useProvisioning();

@@ -11,7 +11,7 @@ import threading
 import requests
 from typing import Optional, Dict, Any, List
 from pysnmp.entity import engine, config
-from pysnmp.carrier.asyncore.dgram import udp
+from pysnmp.carrier.asyncio.dgram import udp
 from pysnmp.entity.rfc3413 import ntfrcv
 from pysnmp.proto.rfc1902 import ObjectName
 
@@ -520,4 +520,3 @@ class TrapListener:
             logger.debug(f"Usando modelo padrão para {olt_ip}: {model}")
 
         return model
-

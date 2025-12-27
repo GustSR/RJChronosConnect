@@ -1,7 +1,6 @@
-from pysnmp.hlapi import (
-    getCmd, SnmpEngine, CommunityData, UdpTransportTarget, ContextData, ObjectType, ObjectIdentity
-)
-from .base_command import OLTCommand
+import asyncio
+from pysnmp.hlapi import v3arch
+from ..base_command import OLTCommand
 from typing import Dict, Any
 
 class GetOntPortAttributeSnmpCommand(OLTCommand):
@@ -28,61 +27,67 @@ class GetOntPortAttributeSnmpCommand(OLTCommand):
         """
         Executes the SNMP GET commands to retrieve attributes for the specified port.
         """
-        attributes = {}
-        try:
-            if_index = self._calculate_if_index(self.eth_port_id)
-        except ValueError as e:
-            print(f"[Error] {e}")
-            return {"error": str(e)}
+        async def _execute_async() -> Dict[str, Any]:
+            attributes = {}
+            try:
+                if_index = self._calculate_if_index(self.eth_port_id)
+            except ValueError as e:
+                print(f"[Error] {e}")
+                return {"error": str(e)}
 
-        oids_to_get = [
-            f"{self.OID_IF_SPEED}.{if_index}",
-            f"{self.OID_IF_OPER_STATUS}.{if_index}",
-            f"{self.OID_IF_ADMIN_STATUS}.{if_index}",
-            f"{self.OID_DOT3_STATS_DUPLEX_STATUS}.{if_index}"
-        ]
+            oids_to_get = [
+                f"{self.OID_IF_SPEED}.{if_index}",
+                f"{self.OID_IF_OPER_STATUS}.{if_index}",
+                f"{self.OID_IF_ADMIN_STATUS}.{if_index}",
+                f"{self.OID_DOT3_STATS_DUPLEX_STATUS}.{if_index}"
+            ]
 
-        error_indication, error_status, error_index, var_binds = next(
-            getCmd(
-                SnmpEngine(),
-                CommunityData(self.community, mpModel=0),
-                UdpTransportTarget((self.host, 161)),
-                ContextData(),
-                *[ObjectType(ObjectIdentity(oid)) for oid in oids_to_get]
+            snmp_engine = v3arch.SnmpEngine()
+            auth = v3arch.CommunityData(self.community, mpModel=0)
+            transport = await v3arch.UdpTransportTarget.create((self.host, 161))
+            context = v3arch.ContextData()
+
+            error_indication, error_status, error_index, var_binds = await v3arch.get_cmd(
+                snmp_engine,
+                auth,
+                transport,
+                context,
+                *[v3arch.ObjectType(v3arch.ObjectIdentity(oid)) for oid in oids_to_get]
             )
-        )
 
-        if error_indication:
-            print(f"[SNMP Error] {error_indication}")
-            return {"error": str(error_indication)}
-        elif error_status:
-            # It's common for some OIDs (like duplex) not to exist, so we handle this gracefully.
-            # We can check the error message if needed, but for now, we just proceed.
-            pass
+            if error_indication:
+                print(f"[SNMP Error] {error_indication}")
+                return {"error": str(error_indication)}
+            elif error_status:
+                # It's common for some OIDs (like duplex) not to exist, so we handle this gracefully.
+                # We can check the error message if needed, but for now, we just proceed.
+                pass
 
-        # Parse the results
-        status_map = {1: 'up', 2: 'down', 3: 'testing'}
-        duplex_map = {1: 'unknown', 2: 'halfDuplex', 3: 'fullDuplex'}
+            # Parse the results
+            status_map = {1: 'up', 2: 'down', 3: 'testing'}
+            duplex_map = {1: 'unknown', 2: 'halfDuplex', 3: 'fullDuplex'}
 
-        for var_bind in var_binds:
-            oid, value = var_bind
-            oid_str = str(oid)
-            
-            if value is None or 'noSuchObject' in str(value) or 'noSuchInstance' in str(value):
-                continue
+            for var_bind in var_binds:
+                oid, value = var_bind
+                oid_str = str(oid)
+                
+                if value is None or 'noSuchObject' in str(value) or 'noSuchInstance' in str(value):
+                    continue
 
-            value_int = int(value)
+                value_int = int(value)
 
-            if oid_str.startswith(self.OID_IF_SPEED):
-                attributes['speed_mbps'] = value_int / 1000000 # Convert bps to Mbps
-            elif oid_str.startswith(self.OID_IF_OPER_STATUS):
-                attributes['operational_status'] = status_map.get(value_int, 'unknown')
-            elif oid_str.startswith(self.OID_IF_ADMIN_STATUS):
-                attributes['admin_status'] = status_map.get(value_int, 'unknown')
-            elif oid_str.startswith(self.OID_DOT3_STATS_DUPLEX_STATUS):
-                attributes['duplex_status'] = duplex_map.get(value_int, 'unknown')
+                if oid_str.startswith(self.OID_IF_SPEED):
+                    attributes['speed_mbps'] = value_int / 1000000 # Convert bps to Mbps
+                elif oid_str.startswith(self.OID_IF_OPER_STATUS):
+                    attributes['operational_status'] = status_map.get(value_int, 'unknown')
+                elif oid_str.startswith(self.OID_IF_ADMIN_STATUS):
+                    attributes['admin_status'] = status_map.get(value_int, 'unknown')
+                elif oid_str.startswith(self.OID_DOT3_STATS_DUPLEX_STATUS):
+                    attributes['duplex_status'] = duplex_map.get(value_int, 'unknown')
 
-        return attributes
+            return attributes
+
+        return asyncio.run(_execute_async())
 
     def _calculate_if_index(self, eth_port_index: int) -> int:
         """ Calculates the SNMP ifIndex for a specific ONT Ethernet port. """

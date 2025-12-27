@@ -1,6 +1,6 @@
 import re
 from typing import Dict, Any
-from .base_command import OLTCommand
+from ..base_command import OLTCommand
 
 class AddGponAlarmProfileCommand(OLTCommand):
     """Command to execute 'gpon alarm-profile add' and parse its output."""

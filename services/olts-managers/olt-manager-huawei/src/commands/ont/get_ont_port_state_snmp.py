@@ -1,7 +1,6 @@
-from pysnmp.hlapi import (
-    nextCmd, SnmpEngine, CommunityData, UdpTransportTarget, ContextData, ObjectType, ObjectIdentity, lexicographicMode
-)
-from .base_command import OLTCommand
+import asyncio
+from pysnmp.hlapi import v3arch
+from ..base_command import OLTCommand
 from typing import List, Dict, Any
 
 class GetOntPortStateSnmpCommand(OLTCommand):
@@ -24,48 +23,56 @@ class GetOntPortStateSnmpCommand(OLTCommand):
         """
         Executes the SNMP WALK command to get all ethernet port states for an ONT.
         """
-        port_states = []
-        
-        try:
-            ont_index = self._calculate_ont_index()
-        except ValueError as e:
-            print(f"[Error] {e}")
-            return []
+        async def _execute_async() -> List[Dict[str, Any]]:
+            port_states = []
+            
+            try:
+                ont_index = self._calculate_ont_index()
+            except ValueError as e:
+                print(f"[Error] {e}")
+                return []
 
-        # The full OID to walk will be the base OID plus the calculated ONT index
-        oid_to_walk = f"{self.OID_HW_GPON_ONT_ETH_PORT_STATE}.{ont_index}"
+            # The full OID to walk will be the base OID plus the calculated ONT index
+            oid_to_walk = f"{self.OID_HW_GPON_ONT_ETH_PORT_STATE}.{ont_index}"
+            snmp_engine = v3arch.SnmpEngine()
+            auth = v3arch.CommunityData(self.community, mpModel=0)
+            transport = await v3arch.UdpTransportTarget.create((self.host, 161))
+            context = v3arch.ContextData()
 
-        for (error_indication, error_status, error_index, var_binds) in nextCmd(
-            SnmpEngine(),
-            CommunityData(self.community, mpModel=0),
-            UdpTransportTarget((self.host, 161)),
-            ContextData(),
-            ObjectType(ObjectIdentity(oid_to_walk)),
-            lexicographicMode=True  # Use lexicographicMode for walking a subtree
-        ):
-            if error_indication:
-                print(f"[SNMP Error] {error_indication}")
-                break
-            elif error_status:
-                print(f"[SNMP Error] {error_status.prettyPrint()} at {error_index and var_binds[int(error_index) - 1][0] or '??'}")
-                break
-            else:
-                for var_bind in var_binds:
-                    oid, value = var_bind
-                    
-                    # Ensure the returned OID is still within the subtree we are walking
-                    if not str(oid).startswith(oid_to_walk):
-                        return port_states
+            async for (error_indication, error_status, error_index, var_binds) in v3arch.walk_cmd(
+                snmp_engine,
+                auth,
+                transport,
+                context,
+                v3arch.ObjectType(v3arch.ObjectIdentity(oid_to_walk)),
+                lexicographicMode=True  # Use lexicographicMode for walking a subtree
+            ):
+                if error_indication:
+                    print(f"[SNMP Error] {error_indication}")
+                    break
+                elif error_status:
+                    error_text = error_status.prettyPrint() if hasattr(error_status, "prettyPrint") else str(error_status)
+                    print(f"[SNMP Error] {error_text} at {error_index and var_binds[int(error_index) - 1][0] or '??'}")
+                    break
+                else:
+                    for var_bind in var_binds:
+                        oid, value = var_bind
+                        
+                        # Ensure the returned OID is still within the subtree we are walking
+                        if not str(oid).startswith(oid_to_walk):
+                            return port_states
 
-                    # The port index is the last part of the OID
-                    port_index_str = str(oid).split('.')[-1]
-                    
-                    port_states.append({
-                        "port_index": int(port_index_str),
-                        "status": "up" if int(value) == 1 else "down"  # 1=up, 2=down
-                    })
-        
-        return port_states
+                        # The port index is the last part of the OID
+                        port_index_str = str(oid).split('.')[-1]
+                        
+                        port_states.append({
+                            "port_index": int(port_index_str),
+                            "status": "up" if int(value) == 1 else "down"  # 1=up, 2=down
+                        })
+            
+            return port_states
+
+        return asyncio.run(_execute_async())
 
     def _calculate_ont_index(self) -> int:
         """

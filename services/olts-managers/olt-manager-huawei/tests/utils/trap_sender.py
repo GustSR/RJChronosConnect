@@ -10,14 +10,8 @@ Requer a biblioteca pysnmp: pip install pysnmp
 """
 
 import argparse
-from pysnmp.hlapi import (
-    sendNotification,
-    SnmpEngine,
-    UdpTransportTarget,
-    ContextData,
-    NotificationType,
-    ObjectIdentity
-)
+import asyncio
+from pysnmp.hlapi import v3arch
 
 # --- OIDs (devem espelhar os do listener.py) ---
 SNMP_TRAP_OID_VARBIND = '1.3.6.1.6.3.1.1.4.1.0'
@@ -36,17 +30,23 @@ VARBIND_OID_ALARM_STATUS = '1.3.6.1.4.1.2011.6.128.1.1.2.51.1.1.3'
 
 def send_trap(target_host, target_port, community, var_binds):
     """Função genérica para construir e enviar um trap SNMPv2c."""
-    snmp_engine = SnmpEngine()
-    error_indication, error_status, error_index, _ = next(
-        sendNotification(
+    async def _send_trap():
+        snmp_engine = v3arch.SnmpEngine()
+        transport = await v3arch.UdpTransportTarget.create((target_host, target_port))
+        notification = v3arch.NotificationType(
+            v3arch.ObjectIdentity(TRAP_OID_ONT_STATE_CHANGE)
+        ).addVarBinds(*var_binds)
+
+        return await v3arch.send_notification(
             snmp_engine,
-            ContextData(),
-            UdpTransportTarget((target_host, target_port)),
-            NotificationType(
-                ObjectIdentity(TRAP_OID_ONT_STATE_CHANGE)
-            ).addVarBinds(*var_binds)
+            v3arch.CommunityData(community, mpModel=0),
+            transport,
+            v3arch.ContextData(),
+            'trap',
+            notification
         )
-    )
+
+    error_indication, error_status, error_index, _ = asyncio.run(_send_trap())
 
     if error_indication:
         print(f"[Erro ao Enviar Trap] {error_indication}")
@@ -71,7 +71,7 @@ def main():
     if args.trap_type == 'state':
         print("Construindo trap de MUDANÇA DE ESTADO (ONT offline)...")
         var_binds = [
-            (SNMP_TRAP_OID_VARBIND, ObjectIdentity(TRAP_OID_ONT_STATE_CHANGE)),
+            (SNMP_TRAP_OID_VARBIND, v3arch.ObjectIdentity(TRAP_OID_ONT_STATE_CHANGE)),
             (VARBIND_OID_IF_INDEX, example_ifindex),
             (VARBIND_OID_ONT_RUN_STATUS, 2), # 2 = offline
             (VARBIND_OID_ONT_SERIAL, "HWTC12345678")
@@ -79,7 +79,7 @@ def main():
     elif args.trap_type == 'alarm':
         print("Construindo trap de ALARME ÓPTICO (Rx Power Low)...")
         var_binds = [
-            (SNMP_TRAP_OID_VARBIND, ObjectIdentity(TRAP_OID_ONT_ALARM)),
+            (SNMP_TRAP_OID_VARBIND, v3arch.ObjectIdentity(TRAP_OID_ONT_ALARM)),
             (VARBIND_OID_IF_INDEX, example_ifindex),
             (VARBIND_OID_ALARM_ID, 3), # Exemplo: 3 = Rx Power Low
             (VARBIND_OID_ALARM_VALUE, -30), # Exemplo: -30 dBm

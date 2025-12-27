@@ -6,7 +6,7 @@ import { useTitle } from '@shared/lib/hooks';
 const OLTAdd: React.FC = () => {
   const navigate = useNavigate();
 
-  useTitle('Adicionar OLT - RJ Chronos');
+  useTitle('Adicionar OLT');
 
   return (
     <OLTAddPage

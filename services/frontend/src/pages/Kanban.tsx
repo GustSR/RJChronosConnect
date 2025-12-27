@@ -4,7 +4,7 @@ import { KanbanBoard } from '@features/kanban/ui';
 
 const Kanban: React.FC = () => {
   // change navbar title
-  useTitle('Kanban - RJ Chronos');
+  useTitle('Kanban');
 
   return <KanbanBoard />;
 };

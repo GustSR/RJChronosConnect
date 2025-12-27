@@ -3,7 +3,7 @@
 Schemas para requisições de gerenciamento de VLAN.
 """
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Literal, Optional
 
 class VlanCreateRequest(BaseModel):
@@ -13,14 +13,13 @@ class VlanCreateRequest(BaseModel):
     description: Optional[str] = Field("", max_length=80, description="Descrição da VLAN")
     vlan_type: Literal["smart", "standard"] = Field("smart", description="Tipo da VLAN")
     
-    class Config:
-        schema_extra = {
-            "example": {
-                "vlan_id": 100,
-                "description": "VLAN para Internet",
-                "vlan_type": "smart"
-            }
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "vlan_id": 100,
+            "description": "VLAN para Internet",
+            "vlan_type": "smart"
         }
+    })
 
 class VlanAssignPortRequest(BaseModel):
     """Dados para associar porta à VLAN."""
@@ -30,12 +29,11 @@ class VlanAssignPortRequest(BaseModel):
     slot: int = Field(..., ge=0, le=20, description="Slot da porta")
     port: int = Field(..., ge=0, le=15, description="Número da porta")
     
-    class Config:
-        schema_extra = {
-            "example": {
-                "vlan_id": 100,
-                "frame": 0,
-                "slot": 10,
-                "port": 0
-            }
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "vlan_id": 100,
+            "frame": 0,
+            "slot": 10,
+            "port": 0
         }
+    })

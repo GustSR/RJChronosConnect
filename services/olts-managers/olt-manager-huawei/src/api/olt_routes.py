@@ -5,8 +5,8 @@ Este módulo contém todos os endpoints específicos para gerenciamento da OLT,
 incluindo configuração de portas PON, perfis, backup/restore e administração.
 """
 
-from fastapi import APIRouter
-from typing import List
+from fastapi import APIRouter, Query
+from typing import List, Optional
 
 from ..services import olt_service
 from ..core.validators import validate_olt_id, validate_port
@@ -21,6 +21,8 @@ from ..schemas.olt import (
     gpon_alarm_profile_add_request as gpon_alarm_profile_add_request_schema,
     gpon_password_request as gpon_password_request_schema,
     optical_threshold_request as optical_threshold_request_schema,
+    olt_snmp_info as olt_snmp_info_schema,
+    snmp_walk as snmp_walk_schema,
     vlan_request as vlan_request_schema,
     user_request as user_request_schema,
     backup_request as backup_request_schema,
@@ -32,37 +34,40 @@ from ..schemas import command_response as command_response_schema
 
 router = APIRouter(prefix="/api/v1", tags=["OLT"])
 
+def _build_port(frame: int, slot: int, pon_port: int) -> str:
+    return validate_port(f"{frame}/{slot}/{pon_port}")
+
 # ============================================================================
 # ENDPOINTS DE GESTÃO DE PORTAS PON
 # ============================================================================
 
-@router.post("/olts/{olt_id}/ports/{port}/shutdown", response_model=command_response_schema.CommandResponse, summary="Shutdown PON Port")
-def shutdown_pon_port(olt_id: int, port: str):
+@router.post("/olts/{olt_id}/ports/{frame}/{slot}/{pon_port}/shutdown", response_model=command_response_schema.CommandResponse, summary="Shutdown PON Port")
+def shutdown_pon_port(olt_id: int, frame: int, slot: int, pon_port: int):
     """Desativa uma porta PON específica da OLT."""
     validate_olt_id(olt_id)
-    validate_port(port)
-    return olt_service.shutdown_pon_port(olt_id, port)
+    port_str = _build_port(frame, slot, pon_port)
+    return olt_service.shutdown_pon_port(olt_id, port_str)
 
-@router.post("/olts/{olt_id}/ports/{port}/enable", response_model=command_response_schema.CommandResponse, summary="Enable PON Port")
-def enable_pon_port(olt_id: int, port: str):
+@router.post("/olts/{olt_id}/ports/{frame}/{slot}/{pon_port}/enable", response_model=command_response_schema.CommandResponse, summary="Enable PON Port")
+def enable_pon_port(olt_id: int, frame: int, slot: int, pon_port: int):
     """Ativa uma porta PON específica da OLT."""
     validate_olt_id(olt_id)
-    validate_port(port)
-    return olt_service.enable_pon_port(olt_id, port)
+    port_str = _build_port(frame, slot, pon_port)
+    return olt_service.enable_pon_port(olt_id, port_str)
 
-@router.get("/olts/{olt_id}/ports/{port}/state", response_model=port_state_schema.PortState, summary="Get PON Port State")
-def get_pon_port_state(olt_id: int, port: str):
+@router.get("/olts/{olt_id}/ports/{frame}/{slot}/{pon_port}/state", response_model=port_state_schema.PortState, summary="Get PON Port State")
+def get_pon_port_state(olt_id: int, frame: int, slot: int, pon_port: int):
     """Obtém o estado atual de uma porta PON (ativa/inativa, estatísticas)."""
     validate_olt_id(olt_id)
-    validate_port(port)
-    return olt_service.get_pon_port_state(olt_id, port)
+    port_str = _build_port(frame, slot, pon_port)
+    return olt_service.get_port_state(olt_id, port_str)
 
-@router.put("/olts/{olt_id}/ports/{port}/mode", response_model=command_response_schema.CommandResponse, summary="Set PON Port Mode")
-def set_pon_port_mode(olt_id: int, port: str, request: port_mode_set_request_schema.PortModeSetRequest):
+@router.put("/olts/{olt_id}/ports/{frame}/{slot}/{pon_port}/mode", response_model=command_response_schema.CommandResponse, summary="Set PON Port Mode")
+def set_pon_port_mode(olt_id: int, frame: int, slot: int, pon_port: int, request: port_mode_set_request_schema.PortModeSetRequest):
     """Configura o modo de operação de uma porta PON (GPON, EPON, etc.)."""
     validate_olt_id(olt_id)
-    validate_port(port)
-    return olt_service.set_pon_port_mode(olt_id, port, request)
+    port_str = _build_port(frame, slot, pon_port)
+    return olt_service.set_port_mode(olt_id, port_str, request)
 
 # ============================================================================
 # ENDPOINTS DE MONITORAMENTO E INFORMAÇÕES
@@ -80,6 +85,36 @@ def get_olt_version(olt_id: int):
     validate_olt_id(olt_id)
     return olt_service.get_olt_version(olt_id)
 
+@router.get("/olts/{olt_id}/snmp-info", response_model=olt_snmp_info_schema.OltSnmpInfo, summary="Get OLT SNMP system info")
+def get_olt_snmp_info(olt_id: int):
+    """Obtém informações básicas via SNMP (sysDescr, sysName, sysObjectID, sysUpTime)."""
+    validate_olt_id(olt_id)
+    return olt_service.get_olt_snmp_info(olt_id)
+
+@router.get(
+    "/olts/{olt_id}/snmp-walk",
+    response_model=List[snmp_walk_schema.SnmpWalkItem],
+    summary="SNMP walk (debug)",
+)
+def snmp_walk(
+    olt_id: int,
+    oid: str = Query(..., min_length=1, description="OID base para walk"),
+    contains: Optional[str] = Query(None, description="Filtro por substring em texto/hex"),
+    limit: int = Query(200, ge=1, le=2000),
+    timeout: int = Query(5, ge=1, le=30),
+    retries: int = Query(1, ge=0, le=5),
+):
+    """Executa um SNMP walk em um OID específico para diagnóstico."""
+    validate_olt_id(olt_id)
+    return olt_service.snmp_walk(
+        olt_id,
+        oid=oid,
+        contains=contains,
+        limit=limit,
+        timeout=timeout,
+        retries=retries,
+    )
+
 @router.get("/olts/{olt_id}/configuration", summary="Get Current Configuration")
 def get_current_configuration(olt_id: int):
     """Obtém a configuração atual completa da OLT."""
@@ -91,13 +126,13 @@ def get_current_configuration(olt_id: int):
 # ============================================================================
 
 @router.post("/olts/{olt_id}/dba-profiles", response_model=command_response_schema.CommandResponse, summary="Add DBA Profile")
-def add_dba_profile(olt_id: int, request: dba_profile_add_request_schema.DBAProfileAddRequest):
+def add_dba_profile(olt_id: int, request: dba_profile_add_request_schema.DbaProfileAddRequest):
     """Adiciona um novo perfil DBA (Dynamic Bandwidth Allocation) na OLT."""
     validate_olt_id(olt_id)
     return olt_service.add_dba_profile(olt_id, request)
 
 @router.post("/olts/{olt_id}/gpon-alarm-profiles", response_model=command_response_schema.CommandResponse, summary="Add GPON Alarm Profile")
-def add_gpon_alarm_profile(olt_id: int, request: gpon_alarm_profile_add_request_schema.GPONAlarmProfileAddRequest):
+def add_gpon_alarm_profile(olt_id: int, request: gpon_alarm_profile_add_request_schema.GponAlarmProfileAddRequest):
     """Adiciona um novo perfil de alarmes GPON na OLT."""
     validate_olt_id(olt_id)
     return olt_service.add_gpon_alarm_profile(olt_id, request)
@@ -129,10 +164,15 @@ def remove_optical_thresholds(olt_id: int, frame: int, slot: int, port: int):
 # ============================================================================
 
 @router.post("/olts/{olt_id}/vlans", response_model=command_response_schema.CommandResponse, summary="Create VLAN")
-def create_vlan(olt_id: int, request: vlan_request_schema.VlanRequest):
+def create_vlan(olt_id: int, request: vlan_request_schema.VlanCreateRequest):
     """Cria uma nova VLAN na OLT."""
     validate_olt_id(olt_id)
-    return olt_service.create_vlan(olt_id, request)
+    return olt_service.create_vlan(
+        olt_id,
+        request.vlan_id,
+        description=request.description,
+        vlan_type=request.vlan_type,
+    )
 
 @router.delete("/olts/{olt_id}/vlans/{vlan_id}", response_model=command_response_schema.CommandResponse, summary="Delete VLAN")
 def delete_vlan(olt_id: int, vlan_id: int):
@@ -141,20 +181,32 @@ def delete_vlan(olt_id: int, vlan_id: int):
     return olt_service.delete_vlan(olt_id, vlan_id)
 
 @router.post("/olts/{olt_id}/vlans/assign-port", response_model=command_response_schema.CommandResponse, summary="Assign Port to VLAN")
-def assign_port_to_vlan(olt_id: int, request: vlan_request_schema.VlanRequest):
+def assign_port_to_vlan(olt_id: int, request: vlan_request_schema.VlanAssignPortRequest):
     """Atribui uma porta a uma VLAN específica."""
     validate_olt_id(olt_id)
-    return olt_service.assign_port_to_vlan(olt_id, request)
+    return olt_service.assign_port_to_vlan(
+        olt_id,
+        request.vlan_id,
+        request.frame,
+        request.slot,
+        request.port,
+    )
 
 # ============================================================================
 # ENDPOINTS DE GESTÃO DE USUÁRIOS
 # ============================================================================
 
 @router.post("/olts/{olt_id}/users", response_model=command_response_schema.CommandResponse, summary="Create User")
-def create_user(olt_id: int, request: user_request_schema.UserRequest):
+def create_user(olt_id: int, request: user_request_schema.UserCreateRequest):
     """Cria um novo usuário de administração na OLT."""
     validate_olt_id(olt_id)
-    return olt_service.create_user(olt_id, request)
+    return olt_service.create_user(
+        olt_id,
+        request.username,
+        request.password,
+        service_type=request.service_type,
+        privilege_level=request.privilege_level,
+    )
 
 @router.delete("/olts/{olt_id}/users/{username}", response_model=command_response_schema.CommandResponse, summary="Delete User")
 def delete_user(olt_id: int, username: str):
@@ -163,10 +215,10 @@ def delete_user(olt_id: int, username: str):
     return olt_service.delete_user(olt_id, username)
 
 @router.put("/olts/{olt_id}/users/{username}/password", response_model=command_response_schema.CommandResponse, summary="Change User Password")
-def change_user_password(olt_id: int, username: str, request: user_request_schema.UserRequest):
+def change_user_password(olt_id: int, username: str, request: user_request_schema.UserPasswordChangeRequest):
     """Altera a senha de um usuário de administração."""
     validate_olt_id(olt_id)
-    return olt_service.change_user_password(olt_id, username, request)
+    return olt_service.change_user_password(olt_id, username, request.new_password)
 
 # ============================================================================
 # ENDPOINTS DE BACKUP E RESTORE

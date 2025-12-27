@@ -1,4 +1,4 @@
-from .base_command import OLTCommand
+from ..base_command import OLTCommand
 from typing import Dict, Any
 
 class AddDbaProfileCommand(OLTCommand):

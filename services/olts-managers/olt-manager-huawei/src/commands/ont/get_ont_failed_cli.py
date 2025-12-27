@@ -1,6 +1,6 @@
 import re
 from typing import List, Dict, Any
-from .base_command import OLTCommand
+from ..base_command import OLTCommand
 
 class GetOntFailedCliCommand(OLTCommand):
     """Command to execute 'display ont failed' and parse its output."""

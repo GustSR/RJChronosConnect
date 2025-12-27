@@ -1,6 +1,6 @@
 import re
 from typing import Dict, Any
-from .base_command import OLTCommand
+from ..base_command import OLTCommand
 
 class GetPortStateCliCommand(OLTCommand):
     """Command to execute 'display port state' and parse its output."""

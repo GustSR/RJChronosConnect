@@ -18,7 +18,7 @@ export function useOlts() {
   const load = useCallback(async () => {
     try {
       setState((prev) => ({ ...prev, loading: true, error: null }));
-      const data = await oltManagementApi.getOlts({ connectedOnly: true });
+      const data = await oltManagementApi.getOlts();
       setState({ olts: data, loading: false, error: null });
     } catch (err) {
       console.error('Erro ao carregar OLTs:', err);

@@ -37,11 +37,19 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true,
+    allowedHosts: ['frontend', 'localhost', '127.0.0.1'],
     proxy: {
       '/api': {
-        target: 'http://backend:8000',
+        target: process.env.VITE_BACKEND_PROXY_TARGET || 'http://localhost:8000',
         changeOrigin: true,
         secure: false
+      },
+      '/olt-manager': {
+        target:
+          process.env.VITE_OLT_MANAGER_PROXY_TARGET || 'http://localhost:8001',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/olt-manager/, '')
       }
     }
   },

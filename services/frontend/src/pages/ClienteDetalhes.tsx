@@ -5,7 +5,7 @@ import { useProvisioning } from '@features/onu-provisioning';
 import { useTitle } from '@shared/lib/hooks';
 
 const ClienteDetalhes: React.FC = () => {
-  useTitle('Detalhes do Cliente - RJ Chronos');
+  useTitle('Detalhes do Cliente');
 
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();

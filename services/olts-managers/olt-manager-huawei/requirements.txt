@@ -5,4 +5,5 @@ pysnmp
 pika
 requests
 pydantic
+pydantic-settings
 PyYAML

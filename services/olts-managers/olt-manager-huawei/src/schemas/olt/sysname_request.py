@@ -2,7 +2,7 @@
 Schema para requisição de alteração de sysname (hostname) da OLT.
 """
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, ConfigDict, field_validator
 import re
 
 
@@ -16,7 +16,7 @@ class SysnameRequest(BaseModel):
 
     sysname: str
 
-    @validator('sysname')
+    @field_validator('sysname')
     def validate_sysname(cls, v):
         """
         Valida o formato do sysname.
@@ -64,10 +64,8 @@ class SysnameRequest(BaseModel):
 
         return v
 
-    class Config:
-        """Configuração do schema."""
-        schema_extra = {
-            "example": {
-                "sysname": "OLT_CENTRAL_RJ"
-            }
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "sysname": "OLT_CENTRAL_RJ"
         }
+    })

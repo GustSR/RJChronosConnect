@@ -1,7 +1,7 @@
 import re
 from typing import List, Dict, Any
-from .base_command import OLTCommand
-from ..core.parsers import robust_parser
+from ..base_command import OLTCommand
+from ...core.parsers import robust_parser
 
 class GetBoardCliCommand(OLTCommand):
     """Command to execute 'display board' and parse its output via CLI."""

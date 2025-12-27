@@ -1,6 +1,6 @@
 import re
 from typing import List, Dict, Any
-from .base_command import OLTCommand
+from ..base_command import OLTCommand
 
 class GetOntRegisterInfoCliCommand(OLTCommand):
     """Command to execute 'display ont register-info' and parse its output."""

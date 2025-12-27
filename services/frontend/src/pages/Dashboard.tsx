@@ -3,7 +3,7 @@ import { DashboardPage } from '@features/monitoring';
 import type { FC } from 'react';
 
 const Dashboard: FC = () => {
-  useTitle('Dashboard - RJ Chronos');
+  useTitle('Dashboard');
   return <DashboardPage />;
 };
 

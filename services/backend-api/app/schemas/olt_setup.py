@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, Dict, Any
 from datetime import datetime
 
@@ -27,8 +27,7 @@ class OltSetupLog(OltSetupLogBase):
     completed_at: Optional[datetime] = None
     duration_seconds: Optional[int] = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Schemas para respostas de descoberta
 class OLTDiscoveryResult(BaseModel):

@@ -7,7 +7,7 @@ const OLTDetails: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
 
-  useTitle('Detalhes da OLT - RJ Chronos');
+  useTitle('Detalhes da OLT');
 
   return (
     <OLTDetailsPage

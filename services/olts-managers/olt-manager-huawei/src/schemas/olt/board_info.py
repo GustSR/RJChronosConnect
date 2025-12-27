@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
 class BoardInfo(BaseModel):
@@ -9,5 +9,4 @@ class BoardInfo(BaseModel):
     sub_type_c: Optional[str] = None
     online: Optional[str] = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

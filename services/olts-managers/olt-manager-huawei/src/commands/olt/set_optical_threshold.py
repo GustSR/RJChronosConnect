@@ -4,8 +4,8 @@ Comando para configurar thresholds de alarme do módulo óptico.
 """
 
 from typing import Dict, Any, Literal
-from .base_command import BaseCommand
-from ..core.logging import get_logger
+from ..base_command import BaseCommand
+from ...core.logging import get_logger
 
 logger = get_logger(__name__)
 

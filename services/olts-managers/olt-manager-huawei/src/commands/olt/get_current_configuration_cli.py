@@ -4,8 +4,8 @@ Comando para obter configuração atual completa da OLT.
 """
 
 from typing import Dict, Any, List, Optional
-from .base_command import BaseCommand
-from ..core.logging import get_logger
+from ..base_command import BaseCommand
+from ...core.logging import get_logger
 
 logger = get_logger(__name__)
 

@@ -7,7 +7,7 @@ const ONUConfigurationStatus: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  useTitle('Status da Configuração - RJ Chronos');
+  useTitle('Status da Configuração');
 
   return (
     <ONUConfigurationStatusPage

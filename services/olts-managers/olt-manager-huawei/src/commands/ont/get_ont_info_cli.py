@@ -1,7 +1,7 @@
 import re
 from typing import List, Dict, Any
 
-from .base_command import OLTCommand
+from ..base_command import OLTCommand
 
 class GetOntInfoCliCommand(OLTCommand):
     """Command to execute 'display ont info' and parse its output via CLI."""

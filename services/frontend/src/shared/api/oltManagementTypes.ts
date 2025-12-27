@@ -27,3 +27,27 @@ export type OltLiveInfo = {
   sysname?: string | null;
   errors?: Record<string, string>;
 };
+
+export type OltCreatePayload = {
+  name: string;
+  ip_address: string;
+  vendor?: string | null;
+  model?: string | null;
+  snmp_community?: string | null;
+  ssh_username?: string | null;
+  ssh_password?: string | null;
+  ssh_port?: number | null;
+};
+
+export type OltUpdatePayload = {
+  name?: string | null;
+  ip_address?: string | null;
+  vendor?: string | null;
+  model?: string | null;
+  snmp_community?: string | null;
+  ssh_username?: string | null;
+  ssh_password?: string | null;
+  ssh_port?: number | null;
+  setup_status?: OltSetupStatus;
+  is_configured?: boolean;
+};

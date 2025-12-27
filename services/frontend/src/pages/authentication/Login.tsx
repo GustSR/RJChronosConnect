@@ -4,7 +4,7 @@ import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Login: FC = () => {
-  useTitle('Login - RJ Chronos');
+  useTitle('Login');
 
   const navigate = useNavigate();
   return <LoginPage onSuccess={() => navigate('/dashboard')} />;

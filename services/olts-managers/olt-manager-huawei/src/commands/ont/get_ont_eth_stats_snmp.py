@@ -1,7 +1,6 @@
-from pysnmp.hlapi import (
-    getCmd, SnmpEngine, CommunityData, UdpTransportTarget, ContextData, ObjectType, ObjectIdentity
-)
-from .base_command import OLTCommand
+import asyncio
+from pysnmp.hlapi import v3arch
+from ..base_command import OLTCommand
 from typing import Dict, Any
 
 class GetOntEthStatsSnmpCommand(OLTCommand):
@@ -30,60 +29,67 @@ class GetOntEthStatsSnmpCommand(OLTCommand):
         """
         Executes the SNMP GET commands to retrieve statistics for the specified port.
         """
-        stats = {}
-        try:
-            if_index = self._calculate_if_index(self.eth_port_id)
-        except ValueError as e:
-            print(f"[Error] {e}")
-            return {"error": str(e)}
+        async def _execute_async() -> Dict[str, Any]:
+            stats = {}
+            try:
+                if_index = self._calculate_if_index(self.eth_port_id)
+            except ValueError as e:
+                print(f"[Error] {e}")
+                return {"error": str(e)}
 
-        oids_to_get = [
-            f"{self.OID_IF_IN_UCAST_PKTS}.{if_index}",
-            f"{self.OID_IF_IN_ERRORS}.{if_index}",
-            f"{self.OID_IF_IN_DISCARDS}.{if_index}",
-            f"{self.OID_IF_OUT_UCAST_PKTS}.{if_index}",
-            f"{self.OID_IF_OUT_ERRORS}.{if_index}",
-            f"{self.OID_IF_OUT_DISCARDS}.{if_index}",
-        ]
+            oids_to_get = [
+                f"{self.OID_IF_IN_UCAST_PKTS}.{if_index}",
+                f"{self.OID_IF_IN_ERRORS}.{if_index}",
+                f"{self.OID_IF_IN_DISCARDS}.{if_index}",
+                f"{self.OID_IF_OUT_UCAST_PKTS}.{if_index}",
+                f"{self.OID_IF_OUT_ERRORS}.{if_index}",
+                f"{self.OID_IF_OUT_DISCARDS}.{if_index}",
+            ]
 
-        error_indication, error_status, error_index, var_binds = next(
-            getCmd(
-                SnmpEngine(),
-                CommunityData(self.community, mpModel=0),
-                UdpTransportTarget((self.host, 161)),
-                ContextData(),
-                *[ObjectType(ObjectIdentity(oid)) for oid in oids_to_get]
+            snmp_engine = v3arch.SnmpEngine()
+            auth = v3arch.CommunityData(self.community, mpModel=0)
+            transport = await v3arch.UdpTransportTarget.create((self.host, 161))
+            context = v3arch.ContextData()
+
+            error_indication, error_status, error_index, var_binds = await v3arch.get_cmd(
+                snmp_engine,
+                auth,
+                transport,
+                context,
+                *[v3arch.ObjectType(v3arch.ObjectIdentity(oid)) for oid in oids_to_get]
             )
-        )
 
-        if error_indication:
-            print(f"[SNMP Error] {error_indication}")
-            return {"error": str(error_indication)}
-        elif error_status:
-            error_msg = f"{error_status.prettyPrint()} at {error_index and var_binds[int(error_index) - 1][0] or '??'}"
-            print(f"[SNMP Error] {error_msg}")
-            return {"error": error_msg}
+            if error_indication:
+                print(f"[SNMP Error] {error_indication}")
+                return {"error": str(error_indication)}
+            elif error_status:
+                error_status_text = error_status.prettyPrint() if hasattr(error_status, "prettyPrint") else str(error_status)
+                error_msg = f"{error_status_text} at {error_index and var_binds[int(error_index) - 1][0] or '??'}"
+                print(f"[SNMP Error] {error_msg}")
+                return {"error": error_msg}
 
-        # Parse the results
-        for var_bind in var_binds:
-            oid, value = var_bind
-            oid_str = str(oid)
-            value_int = int(value)
+            # Parse the results
+            for var_bind in var_binds:
+                oid, value = var_bind
+                oid_str = str(oid)
+                value_int = int(value)
 
-            if oid_str.startswith(self.OID_IF_IN_UCAST_PKTS):
-                stats['ingress_packets'] = value_int
-            elif oid_str.startswith(self.OID_IF_IN_ERRORS):
-                stats['ingress_errors'] = value_int
-            elif oid_str.startswith(self.OID_IF_IN_DISCARDS):
-                stats['ingress_discards'] = value_int
-            elif oid_str.startswith(self.OID_IF_OUT_UCAST_PKTS):
-                stats['egress_packets'] = value_int
-            elif oid_str.startswith(self.OID_IF_OUT_ERRORS):
-                stats['egress_errors'] = value_int
-            elif oid_str.startswith(self.OID_IF_OUT_DISCARDS):
-                stats['egress_discards'] = value_int
+                if oid_str.startswith(self.OID_IF_IN_UCAST_PKTS):
+                    stats['ingress_packets'] = value_int
+                elif oid_str.startswith(self.OID_IF_IN_ERRORS):
+                    stats['ingress_errors'] = value_int
+                elif oid_str.startswith(self.OID_IF_IN_DISCARDS):
+                    stats['ingress_discards'] = value_int
+                elif oid_str.startswith(self.OID_IF_OUT_UCAST_PKTS):
+                    stats['egress_packets'] = value_int
+                elif oid_str.startswith(self.OID_IF_OUT_ERRORS):
+                    stats['egress_errors'] = value_int
+                elif oid_str.startswith(self.OID_IF_OUT_DISCARDS):
+                    stats['egress_discards'] = value_int
 
-        return stats
+            return stats
+
+        return asyncio.run(_execute_async())
 
     def _calculate_if_index(self, eth_port_index: int) -> int:
         """

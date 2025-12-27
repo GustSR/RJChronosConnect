@@ -1,196 +1,211 @@
-version: '3.8'
+version: "3.8"
 
 # Este arquivo sobrescreve o docker-compose.yml principal para o ambiente de desenvolvimento.
 
 services:
-  edge:
-    container_name: rjchronos_edge_dev
-    build:
-      context: .
-      dockerfile: services/edge/Dockerfile.dev
-    ports:
-      - "8081:8081"
-    volumes:
-      - ./services/edge:/app
-      - /app/node_modules
-    environment:
-      - EDGE_HOST=0.0.0.0
-      - EDGE_PORT=8081
-      - BACKEND_INTERNAL_URL=http://backend:8000
-      - GENIEACS_UI_INTERNAL_URL=http://genieacs:3000
-      - FRONTEND_DEV_URL=http://frontend:3000
-      - BETTER_AUTH_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
-      - BETTER_AUTH_BASE_PATH=/api/auth
-      - BETTER_AUTH_BASE_URL=${BETTER_AUTH_BASE_URL}
-      - BETTER_AUTH_TRUSTED_ORIGINS=${BETTER_AUTH_TRUSTED_ORIGINS}
-      - EDGE_LEGACY_AUTH_PROXY_ENABLED=${EDGE_LEGACY_AUTH_PROXY_ENABLED}
-      - EDGE_LEGACY_AUTH_PROXY_HEADER=${EDGE_LEGACY_AUTH_PROXY_HEADER}
-      - EDGE_LEGACY_AUTH_PROXY_TOKEN=${EDGE_LEGACY_AUTH_PROXY_TOKEN}
-    depends_on:
-      - backend
-      - db-app
-    networks:
-      - rjchronos-net
+    edge:
+        container_name: rjchronos_edge_dev
+        build:
+            context: .
+            dockerfile: services/edge/Dockerfile.dev
+        ports:
+            - "8081:8081"
+        volumes:
+            - ./services/edge:/app
+            - /app/node_modules
+        environment:
+            - EDGE_HOST=0.0.0.0
+            - EDGE_PORT=8081
+            - BACKEND_INTERNAL_URL=http://backend:8000
+            - GENIEACS_UI_INTERNAL_URL=http://genieacs:3000
+            - FRONTEND_DEV_URL=http://frontend:3000
+            - BETTER_AUTH_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
+            - BETTER_AUTH_BASE_PATH=/api/auth
+            - BETTER_AUTH_BASE_URL=${BETTER_AUTH_BASE_URL}
+            - BETTER_AUTH_TRUSTED_ORIGINS=${BETTER_AUTH_TRUSTED_ORIGINS}
+            - EDGE_LEGACY_AUTH_PROXY_ENABLED=${EDGE_LEGACY_AUTH_PROXY_ENABLED}
+            - EDGE_LEGACY_AUTH_PROXY_HEADER=${EDGE_LEGACY_AUTH_PROXY_HEADER}
+            - EDGE_LEGACY_AUTH_PROXY_TOKEN=${EDGE_LEGACY_AUTH_PROXY_TOKEN}
+        depends_on:
+            - backend
+            - db-app
+        networks:
+            - rjchronos-net
 
-  frontend:
-    container_name: rjchronos_frontend_dev
-    ports:
-      - "3000:3000"
-    build:
-      context: ./services/frontend
-      dockerfile: Dockerfile.dev
-    command: bun run dev
-    volumes:
-      - ./services/frontend:/app
-      - /app/node_modules # Impede que o node_modules local sobrescreva o do contêiner
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+    frontend:
+        container_name: rjchronos_frontend_dev
+        ports:
+            - "3000:3000"
+        build:
+            context: ./services/frontend
+            dockerfile: Dockerfile.dev
+        command: bun run dev
+        volumes:
+            - ./services/frontend:/app
+            - /app/node_modules # Impede que o node_modules local sobrescreva o do contêiner
+        networks:
+            - rjchronos-net
+        depends_on:
+            - backend
+        environment:
+            - VITE_BACKEND_PROXY_TARGET=http://backend:8000
+            - VITE_OLT_MANAGER_PROXY_TARGET=http://olt-manager-huawei:8001
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:3000"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 30s
 
-  backend:
-    container_name: rjchronos_backend_dev
-    build:
-      dockerfile: Dockerfile.dev
-    volumes:
-      - ./services/backend-api:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    depends_on:
-      - db-app
-      - redis
-      - rabbitmq
-    environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
-      - GENIACS_API_URL=http://genieacs:7557/
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    backend:
+        container_name: rjchronos_backend_dev
+        build:
+            dockerfile: Dockerfile.dev
+        volumes:
+            - ./services/backend-api:/app
+            - ./shared:/app/shared
+        ports:
+            - "8000:8000"
+        command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+        depends_on:
+            - db-app
+            - redis
+            - rabbitmq
+        environment:
+            - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
+            - GENIACS_API_URL=http://genieacs:7557/
+            - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+            - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+            - CREDENTIAL_ENCRYPTION_KEY=${CREDENTIAL_ENCRYPTION_KEY}
 
-  # --- Novos Serviços ---
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: rjchronos_rabbitmq_dev
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    networks:
-      - rjchronos-net
-    environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
-    volumes:
-      - rabbitmq_data_dev:/var/lib/rabbitmq # Persistência de dados em dev
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "check_running", "-q"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+    # --- Novos Serviços ---
+    rabbitmq:
+        image: rabbitmq:3-management-alpine
+        container_name: rjchronos_rabbitmq_dev
+        ports:
+            - "5672:5672"
+            - "15672:15672"
+        networks:
+            - rjchronos-net
+        environment:
+            - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+            - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+        volumes:
+            - rabbitmq_data_dev:/var/lib/rabbitmq # Persistência de dados em dev
+        healthcheck:
+            test: ["CMD", "rabbitmq-diagnostics", "check_running", "-q"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
 
-  works:
-    build:
-      context: ./services/works
-      dockerfile: Dockerfile.dev
-    container_name: rjchronos_works_dev
-    volumes:
-      - ./services/works:/app
-    networks:
-      - rjchronos-net
-    depends_on:
-      - rabbitmq
-      - redis
-    command: python -u main.py
-    environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    works:
+        build:
+            context: ./services/works
+            dockerfile: Dockerfile.dev
+        container_name: rjchronos_works_dev
+        volumes:
+            - ./services/works:/app
+        networks:
+            - rjchronos-net
+        depends_on:
+            - rabbitmq
+            - redis
+        command: python -u main.py
+        environment:
+            - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+            - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
 
-  olt-manager-huawei:
-    build:
-      context: ./services/olts-managers/olt-manager-huawei
-      dockerfile: Dockerfile.dev
-    container_name: rjchronos_olt_manager_huawei_dev
-    volumes:
-      - ./services/olts-managers/olt-manager-huawei/src:/app/src
-    networks:
-      - rjchronos-net
-    depends_on:
-      - rabbitmq
-    command: uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload
-    environment:
-      # Configurações de conexão com outros serviços
-      - RABBITMQ_HOST=rabbitmq
-      - RABBITMQ_PORT=5672
-      - BACKEND_API_URL=http://backend:8000
+    olt-manager-huawei:
+        build:
+            context: ./services/olts-managers/olt-manager-huawei
+            dockerfile: Dockerfile.dev
+        container_name: rjchronos_olt_manager_huawei_dev
+        volumes:
+            - ./services/olts-managers/olt-manager-huawei/src:/app/src
+        ports:
+            - "8001:8001"
+        networks:
+            - rjchronos-net
+        depends_on:
+            - rabbitmq
+        command: uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload
+        environment:
+            # Configurações de conexão com outros serviços
+            - RABBITMQ_HOST=rabbitmq
+            - RABBITMQ_PORT=5672
+            - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+            - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+            - BACKEND_API_URL=http://backend:8000
 
-      # Configurações de OLT para testes
-      - TEST_OLT_IP=${TEST_OLT_IP:-}
-      - TEST_OLT_MODEL=${TEST_OLT_MODEL:-MA5600T}
-      - OLT_IP_MODEL_MAPPING=${OLT_IP_MODEL_MAPPING:-{}}
+            # Configurações de OLT para testes
+            - TEST_OLT_IP=${TEST_OLT_IP:-}
+            - TEST_OLT_MODEL=${TEST_OLT_MODEL:-MA5600T}
+            - OLT_IP_MODEL_MAPPING=${OLT_IP_MODEL_MAPPING:-{}}
 
-      # Configurações SNMP
-      - TRAP_LISTENER_HOST=0.0.0.0
-      - TRAP_LISTENER_PORT=162
-      - SNMP_COMMUNITY=${SNMP_COMMUNITY:-public}
+            # Configurações SNMP
+            - TRAP_LISTENER_HOST=0.0.0.0
+            - TRAP_LISTENER_PORT=162
+            - SNMP_COMMUNITY=${SNMP_COMMUNITY:-1wAdehYft0c[}
 
-  genieacs-sim:
-    image: drumsergio/genieacs-sim:latest
-    container_name: "rjchronos_genieacs-sim_dev"
-    networks:
-      - rjchronos-net
-    depends_on:
-      - genieacs
+    genieacs-sim:
+        image: drumsergio/genieacs-sim:latest
+        container_name: "rjchronos_genieacs-sim_dev"
+        networks:
+            - rjchronos-net
+        depends_on:
+            - genieacs
 
-  genieacs-mcp:
-    image: drumsergio/genieacs-mcp:latest
-    container_name: "rjchronos_genieacs-mcp_dev"
-    environment:
-      - ACS_URL=http://genieacs:7557
-      - ACS_USER=admin
-      - ACS_PASS=admin
-    ports:
-      - "8082:8080"
-    networks:
-      - rjchronos-net
-    depends_on:
-      - genieacs
+    genieacs-mcp:
+        image: drumsergio/genieacs-mcp:latest
+        container_name: "rjchronos_genieacs-mcp_dev"
+        environment:
+            - ACS_URL=http://genieacs:7557
+            - ACS_USER=admin
+            - ACS_PASS=admin
+        ports:
+            - "8082:8080"
+        networks:
+            - rjchronos-net
+        depends_on:
+            - genieacs
 
-  # --- Nomes e Volumes Específicos para DEV ---
-  genieacs:
-    container_name: rjchronos_genieacs_dev
+    # --- Nomes e Volumes Específicos para DEV ---
+    genieacs:
+        container_name: rjchronos_genieacs_dev
 
-  db-app:
-    container_name: rjchronos_db_app_dev
-    volumes:
-      - postgres_app_data_dev:/var/lib/postgresql/data
+    db-app:
+        container_name: rjchronos_db_app_dev
+        volumes:
+            - postgres_app_data_dev:/var/lib/postgresql/data
 
-  db-acs:
-    container_name: rjchronos_db_acs_dev
-    volumes:
-      - mongo_acs_data_dev:/data/db
+    db-acs:
+        container_name: rjchronos_db_acs_dev
+        volumes:
+            - mongo_acs_data_dev:/data/db
 
-  redis:
-    container_name: rjchronos_redis_dev
-    ports:
-      - "6379:6379"
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-    command: redis-server --requirepass ${REDIS_PASSWORD}
-    volumes:
-      - redis_data_dev:/data # Persistência de dados em dev
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    redis:
+        container_name: rjchronos_redis_dev
+        ports:
+            - "6379:6379"
+        environment:
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+        command: redis-server --requirepass ${REDIS_PASSWORD}
+        volumes:
+            - redis_data_dev:/data # Persistência de dados em dev
+        healthcheck:
+            test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
 
 volumes:
-  postgres_app_data_dev:
-  mongo_acs_data_dev:
-  rabbitmq_data_dev:
-  redis_data_dev:
+    postgres_app_data_dev:
+    mongo_acs_data_dev:
+    rabbitmq_data_dev:
+    redis_data_dev:
 
 networks:
-  rjchronos-net:
-    driver: bridge
+    rjchronos-net:
+        driver: bridge

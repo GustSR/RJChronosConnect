@@ -1,5 +1,5 @@
 import requests
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from ..core.config import settings
 from ..core.logging import get_logger
@@ -16,6 +16,7 @@ from ..commands.ont.add_ont_srv_profile import AddOntSrvProfileCommand
 from ..commands.ont.get_ont_port_state_snmp import GetOntPortStateSnmpCommand
 from ..commands.ont.pon_port_control import PonPortControlCommand
 from ..commands.ont.get_ont_autofind_cli import GetOntAutofindCliCommand
+from ..commands.ont.get_ont_autofind_snmp import GetOntAutofindSnmpCommand
 from ..commands.ont.get_all_autofind_onts import GetAllAutofindOntsCommand
 from ..commands.ont.ont_confirm import OntConfirmCommand
 from ..commands.ont.get_ont_port_attribute_snmp import GetOntPortAttributeSnmpCommand
@@ -41,6 +42,8 @@ from ..commands.olt.backup_restore import BackupConfigurationCommand, RestoreCon
 from ..commands.olt.set_sysname import SetSysnameCommand
 from ..commands.olt.validate_sysname_change import ValidateSysnameChangeCommand, GetSysnameCommand
 from ..commands.olt.rollback_sysname import RollbackSysnameCommand, SysnameAuditCommand
+from ..commands.olt.get_olt_snmp_info import GetOltSnmpInfoCommand
+from ..commands.olt.snmp_walk import SnmpWalkCommand
 # Imports de schemas ONT
 from ..schemas.ont import (
     ont_add_request,
@@ -260,8 +263,35 @@ def add_ont_srv_profile(olt_id: int, srv_profile_data: ont_srv_profile_add_reque
 def get_ont_port_state(olt_id: int, port: str, ont_id_on_port: int) -> List[Dict[str, Any]]:
     return _execute_snmp_command(olt_id, GetOntPortStateSnmpCommand, port=port, ont_id=ont_id_on_port)
 
+def get_olt_snmp_info(olt_id: int) -> Dict[str, Any]:
+    """Gets basic OLT system information via SNMP."""
+    return _execute_snmp_command(olt_id, GetOltSnmpInfoCommand)
+
+def snmp_walk(
+    olt_id: int,
+    oid: str,
+    contains: Optional[str] = None,
+    limit: int = 200,
+    timeout: int = 5,
+    retries: int = 1,
+) -> List[Dict[str, Any]]:
+    """Performs a debug SNMP walk under a given OID subtree."""
+    return _execute_snmp_command(
+        olt_id,
+        SnmpWalkCommand,
+        oid=oid,
+        contains=contains,
+        limit=limit,
+        timeout=timeout,
+        retries=retries,
+    )
+
 def get_mac_address_for_ont(olt_id: int, port: str, ont_id_on_port: int) -> List[Dict[str, Any]]:
     return _execute_cli_command(olt_id, GetMacAddressCliCommand, port=port, ont_id=ont_id_on_port)
+
+def get_mac_addresses_on_port(olt_id: int, port: str) -> Dict[str, Any]:
+    """Gets MAC addresses learned on a specific port."""
+    return _execute_cli_command(olt_id, GetMacAddressCliCommand, port=port)
 
 
 def shutdown_pon_port(olt_id: int, port: str) -> Dict[str, Any]:
@@ -280,6 +310,29 @@ def get_all_autofind_onts(olt_id: int) -> List[Dict[str, Any]]:
     Orquestra as chamadas para listar boards GPON e buscar autofind em cada porta.
     """
     return _execute_cli_command(olt_id, GetAllAutofindOntsCommand)
+
+def get_autofind_onts_snmp(
+    olt_id: int,
+    serial_number: Optional[str] = None,
+    port: Optional[str] = None,
+    limit: int = 200,
+    timeout: int = 5,
+    retries: int = 1,
+) -> List[Dict[str, Any]]:
+    credentials = _get_olt_credentials(olt_id)
+    olt_model = credentials.get("model", "MA5600T")
+    results = _execute_snmp_command(
+        olt_id,
+        GetOntAutofindSnmpCommand,
+        serial_number=serial_number,
+        olt_model=olt_model,
+        limit=limit,
+        timeout=timeout,
+        retries=retries,
+    )
+    if port:
+        results = [ont for ont in results if ont.get("port") == port]
+    return results
 
 def confirm_ont(olt_id: int, port: str, ont_id: int, confirm_data: ont_confirm_request.OntConfirmRequest) -> Dict[str, Any]:
     return _execute_cli_command(

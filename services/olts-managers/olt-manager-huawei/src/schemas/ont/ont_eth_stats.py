@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class OntEthStats(BaseModel):
     packets_received: int
@@ -12,5 +12,4 @@ class OntEthStats(BaseModel):
     broadcast_packets_sent: int
     multicast_packets_sent: int
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

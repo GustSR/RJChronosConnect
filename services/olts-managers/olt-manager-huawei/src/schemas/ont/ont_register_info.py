@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
 class OntRegisterInfo(BaseModel):
@@ -9,5 +9,4 @@ class OntRegisterInfo(BaseModel):
     dereg_time: str
     dereg_reason: str
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

@@ -4,7 +4,9 @@ import { useContext, useEffect } from 'react';
 const useTitle = (text: string) => {
   const { title, setTitle } = useContext(TitleContext);
 
-  useEffect(() => setTitle(text), [text, setTitle]);
+  const normalizedTitle = text.replace(/\s*-\s*RJ\s*Chronos\s*$/i, '').trim();
+
+  useEffect(() => setTitle(normalizedTitle), [normalizedTitle, setTitle]);
 
   return title;
 };

@@ -5,7 +5,7 @@ import { useProvisioning } from '@features/onu-provisioning';
 import { ProvisioningPage } from '@features/onu-provisioning';
 
 const Provisioning: React.FC = () => {
-  useTitle('Provisionamento - RJ Chronos');
+  useTitle('Provisionamento');
 
   const navigate = useNavigate();
   const { pendingONUs, loading, error, provisionONU, rejectONU, refreshPendingONUs } = useProvisioning();

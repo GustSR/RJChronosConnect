@@ -8,11 +8,18 @@ import os
 import sys
 from pathlib import Path
 
-# Adicionar o diretório shared ao path para importar a biblioteca
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent / "shared"))
+# Adicionar o diretório raiz do repo ao path para importar shared/*
+current_path = Path(__file__).resolve()
+repo_root = None
+for parent in (current_path, *current_path.parents):
+    if (parent / "shared").is_dir():
+        repo_root = parent
+        break
+if repo_root is None:
+    repo_root = current_path.parents[2] if len(current_path.parents) > 2 else current_path.parent
+sys.path.insert(0, str(repo_root))
 
-from logging import setup_logging
-from logging.config import LoggingConfig
+from shared.logging import setup_logging, LoggingConfig
 
 # Logger global para a aplicação
 logger = None

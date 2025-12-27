@@ -6,7 +6,7 @@ import { useTitle } from '@shared/lib/hooks';
 const OLTManagement: React.FC = () => {
   const navigate = useNavigate();
 
-  useTitle('Gerenciamento de OLTs - RJ Chronos');
+  useTitle('Gerenciamento das OLTs');
 
   return (
     <OLTManagementPage

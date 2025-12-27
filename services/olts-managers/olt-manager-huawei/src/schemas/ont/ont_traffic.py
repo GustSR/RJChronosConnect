@@ -1,9 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class OntTraffic(BaseModel):
     port_index: int
     ingress_bytes: int
     egress_bytes: int
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

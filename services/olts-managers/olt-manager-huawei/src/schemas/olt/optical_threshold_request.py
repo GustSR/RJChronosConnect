@@ -3,7 +3,7 @@
 Schema para requisição de configuração de threshold óptico.
 """
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 from typing import Literal
 
 class OpticalThresholdRequest(BaseModel):
@@ -20,10 +20,10 @@ class OpticalThresholdRequest(BaseModel):
     )
     value: float = Field(..., description="Valor do threshold")
     
-    @validator('value')
-    def validate_threshold_value(cls, v, values):
+    @field_validator('value')
+    def validate_threshold_value(cls, v, info: ValidationInfo):
         """Valida se o valor está dentro dos limites aceitáveis."""
-        parameter = values.get('parameter')
+        parameter = info.data.get('parameter') if info.data else None
         
         validation_ranges = {
             "rx-power": (-50.0, 10.0),  # dBm
@@ -40,14 +40,13 @@ class OpticalThresholdRequest(BaseModel):
         
         return v
     
-    class Config:
-        schema_extra = {
-            "example": {
-                "frame": 0,
-                "slot": 1,
-                "port": 0,
-                "parameter": "rx-power",
-                "limit_type": "lower-limit",
-                "value": -28.0
-            }
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "frame": 0,
+            "slot": 1,
+            "port": 0,
+            "parameter": "rx-power",
+            "limit_type": "lower-limit",
+            "value": -28.0
         }
+    })
