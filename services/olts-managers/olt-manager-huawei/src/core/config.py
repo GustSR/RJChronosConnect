@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     backend_api_url: str = "http://backend-api:8000"
     trap_listener_host: str = "0.0.0.0"
     trap_listener_port: int = 162
-    snmp_community: str = "1wAdehYft0c["
+    snmp_community: str = "public"
     rabbitmq_host: str = "localhost"
     rabbitmq_port: int = 5672
     rabbitmq_user: str = Field("guest", validation_alias="RABBITMQ_DEFAULT_USER")

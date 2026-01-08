@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+netmiko
+pysnmp
+pika
+requests
+pydantic
+pydantic-settings
+PyYAML

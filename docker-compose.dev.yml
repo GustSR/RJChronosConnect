@@ -149,6 +149,24 @@ services:
             - TRAP_LISTENER_PORT=162
             - SNMP_COMMUNITY=${SNMP_COMMUNITY:-1wAdehYft0c[}
 
+    olt-manager-fiberhome:
+        build:
+            context: ./services/olts-managers/olt-manager-fiberhome
+            dockerfile: Dockerfile.dev
+        container_name: rjchronos_olt_manager_fiberhome_dev
+        volumes:
+            - ./services/olts-managers/olt-manager-fiberhome/src:/app/src
+        ports:
+            - "8002:8002"
+        networks:
+            - rjchronos-net
+        depends_on:
+            - rabbitmq
+        command: uvicorn src.main:app --host 0.0.0.0 --port 8002 --reload
+        environment:
+            - BACKEND_API_URL=http://backend:8000
+            - SNMP_COMMUNITY=${SNMP_COMMUNITY:-public}
+
     genieacs-sim:
         image: drumsergio/genieacs-sim:latest
         container_name: "rjchronos_genieacs-sim_dev"

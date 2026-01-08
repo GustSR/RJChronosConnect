@@ -52,6 +52,7 @@ const ONUConfigurationStatus = Loadable(
 const OLTManagement = Loadable(lazy(() => import('../pages/OLTManagement')));
 const OLTAdd = Loadable(lazy(() => import('../pages/OLTAdd')));
 const OLTDetails = Loadable(lazy(() => import('../pages/OLTDetails')));
+const RouteReport = Loadable(lazy(() => import('../pages/RouteReport')));
 
 // user profile
 const UserProfile = Loadable(lazy(() => import('../pages/UserProfile')));
@@ -207,6 +208,20 @@ const routes = [
       {
         path: ':id',
         element: <OLTDetails />,
+      },
+    ],
+  },
+  {
+    path: 'relatorios',
+    element: (
+      <AuthGuard>
+        <DashboardLayout />
+      </AuthGuard>
+    ),
+    children: [
+      {
+        path: 'rota',
+        element: <RouteReport />,
       },
     ],
   },

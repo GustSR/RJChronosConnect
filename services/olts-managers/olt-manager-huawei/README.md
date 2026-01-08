@@ -39,7 +39,7 @@ FastAPI App (Domain-Separated Architecture)
 │
 ├── 🏗️ OLT Domain (Equipment Management)
 │   ├── /api/v1/olts/* - Equipment endpoints
-│   ├── commands/olt/ - Equipment commands
+│   ├── commands/olts/ - Equipment commands (SNMP/SSH)
 │   ├── schemas/olt/ - Equipment data models
 │   └── Features:
 │       ├── Port management (PON ports)
@@ -50,7 +50,7 @@ FastAPI App (Domain-Separated Architecture)
 │
 ├── 👥 ONT Domain (Customer Management)
 │   ├── /api/v1/olts/*/onts/* - Customer endpoints
-│   ├── commands/ont/ - Customer commands
+│   ├── commands/onts/ - Customer commands (SNMP/SSH)
 │   ├── schemas/ont/ - Customer data models
 │   └── Features:
 │       ├── ONT provisioning
@@ -161,16 +161,25 @@ src/
 │
 ├── 📦 commands/               # Comandos organizados por domínio
 │   ├── base_command.py      # Interface base para comandos
-│   ├── olt/                 # 🏗️ Comandos de equipamento
-│   │   ├── get_board_cli.py
-│   │   ├── manage_vlan.py
-│   │   ├── backup_restore.py
-│   │   └── ... (12 comandos OLT)
-│   └── ont/                 # 👥 Comandos de clientes
-│       ├── add_ont.py
-│       ├── get_ont_info_*.py
-│       ├── ont_confirm.py
-│       └── ... (17 comandos ONT)
+│   ├── olts/                # 🏗️ Comandos de equipamento
+│   │   ├── snmp/
+│   │   │   ├── get_olt_snmp_info.py
+│   │   │   ├── snmp_walk.py
+│   │   │   └── ... (comandos SNMP OLT)
+│   │   └── ssh/
+│   │       ├── get_board_cli.py
+│   │       ├── manage_vlan.py
+│   │       ├── backup_restore.py
+│   │       └── ... (comandos SSH OLT)
+│   └── onts/                # 👥 Comandos de clientes
+│       ├── snmp/
+│       │   ├── get_ont_info_snmp.py
+│       │   ├── get_ont_optical_info_snmp.py
+│       │   └── ... (comandos SNMP ONT)
+│       └── ssh/
+│           ├── add_ont.py
+│           ├── ont_confirm.py
+│           └── ... (comandos SSH ONT)
 │
 ├── 📋 schemas/               # Modelos de dados por domínio
 │   ├── olt/                 # 🏗️ Schemas de equipamento

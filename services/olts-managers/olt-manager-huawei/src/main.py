@@ -17,7 +17,7 @@ from .core.logging import get_logger
 from .services.connection_pool import pool_manager
 
 # Import das rotas organizadas por domínio
-from .api import olt_routes, ont_routes, health_routes
+from .api import olt_routes, ont_routes, health_routes, report_routes
 
 # ============================================================================
 # CONFIGURAÇÃO DA APLICAÇÃO
@@ -94,6 +94,12 @@ app.include_router(
 app.include_router(
     ont_routes.router,
     tags=["👥 ONT Management"]
+)
+
+# Rotas de relatorios
+app.include_router(
+    report_routes.router,
+    tags=["📄 Reports"]
 )
 
 # Rotas de health e monitoramento

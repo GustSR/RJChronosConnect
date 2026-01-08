@@ -20,6 +20,7 @@ from ..schemas.olt import (
     dba_profile_add_request as dba_profile_add_request_schema,
     gpon_alarm_profile_add_request as gpon_alarm_profile_add_request_schema,
     gpon_password_request as gpon_password_request_schema,
+    gpon_port as gpon_port_schema,
     optical_threshold_request as optical_threshold_request_schema,
     olt_snmp_info as olt_snmp_info_schema,
     snmp_walk as snmp_walk_schema,
@@ -90,6 +91,20 @@ def get_olt_snmp_info(olt_id: int):
     """Obtém informações básicas via SNMP (sysDescr, sysName, sysObjectID, sysUpTime)."""
     validate_olt_id(olt_id)
     return olt_service.get_olt_snmp_info(olt_id)
+
+@router.get(
+    "/olts/{olt_id}/ports/gpon",
+    response_model=List[gpon_port_schema.GponPort],
+    summary="List GPON ports",
+)
+def list_gpon_ports(
+    olt_id: int,
+    timeout: int = Query(5, ge=1, le=30),
+    retries: int = Query(1, ge=0, le=5),
+):
+    """Lista portas GPON disponíveis na OLT via SNMP."""
+    validate_olt_id(olt_id)
+    return olt_service.list_gpon_ports(olt_id, timeout=timeout, retries=retries)
 
 @router.get(
     "/olts/{olt_id}/snmp-walk",

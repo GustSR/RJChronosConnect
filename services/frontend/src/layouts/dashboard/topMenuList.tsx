@@ -46,6 +46,11 @@ const navigations = [
     icon: duotone.DeviceHub,
     path: '/olts',
   },
+  {
+    name: 'Relatorio de Rota',
+    icon: duotone.Network,
+    path: '/relatorios/rota',
+  },
 ];
 
 export default navigations;

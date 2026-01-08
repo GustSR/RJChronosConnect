@@ -6,44 +6,46 @@ from ..core.logging import get_logger
 # Connection manager não usado diretamente - usando connection pool
 from ..services.connection_pool import pool_manager
 # Imports de comandos ONT (clientes)
-from ..commands.ont.get_ont_info_snmp import GetOntInfoSnmpCommand
-from ..commands.ont.get_ont_optical_info_snmp import GetOntOpticalInfoSnmpCommand
-from ..commands.ont.add_ont import AddOntCommand
-from ..commands.ont.reboot_ont import RebootOntCommand
-from ..commands.ont.get_service_port_cli import GetServicePortCliCommand
-from ..commands.ont.add_ont_line_profile import AddOntLineProfileCommand
-from ..commands.ont.add_ont_srv_profile import AddOntSrvProfileCommand
-from ..commands.ont.get_ont_port_state_snmp import GetOntPortStateSnmpCommand
-from ..commands.ont.pon_port_control import PonPortControlCommand
-from ..commands.ont.get_ont_autofind_cli import GetOntAutofindCliCommand
-from ..commands.ont.get_ont_autofind_snmp import GetOntAutofindSnmpCommand
-from ..commands.ont.get_all_autofind_onts import GetAllAutofindOntsCommand
-from ..commands.ont.ont_confirm import OntConfirmCommand
-from ..commands.ont.get_ont_port_attribute_snmp import GetOntPortAttributeSnmpCommand
-from ..commands.ont.get_ont_eth_stats_snmp import GetOntEthStatsSnmpCommand
-from ..commands.ont.get_ont_traffic_snmp import GetOntTrafficSnmpCommand
-from ..commands.ont.get_ont_failed_cli import GetOntFailedCliCommand
-from ..commands.ont.add_service_port import AddServicePortCommand
-from ..commands.ont.get_ont_register_info_cli import GetOntRegisterInfoCliCommand
-from ..commands.ont.get_mac_address_cli import GetMacAddressCliCommand
+from ..commands.onts.snmp.get_ont_info_snmp import GetOntInfoSnmpCommand
+from ..commands.onts.snmp.get_ont_optical_info_snmp import GetOntOpticalInfoSnmpCommand
+from ..commands.onts.ssh.add_ont import AddOntCommand
+from ..commands.onts.ssh.reboot_ont import RebootOntCommand
+from ..commands.onts.ssh.get_service_port_cli import GetServicePortCliCommand
+from ..commands.onts.ssh.add_ont_line_profile import AddOntLineProfileCommand
+from ..commands.onts.ssh.add_ont_srv_profile import AddOntSrvProfileCommand
+from ..commands.onts.snmp.get_ont_port_state_snmp import GetOntPortStateSnmpCommand
+from ..commands.onts.ssh.pon_port_control import PonPortControlCommand
+from ..commands.onts.ssh.get_ont_autofind_cli import GetOntAutofindCliCommand
+from ..commands.onts.snmp.get_ont_autofind_snmp import GetOntAutofindSnmpCommand
+from ..commands.onts.ssh.get_all_autofind_onts import GetAllAutofindOntsCommand
+from ..commands.onts.ssh.ont_confirm import OntConfirmCommand
+from ..commands.onts.snmp.get_ont_port_attribute_snmp import GetOntPortAttributeSnmpCommand
+from ..commands.onts.snmp.get_ont_eth_stats_snmp import GetOntEthStatsSnmpCommand
+from ..commands.onts.snmp.get_ont_traffic_snmp import GetOntTrafficSnmpCommand
+from ..commands.onts.ssh.get_ont_failed_cli import GetOntFailedCliCommand
+from ..commands.onts.ssh.add_service_port import AddServicePortCommand
+from ..commands.onts.ssh.get_ont_register_info_cli import GetOntRegisterInfoCliCommand
+from ..commands.onts.ssh.get_mac_address_cli import GetMacAddressCliCommand
 
 # Imports de comandos OLT (equipamento)
-from ..commands.olt.add_dba_profile import AddDbaProfileCommand
-from ..commands.olt.add_gpon_alarm_profile import AddGponAlarmProfileCommand
-from ..commands.olt.get_board_cli import GetBoardCliCommand
-from ..commands.olt.get_port_state_cli import GetPortStateCliCommand
-from ..commands.olt.set_port_mode import SetPortModeCommand
-from ..commands.olt.set_gpon_password import SetGponPasswordCommand
-from ..commands.olt.set_optical_threshold import SetOpticalThresholdCommand, RemoveOpticalThresholdCommand
-from ..commands.olt.get_current_configuration_cli import GetCurrentConfigurationCliCommand
-from ..commands.olt.manage_vlan import CreateVlanCommand, DeleteVlanCommand, AssignPortToVlanCommand
-from ..commands.olt.manage_users import CreateUserCommand, DeleteUserCommand, ChangeUserPasswordCommand
-from ..commands.olt.backup_restore import BackupConfigurationCommand, RestoreConfigurationCommand
-from ..commands.olt.set_sysname import SetSysnameCommand
-from ..commands.olt.validate_sysname_change import ValidateSysnameChangeCommand, GetSysnameCommand
-from ..commands.olt.rollback_sysname import RollbackSysnameCommand, SysnameAuditCommand
-from ..commands.olt.get_olt_snmp_info import GetOltSnmpInfoCommand
-from ..commands.olt.snmp_walk import SnmpWalkCommand
+from ..commands.olts.ssh.add_dba_profile import AddDbaProfileCommand
+from ..commands.olts.ssh.add_gpon_alarm_profile import AddGponAlarmProfileCommand
+from ..commands.olts.ssh.get_board_cli import GetBoardCliCommand
+from ..commands.olts.ssh.get_port_state_cli import GetPortStateCliCommand
+from ..commands.olts.ssh.set_port_mode import SetPortModeCommand
+from ..commands.olts.ssh.set_gpon_password import SetGponPasswordCommand
+from ..commands.olts.ssh.set_optical_threshold import SetOpticalThresholdCommand, RemoveOpticalThresholdCommand
+from ..commands.olts.ssh.get_current_configuration_cli import GetCurrentConfigurationCliCommand
+from ..commands.olts.ssh.manage_vlan import CreateVlanCommand, DeleteVlanCommand, AssignPortToVlanCommand
+from ..commands.olts.ssh.manage_users import CreateUserCommand, DeleteUserCommand, ChangeUserPasswordCommand
+from ..commands.olts.ssh.backup_restore import BackupConfigurationCommand, RestoreConfigurationCommand
+from ..commands.olts.ssh.set_sysname import SetSysnameCommand
+from ..commands.olts.ssh.validate_sysname_change import ValidateSysnameChangeCommand, GetSysnameCommand
+from ..commands.olts.ssh.rollback_sysname import RollbackSysnameCommand, SysnameAuditCommand
+from ..commands.olts.snmp.get_olt_snmp_info import GetOltSnmpInfoCommand
+from ..commands.olts.snmp.snmp_walk import SnmpWalkCommand
+from ..services.route_report_service import RouteReportService
+from ..schemas.report import route_report as route_report_schema
 # Imports de schemas ONT
 from ..schemas.ont import (
     ont_add_request,
@@ -507,3 +509,43 @@ def get_sysname_audit(olt_id: int) -> Dict[str, Any]:
         Dict contendo histórico de mudanças
     """
     return _execute_cli_command(olt_id, SysnameAuditCommand, olt_id=olt_id)
+
+
+# ========== RELATORIO DE ROTA (LOS) ==========
+
+def get_route_report_service(
+    olt_id: int, timeout: int = 5, retries: int = 1
+) -> RouteReportService:
+    credentials = _get_olt_credentials(olt_id)
+    if not all([credentials.get("host"), credentials.get("snmp_community")]):
+        raise ValueError(f"Missing SNMP credentials for OLT ID {olt_id}")
+    return RouteReportService(
+        host=credentials["host"],
+        community_string=credentials["snmp_community"],
+        timeout=timeout,
+        retries=retries,
+    )
+
+
+def build_route_report(
+    olt_id: int,
+    port: Optional[str],
+    if_index: Optional[int],
+    los_threshold: int,
+    timeout: int,
+    retries: int,
+) -> route_report_schema.RouteReport:
+    service = get_route_report_service(olt_id, timeout=timeout, retries=retries)
+    return service.build_report(
+        olt_id=olt_id,
+        if_index=if_index,
+        port=port,
+        los_threshold=los_threshold,
+    )
+
+
+def list_gpon_ports(
+    olt_id: int, timeout: int = 5, retries: int = 1
+) -> List[Dict[str, Any]]:
+    service = get_route_report_service(olt_id, timeout=timeout, retries=retries)
+    return service.list_gpon_ports()

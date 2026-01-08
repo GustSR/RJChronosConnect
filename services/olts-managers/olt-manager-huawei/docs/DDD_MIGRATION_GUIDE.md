@@ -109,12 +109,12 @@ from ..commands.manage_vlan import CreateVlanCommand
 ```python
 # ✅ Imports organizados por domínio
 # ONT Domain (Customer Management)
-from ..commands.ont.add_ont import AddOntCommand
-from ..commands.ont.reboot_ont import RebootOntCommand
+from ..commands.onts.ssh.add_ont import AddOntCommand
+from ..commands.onts.ssh.reboot_ont import RebootOntCommand
 
 # OLT Domain (Equipment Management)
-from ..commands.olt.get_board_cli import GetBoardCliCommand
-from ..commands.olt.manage_vlan import CreateVlanCommand
+from ..commands.olts.ssh.get_board_cli import GetBoardCliCommand
+from ..commands.olts.ssh.manage_vlan import CreateVlanCommand
 ```
 
 ## 🎯 Benefícios Alcançados
@@ -146,12 +146,16 @@ from ..commands.olt.manage_vlan import CreateVlanCommand
 #### **Funcionalidades de Equipamento (OLT):**
 ```bash
 # Comandos relacionados ao equipamento OLT
-src/commands/olt/
-├── get_board_cli.py              # Informações de hardware
-├── manage_vlan.py                # Gestão de VLANs
-├── manage_users.py               # Usuários administrativos
-├── backup_restore.py             # Backup/restore
-└── set_*.py                      # Configurações avançadas
+src/commands/olts/
+├── snmp/
+│   ├── get_olt_snmp_info.py       # Informações SNMP
+│   └── snmp_walk.py               # Coletas SNMP
+└── ssh/
+    ├── get_board_cli.py           # Informações de hardware
+    ├── manage_vlan.py             # Gestão de VLANs
+    ├── manage_users.py            # Usuários administrativos
+    ├── backup_restore.py          # Backup/restore
+    └── set_*.py                   # Configurações avançadas
 
 # Schemas relacionados ao equipamento
 src/schemas/olt/
@@ -166,11 +170,15 @@ src/api/olt_routes.py             # 18 endpoints organizados
 #### **Funcionalidades de Clientes (ONT):**
 ```bash
 # Comandos relacionados a clientes
-src/commands/ont/
-├── add_ont.py                    # Provisionamento
-├── get_ont_info_*.py             # Informações de ONT
-├── get_ont_optical_info_*.py     # Dados ópticos
-└── ont_confirm.py                # Confirmação autofind
+src/commands/onts/
+├── snmp/
+│   ├── get_ont_info_snmp.py       # Informações de ONT
+│   ├── get_ont_optical_info_snmp.py # Dados ópticos
+│   └── get_ont_traffic_snmp.py    # Tráfego
+└── ssh/
+    ├── add_ont.py                 # Provisionamento
+    ├── get_ont_info_cli.py        # Informações via CLI
+    └── ont_confirm.py             # Confirmação autofind
 
 # Schemas relacionados a clientes
 src/schemas/ont/
@@ -186,7 +194,7 @@ src/api/ont_routes.py             # 22 endpoints organizados
 
 #### **1. Para Equipamento (OLT):**
 ```python
-# 1. Criar comando em src/commands/olt/
+# 1. Criar comando em src/commands/olts/{ssh|snmp}/
 class NewOltFeatureCommand(OLTCommand):
     def execute(self, connection_manager, olt_version: str, **kwargs):
         # Implementação específica do equipamento
@@ -206,7 +214,7 @@ def new_olt_feature(olt_id: int, request: NewOltFeatureRequest):
 
 #### **2. Para Clientes (ONT):**
 ```python
-# 1. Criar comando em src/commands/ont/
+# 1. Criar comando em src/commands/onts/{ssh|snmp}/
 class NewOntFeatureCommand(OLTCommand):
     def execute(self, connection_manager, olt_version: str, **kwargs):
         # Implementação específica do cliente

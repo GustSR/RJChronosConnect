@@ -1,0 +1,8 @@
+olts:
+  - id: 1
+    host: 192.168.1.200
+    username: admin
+    password: admin123
+    snmp_community: public
+    device_type: fiberhome
+    port: 22

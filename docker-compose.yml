@@ -161,7 +161,7 @@ services:
     build:
       context: ./services/log-monitor
     ports:
-      - "8000:8000"  # Prometheus metrics
+      - "8100:8000"  # Prometheus metrics
       - "8080:8080"  # Health check API
     environment:
       - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672

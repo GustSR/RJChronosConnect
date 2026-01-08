@@ -26,19 +26,23 @@ O OLT Manager Huawei foi refatorado para seguir os princípios de Domain-Driven 
 ```
 src/
 ├── api/olt_routes.py              # 18 endpoints de equipamento
-├── commands/olt/                  # 12 comandos específicos
-│   ├── add_dba_profile.py
-│   ├── add_gpon_alarm_profile.py
-│   ├── backup_restore.py
-│   ├── get_board_cli.py
-│   ├── get_current_configuration_cli.py
-│   ├── get_port_state_cli.py
-│   ├── manage_users.py
-│   ├── manage_vlan.py
-│   ├── set_gpon_password.py
-│   ├── set_laser_state.py
-│   ├── set_optical_threshold.py
-│   └── set_port_mode.py
+├── commands/olts/                 # Comandos organizados por protocolo
+│   ├── snmp/
+│   │   ├── get_olt_snmp_info.py
+│   │   └── snmp_walk.py
+│   └── ssh/
+│       ├── add_dba_profile.py
+│       ├── add_gpon_alarm_profile.py
+│       ├── backup_restore.py
+│       ├── get_board_cli.py
+│       ├── get_current_configuration_cli.py
+│       ├── get_port_state_cli.py
+│       ├── manage_users.py
+│       ├── manage_vlan.py
+│       ├── set_gpon_password.py
+│       ├── set_laser_state.py
+│       ├── set_optical_threshold.py
+│       └── set_port_mode.py
 └── schemas/olt/                   # 12 schemas de dados
     ├── backup_request.py
     ├── board_info.py
@@ -76,30 +80,34 @@ src/
 ```
 src/
 ├── api/ont_routes.py              # 22 endpoints de clientes
-├── commands/ont/                  # 17 comandos específicos
-│   ├── add_ont.py
-│   ├── add_ont_line_profile.py
-│   ├── add_ont_srv_profile.py
-│   ├── add_service_port.py
-│   ├── get_all_autofind_onts.py
-│   ├── get_mac_address_cli.py
-│   ├── get_ont_autofind_cli.py
-│   ├── get_ont_eth_stats_cli.py
-│   ├── get_ont_eth_stats_snmp.py
-│   ├── get_ont_failed_cli.py
-│   ├── get_ont_info_cli.py
-│   ├── get_ont_info_snmp.py
-│   ├── get_ont_optical_info_snmp.py
-│   ├── get_ont_port_attribute_cli.py
-│   ├── get_ont_port_attribute_snmp.py
-│   ├── get_ont_port_state_snmp.py
-│   ├── get_ont_register_info_cli.py
-│   ├── get_ont_traffic_cli.py
-│   ├── get_ont_traffic_snmp.py
-│   ├── ont_confirm.py
-│   ├── pon_port_control.py
-│   ├── reboot_ont.py
-│   └── get_service_port_cli.py
+├── commands/onts/                 # Comandos organizados por protocolo
+│   ├── snmp/
+│   │   ├── get_ont_autofind_snmp.py
+│   │   ├── get_ont_eth_stats_snmp.py
+│   │   ├── get_ont_info_snmp.py
+│   │   ├── get_ont_optical_info_snmp.py
+│   │   ├── get_ont_port_attribute_snmp.py
+│   │   ├── get_ont_port_state_snmp.py
+│   │   ├── get_ont_register_info_snmp.py
+│   │   └── get_ont_traffic_snmp.py
+│   └── ssh/
+│       ├── add_ont.py
+│       ├── add_ont_line_profile.py
+│       ├── add_ont_srv_profile.py
+│       ├── add_service_port.py
+│       ├── get_all_autofind_onts.py
+│       ├── get_mac_address_cli.py
+│       ├── get_ont_autofind_cli.py
+│       ├── get_ont_eth_stats_cli.py
+│       ├── get_ont_failed_cli.py
+│       ├── get_ont_info_cli.py
+│       ├── get_ont_port_attribute_cli.py
+│       ├── get_ont_register_info_cli.py
+│       ├── get_ont_traffic_cli.py
+│       ├── get_service_port_cli.py
+│       ├── ont_confirm.py
+│       ├── pon_port_control.py
+│       └── reboot_ont.py
 └── schemas/ont/                   # 13 schemas de dados
     ├── ont.py
     ├── ont_add_request.py
