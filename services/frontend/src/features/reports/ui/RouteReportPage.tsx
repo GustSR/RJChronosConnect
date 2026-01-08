@@ -280,14 +280,9 @@ export const RouteReportPage: React.FC = () => {
     <Container maxWidth="xl" sx={{ py: 4, px: 2 }}>
       <AnimatedCard delay={0}>
         <Box p={3}>
-          <FlexBox alignItems="center" justifyContent="space-between" mb={2}>
-            <H3>Relatorio de Rota (LOS)</H3>
+          <FlexBox alignItems="center" justifyContent="flex-end" mb={2}>
             {loading && <CircularProgress size={20} />}
           </FlexBox>
-          <Typography color="text.secondary" mb={3}>
-            Gere o relatorio de ONUs em LOS por porta GPON e exporte em XLSX ou
-            XML.
-          </Typography>
 
           {oltsError && (
             <Alert severity="warning" sx={{ mb: 2 }}>

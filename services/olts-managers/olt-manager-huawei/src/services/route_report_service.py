@@ -28,6 +28,7 @@ class RouteReportService:
 
     LAST_DOWN_CAUSE_MAP = {
         1: "los",
+        2: "los",
         13: "dying-gasp",
     }
 
@@ -304,27 +305,39 @@ class RouteReportService:
         context: v3arch.ContextData,
         if_index: int,
     ) -> List[Tuple[int, int]]:
-        entries = await self._walk_indexed_table(
-            snmp_engine, auth, transport, context, self.OID_LOS
+        entries = await self._walk_los_by_ifindex(
+            snmp_engine, auth, transport, context, if_index
         )
-        los_keys = []
+        los_keys: List[Tuple[int, int]] = []
+        value_counts = {1: 0, 2: 0}
+        parsed_entries: List[Tuple[Tuple[int, int], int]] = []
+
         for (if_idx, ont_idx), value in entries.items():
+            if if_idx != if_index:
+                continue
             try:
                 los_state = int(value)
             except (TypeError, ValueError):
                 continue
-            if if_idx == if_index and los_state == 1:
-                los_keys.append((if_idx, ont_idx))
+            if los_state in value_counts:
+                value_counts[los_state] += 1
+            parsed_entries.append(((if_idx, ont_idx), los_state))
+
+        if parsed_entries:
+            alarm_value = 2 if value_counts[1] >= value_counts[2] else 1
+            for key, los_state in parsed_entries:
+                if los_state == alarm_value:
+                    los_keys.append(key)
         if not los_keys:
             return los_keys
 
-        online_states = await self._walk_indexed_table(
+        online_states = await self._get_indexed_values(
             snmp_engine,
             auth,
             transport,
             context,
             self.OID_ONT_ONLINE_STATE,
-            filter_keys=set(los_keys),
+            set(los_keys),
         )
         if not online_states:
             return los_keys
@@ -335,7 +348,33 @@ class RouteReportService:
             if state == "online":
                 continue
             filtered_keys.append(key)
-        return filtered_keys
+        if not filtered_keys:
+            return filtered_keys
+
+        last_down_causes = await self._get_indexed_values(
+            snmp_engine,
+            auth,
+            transport,
+            context,
+            self.OID_LAST_DOWN_CAUSE,
+            set(filtered_keys),
+        )
+
+        los_filtered = []
+        for key in filtered_keys:
+            value = last_down_causes.get(key)
+            if value is None:
+                los_filtered.append(key)
+                continue
+            try:
+                cause_code = int(value)
+            except (TypeError, ValueError):
+                los_filtered.append(key)
+                continue
+            if cause_code == 2:
+                los_filtered.append(key)
+
+        return los_filtered
 
     async def _collect_onu_details(
         self,
@@ -356,13 +395,13 @@ class RouteReportService:
 
         results: Dict[str, Dict[Tuple[int, int], Any]] = {}
         for name, oid in tables.items():
-            results[name] = await self._walk_indexed_table(
+            results[name] = await self._get_indexed_values(
                 snmp_engine,
                 auth,
                 transport,
                 context,
                 oid,
-                filter_keys=key_set,
+                key_set,
             )
         return results
 
@@ -449,6 +488,119 @@ class RouteReportService:
                 if filter_set is not None and key not in filter_set:
                     continue
                 results[key] = value
+
+        return results
+
+    async def _walk_los_by_ifindex(
+        self,
+        snmp_engine: v3arch.SnmpEngine,
+        auth: v3arch.CommunityData,
+        transport: v3arch.UdpTransportTarget,
+        context: v3arch.ContextData,
+        if_index: int,
+    ) -> Dict[Tuple[int, int], Any]:
+        results: Dict[Tuple[int, int], Any] = {}
+        base_oid = f"{self.OID_LOS}.{if_index}"
+        base_oid_tuple = _oid_to_tuple(base_oid)
+
+        async for (
+            error_indication,
+            error_status,
+            error_index,
+            var_binds,
+        ) in v3arch.walk_cmd(
+            snmp_engine,
+            auth,
+            transport,
+            context,
+            v3arch.ObjectType(v3arch.ObjectIdentity(base_oid)),
+            lexicographicMode=True,
+        ):
+            if error_indication:
+                raise RuntimeError(f"SNMP error: {error_indication}")
+            if error_status:
+                error_text = (
+                    error_status.prettyPrint()
+                    if hasattr(error_status, "prettyPrint")
+                    else str(error_status)
+                )
+                error_location = (
+                    var_binds[int(error_index) - 1][0] if error_index else "unknown"
+                )
+                raise RuntimeError(f"SNMP error: {error_text} at {error_location}")
+
+            for oid, value in var_binds:
+                oid_tuple = oid.asTuple()
+                if not _tuple_startswith(oid_tuple, base_oid_tuple):
+                    return results
+
+                index_tuple = oid_tuple[len(base_oid_tuple) :]
+                if len(index_tuple) < 1:
+                    continue
+
+                ont_index = int(index_tuple[0])
+                results[(if_index, ont_index)] = value
+
+        return results
+
+    async def _get_indexed_values(
+        self,
+        snmp_engine: v3arch.SnmpEngine,
+        auth: v3arch.CommunityData,
+        transport: v3arch.UdpTransportTarget,
+        context: v3arch.ContextData,
+        base_oid: str,
+        keys: Iterable[Tuple[int, int]],
+    ) -> Dict[Tuple[int, int], Any]:
+        results: Dict[Tuple[int, int], Any] = {}
+        base_oid_tuple = _oid_to_tuple(base_oid)
+        key_list = list(keys)
+        if not key_list:
+            return results
+
+        for batch in _chunked(key_list, 20):
+            objects = [
+                v3arch.ObjectType(
+                    v3arch.ObjectIdentity(
+                        f"{base_oid}.{if_index}.{ont_index}"
+                    )
+                )
+                for if_index, ont_index in batch
+            ]
+
+            error_indication, error_status, error_index, var_binds = (
+                await v3arch.get_cmd(
+                    snmp_engine, auth, transport, context, *objects
+                )
+            )
+
+            if error_indication:
+                raise RuntimeError(f"SNMP error: {error_indication}")
+            if error_status:
+                error_text = (
+                    error_status.prettyPrint()
+                    if hasattr(error_status, "prettyPrint")
+                    else str(error_status)
+                )
+                error_location = (
+                    var_binds[int(error_index) - 1][0] if error_index else "unknown"
+                )
+                raise RuntimeError(f"SNMP error: {error_text} at {error_location}")
+
+            for oid, value in var_binds:
+                oid_tuple = oid.asTuple()
+                if not _tuple_startswith(oid_tuple, base_oid_tuple):
+                    continue
+
+                index_tuple = oid_tuple[len(base_oid_tuple) :]
+                if len(index_tuple) < 2:
+                    continue
+
+                if_index = int(index_tuple[0])
+                ont_index = int(index_tuple[1])
+                if _is_no_such(value):
+                    continue
+                results[(if_index, ont_index)] = value
 
         return results
 
@@ -555,11 +707,22 @@ def _parse_online_state(value: Any) -> Optional[str]:
         lower = text.strip().lower()
         if not lower or lower == "-1":
             return None
-        if "online" in lower or "authd" in lower:
+        if "online" in lower:
             return "online"
-        if "offline" in lower or "unauth" in lower or "unauthorized" in lower:
+        if "offline" in lower:
             return "offline"
         return None
+
+
+def _is_no_such(value: Any) -> bool:
+    if value is None:
+        return True
+    text = value.prettyPrint() if hasattr(value, "prettyPrint") else str(value)
+    return text.strip().lower().startswith("no such")
+
+
+def _chunked(items: List[Any], size: int) -> List[List[Any]]:
+    return [items[i : i + size] for i in range(0, len(items), size)]
 
 
 def _decode_snmp_serial(value: Any) -> Optional[str]:

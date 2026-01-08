@@ -20,10 +20,13 @@ class GetOntInfoSnmpCommand(OLTCommand):
     )
     OID_ONT_DESCRIPTION = "1.3.6.1.4.1.2011.6.128.1.1.2.43.1.5"  # hwGponOntDescription
     OID_ONT_LAST_DOWN_CAUSE = (
-        "1.3.6.1.4.1.2011.6.128.1.1.2.43.1.14"  # hwGponOntLastDownCause
+        "1.3.6.1.4.1.2011.6.128.1.1.2.46.1.24"  # hwGponDeviceOntControlLastDownCause
     )
     OID_ONT_DISTANCE = (
         "1.3.6.1.4.1.2011.6.128.1.1.2.46.1.20"  # hwGponDeviceOntControlRanging
+    )
+    OID_ONT_RX_POWER = (
+        "1.3.6.1.4.1.2011.6.128.1.1.2.51.1.4"  # hwGponOntOpticalDdmRxPower
     )
 
     def __init__(
@@ -52,6 +55,8 @@ class GetOntInfoSnmpCommand(OLTCommand):
             transport = await v3arch.UdpTransportTarget.create((self.host, 161))
             context = v3arch.ContextData()
 
+            if_index_filter = _port_to_ifindex(self.port_str)
+
             # List of OIDs to walk. We process them sequentially.
             oids_to_walk = {
                 "serial_number": self.OID_ONT_SERIAL_NUMBER,
@@ -59,16 +64,53 @@ class GetOntInfoSnmpCommand(OLTCommand):
                 "description": self.OID_ONT_DESCRIPTION,
                 "last_down_cause": self.OID_ONT_LAST_DOWN_CAUSE,
                 "distance_m": self.OID_ONT_DISTANCE,
+                "rx_power": self.OID_ONT_RX_POWER,
             }
 
-            for key, base_oid in oids_to_walk.items():
+            if if_index_filter is None:
+                for key, base_oid in oids_to_walk.items():
+                    await self._walk_and_populate(
+                        base_oid, key, ont_data, snmp_engine, auth, transport, context
+                    )
+            else:
                 await self._walk_and_populate(
-                    base_oid, key, ont_data, snmp_engine, auth, transport, context
+                    f"{self.OID_ONT_SERIAL_NUMBER}.{if_index_filter}",
+                    "serial_number",
+                    ont_data,
+                    snmp_engine,
+                    auth,
+                    transport,
+                    context,
                 )
+
+                keys = {
+                    (ont.get("if_index"), ont.get("ont_id"))
+                    for ont in ont_data.values()
+                    if ont.get("if_index") is not None and ont.get("ont_id") is not None
+                }
+
+                if keys:
+                    for key_name, base_oid in oids_to_walk.items():
+                        if key_name == "serial_number":
+                            continue
+                        values = await self._get_indexed_values(
+                            base_oid,
+                            keys,
+                            snmp_engine,
+                            auth,
+                            transport,
+                            context,
+                        )
+                        self._apply_indexed_values(
+                            key_name,
+                            values,
+                            ont_data,
+                        )
 
             await self._fill_online_state(
                 ont_data, snmp_engine, auth, transport, context
             )
+            _apply_current_state(ont_data)
 
             # Convert the correlated dictionary to a list
             result_list = list(ont_data.values())
@@ -106,6 +148,7 @@ class GetOntInfoSnmpCommand(OLTCommand):
             2: "loss-of-signal",
             3: "loss-of-frame",
             4: "shutdown",
+            13: "dying-gasp",
         }
 
         async for (
@@ -170,9 +213,14 @@ class GetOntInfoSnmpCommand(OLTCommand):
                         ):
                             data_dict[unique_key]["description"] = description_override
                     elif key == "last_down_cause":
-                        data_dict[unique_key][key] = cause_map.get(
-                            int(value), "unknown"
-                        )
+                        try:
+                            cause_value = int(value)
+                        except (TypeError, ValueError):
+                            data_dict[unique_key][key] = None
+                        else:
+                            data_dict[unique_key][key] = cause_map.get(
+                                cause_value, "unknown"
+                            )
                     elif key == "description":
                         description_value = value.prettyPrint()
                         current_description = data_dict[unique_key].get("description")
@@ -182,7 +230,10 @@ class GetOntInfoSnmpCommand(OLTCommand):
                         else:
                             data_dict[unique_key][key] = description_value
                     else:
-                        data_dict[unique_key][key] = value.prettyPrint()
+                        if key == "rx_power":
+                            data_dict[unique_key][key] = _snmp_int(value)
+                        else:
+                            data_dict[unique_key][key] = value.prettyPrint()
 
                 except (IndexError, ValueError):
                     continue
@@ -355,6 +406,119 @@ class GetOntInfoSnmpCommand(OLTCommand):
         # Not used for SNMP commands
         pass
 
+    async def _get_indexed_values(
+        self,
+        base_oid: str,
+        keys: set[tuple[int, int]],
+        snmp_engine: v3arch.SnmpEngine,
+        auth: v3arch.CommunityData,
+        transport: v3arch.UdpTransportTarget,
+        context: v3arch.ContextData,
+    ) -> Dict[tuple[int, int], Any]:
+        results: Dict[tuple[int, int], Any] = {}
+        base_oid_tuple = _oid_to_tuple(base_oid)
+
+        for batch in _chunked(list(keys), 20):
+            objects = [
+                v3arch.ObjectType(
+                    v3arch.ObjectIdentity(
+                        f"{base_oid}.{if_index}.{ont_id}"
+                    )
+                )
+                for if_index, ont_id in batch
+            ]
+
+            error_indication, error_status, error_index, var_binds = (
+                await v3arch.get_cmd(
+                    snmp_engine, auth, transport, context, *objects
+                )
+            )
+
+            if error_indication or error_status:
+                continue
+
+            for oid, value in var_binds:
+                oid_tuple = oid.asTuple()
+                if not _tuple_startswith(oid_tuple, base_oid_tuple):
+                    continue
+
+                index_tuple = oid_tuple[len(base_oid_tuple) :]
+                if len(index_tuple) < 2:
+                    continue
+
+                if_index = int(index_tuple[0])
+                ont_id = int(index_tuple[1])
+                if _is_no_such(value):
+                    continue
+                results[(if_index, ont_id)] = value
+
+        return results
+
+    def _apply_indexed_values(
+        self,
+        key: str,
+        values: Dict[tuple[int, int], Any],
+        data_dict: Dict[str, Dict],
+    ) -> None:
+        cause_map = {
+            0: "unknown",
+            1: "dying-gasp",
+            2: "loss-of-signal",
+            3: "loss-of-frame",
+            4: "shutdown",
+            13: "dying-gasp",
+        }
+
+        for (if_index, ont_id), value in values.items():
+            unique_key = f"{if_index}.{ont_id}"
+            if unique_key not in data_dict:
+                data_dict[unique_key] = {
+                    "if_index": if_index,
+                    "ont_id": ont_id,
+                    "port": self._ifindex_to_port(if_index),
+                }
+
+            if key == "serial_number":
+                data_dict[unique_key][key] = _decode_serial_number(value)
+                continue
+
+            if key == "online_state":
+                normalized_state, description_override = _normalize_online_state(value)
+                if normalized_state:
+                    data_dict[unique_key][key] = normalized_state
+                else:
+                    data_dict[unique_key][key] = None
+                if description_override and _should_override_description(
+                    data_dict[unique_key].get("description")
+                ):
+                    data_dict[unique_key]["description"] = description_override
+                continue
+
+            if key == "last_down_cause":
+                try:
+                    cause_value = int(value)
+                except (TypeError, ValueError):
+                    data_dict[unique_key][key] = None
+                else:
+                    data_dict[unique_key][key] = cause_map.get(cause_value, "unknown")
+                continue
+
+            if key == "description":
+                description_value = value.prettyPrint()
+                current_description = data_dict[unique_key].get("description")
+                if _should_override_description(description_value):
+                    if _should_override_description(current_description):
+                        data_dict[unique_key][key] = None
+                else:
+                    data_dict[unique_key][key] = description_value
+                continue
+
+            if key == "rx_power":
+                data_dict[unique_key][key] = _snmp_int(value)
+                continue
+
+            data_dict[unique_key][key] = value.prettyPrint()
+
 
 def _decode_serial_number(value) -> str:
     as_octets = getattr(value, "asOctets", None)
@@ -386,14 +550,10 @@ def _normalize_online_state(value: Any) -> tuple[Optional[str], Optional[str]]:
             state = "online"
         elif "offline" in lower:
             state = "offline"
-        elif "authd" in lower:
-            state = "online"
-        elif "unauth" in lower or "unauthorized" in lower:
-            state = "offline"
 
         description_hint = _extract_description_hint(text)
         if state:
-            if lower not in {"online", "offline", "authd", "unauth", "unauthorized"}:
+            if lower not in {"online", "offline"}:
                 return state, description_hint
             return state, None
 
@@ -439,6 +599,22 @@ def _calculate_ont_index(port: str, ont_id: int) -> Optional[int]:
     return (frame * 1000000) + (slot * 10000) + (pon * 100) + int(ont_id)
 
 
+def _port_to_ifindex(port: Optional[str]) -> Optional[int]:
+    if not port:
+        return None
+    try:
+        frame, slot, pon = map(int, port.split("/"))
+    except (ValueError, AttributeError):
+        return None
+    if frame != 0:
+        return None
+
+    base_index = 4194304000
+    slot_multiplier = 8192
+    pon_multiplier = 256
+    return base_index + (slot * slot_multiplier) + (pon * pon_multiplier)
+
+
 def _is_no_such(value: Any) -> bool:
     if value is None:
         return True
@@ -449,7 +625,73 @@ def _is_no_such(value: Any) -> bool:
 def _chunked(items: List[Any], size: int) -> List[List[Any]]:
     return [items[i : i + size] for i in range(0, len(items), size)]
 
+
+def _oid_to_tuple(oid: str) -> tuple[int, ...]:
+    return tuple(int(part) for part in oid.strip(".").split(".") if part)
+
+
+def _tuple_startswith(full: tuple[int, ...], prefix: tuple[int, ...]) -> bool:
+    return full[: len(prefix)] == prefix
+
     # Fallbacks for unexpected length/format
     if raw and all(32 <= b < 127 for b in raw):
         return raw.decode("ascii", errors="ignore")
     return raw.hex().upper()
+
+
+def _snmp_int(value: Any) -> Optional[int]:
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        text = value.prettyPrint() if hasattr(value, "prettyPrint") else str(value)
+        try:
+            return int(text)
+        except (TypeError, ValueError):
+            return None
+
+
+def _is_invalid_rx_power(value: Any) -> bool:
+    numeric = _snmp_int(value)
+    if numeric is None:
+        return True
+    return numeric >= 2147483647
+
+
+def _is_valid_distance(value: Any) -> bool:
+    if value is None:
+        return False
+    text = str(value).strip()
+    if not text or text == "-1":
+        return False
+    try:
+        return int(float(text)) > 0
+    except (TypeError, ValueError):
+        return False
+
+
+def _apply_current_state(data_dict: Dict[str, Dict]) -> None:
+    for ont in data_dict.values():
+        online_state = ont.get("online_state")
+        rx_invalid = _is_invalid_rx_power(ont.get("rx_power"))
+        distance_valid = _is_valid_distance(ont.get("distance_m"))
+        current_cause = ont.get("last_down_cause")
+        down_cause = current_cause in {"dying-gasp", "loss-of-signal", "loss-of-frame"}
+
+        if online_state not in {"online", "offline"}:
+            if rx_invalid and (down_cause or not distance_valid):
+                ont["online_state"] = "offline"
+            else:
+                ont["online_state"] = "online"
+
+        if ont.get("online_state") == "online":
+            ont["last_down_cause"] = None
+            continue
+
+        if not rx_invalid:
+            ont["last_down_cause"] = None
+            continue
+
+        if not down_cause:
+            ont["last_down_cause"] = None

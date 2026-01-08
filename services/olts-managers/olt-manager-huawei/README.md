@@ -32,6 +32,34 @@ Microsserviço FastAPI para gerenciamento completo de OLTs (Optical Line Termina
 - **Suporte a múltiplos modelos** (MA5600T, MA5800)
 - **Health checks** e monitoramento integrado
 
+## 📌 Relatorio de rota e status (SNMP Huawei)
+
+Resumo do que foi ajustado para o modulo de relatorio de rota/preview de ONTs.
+
+### OIDs utilizados
+
+- **LOS por ONU (alarme atual):** `1.3.6.1.4.1.2011.6.128.1.1.2.50.1.4` (hwGponDeviceOntAlarmLOSi)  
+  Indexado por `ifIndex + ontIndex`. O valor ativo varia por OLT. Na OLT testada, **2 = LOS ativo** e **1 = normal** (detectado pela maioria).
+- **Last down cause (historico):** `1.3.6.1.4.1.2011.6.128.1.1.2.46.1.24`  
+  Codigos observados: `2 = loss-of-signal (LOS)`, `13 = dying-gasp (powerfail)`.
+- **Rx power (optico):** `1.3.6.1.4.1.2011.6.128.1.1.2.51.1.4`  
+  Valor `2147483647` indica leitura invalida/sem sinal.
+- **Distance (ranging):** `1.3.6.1.4.1.2011.6.128.1.1.2.46.1.20`  
+  `-1` ou `0` indica distancia desconhecida.
+- **Serial SN (equipment):** `1.3.6.1.4.1.2011.6.128.1.1.2.43.1.3`
+- **Actual SN:** `1.3.6.1.4.1.2011.6.128.1.1.2.46.1.30`
+- **Descricao/registro (string):** `1.3.6.1.4.1.2011.6.128.1.1.2.43.1.9`  
+  Nesta OLT nao retorna estado; usamos para extrair apenas a descricao entre `descr_...` e `_authd`.
+
+### Regras de classificacao aplicadas
+
+- **LOS (alerta atual):** alarme ativo em `50.1.4` + `last_down_cause=2`.
+- **Dyinggasp / powerfail:** `last_down_cause=13` e RX invalido.
+- **Offline:** RX invalido + (down cause conhecido **ou** distancia invalida).
+- **Online:** RX valido ou distancia valida; `last_down_cause` eh limpo quando online.
+
+> Observacao: o OID `43.1.9` retornava string de registro/descricao com `authd`, entao foi removido como fonte de "online/offline".
+
 ## 🎨 Arquitetura Domain-Driven Design
 
 ```
