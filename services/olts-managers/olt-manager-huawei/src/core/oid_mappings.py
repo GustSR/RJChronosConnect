@@ -66,8 +66,8 @@ class HuaweiOIDManager:
                         description="ONT Serial Number"
                     ),
                     "run_state": OIDMapping(
-                        oid_base="1.3.6.1.4.1.2011.6.128.1.1.2.43.1.9",
-                        description="ONT Running State"
+                        oid_base="1.3.6.1.4.1.2011.6.128.1.1.2.46.1.15",
+                        description="ONT Run Status"
                     ),
                     "config_state": OIDMapping(
                         oid_base="1.3.6.1.4.1.2011.6.128.1.1.2.43.1.10", 

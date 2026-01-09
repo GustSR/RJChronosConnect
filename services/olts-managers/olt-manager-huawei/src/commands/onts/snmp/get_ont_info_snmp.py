@@ -15,8 +15,8 @@ class GetOntInfoSnmpCommand(OLTCommand):
 
     # OIDs from HUAWEI-GPON-MIB
     OID_ONT_SERIAL_NUMBER = "1.3.6.1.4.1.2011.6.128.1.1.2.43.1.3"  # hwGponOntSerialNum (MA5800)
-    OID_ONT_ONLINE_STATE = (
-        "1.3.6.1.4.1.2011.6.128.1.1.2.43.1.9"  # hwGponDeviceOntOnlineState
+    OID_ONT_RUN_STATUS = (
+        "1.3.6.1.4.1.2011.6.128.1.1.2.46.1.15"  # hwGponDeviceOntControlRunStatus
     )
     OID_ONT_DESCRIPTION = "1.3.6.1.4.1.2011.6.128.1.1.2.43.1.5"  # hwGponOntDescription
     OID_ONT_LAST_DOWN_CAUSE = (
@@ -60,7 +60,7 @@ class GetOntInfoSnmpCommand(OLTCommand):
             # List of OIDs to walk. We process them sequentially.
             oids_to_walk = {
                 "serial_number": self.OID_ONT_SERIAL_NUMBER,
-                "online_state": self.OID_ONT_ONLINE_STATE,
+                "online_state": self.OID_ONT_RUN_STATUS,
                 "description": self.OID_ONT_DESCRIPTION,
                 "last_down_cause": self.OID_ONT_LAST_DOWN_CAUSE,
                 "distance_m": self.OID_ONT_DISTANCE,
@@ -144,11 +144,14 @@ class GetOntInfoSnmpCommand(OLTCommand):
         """Walks a single OID tree and populates the data dictionary."""
         cause_map = {
             0: "unknown",
-            1: "dying-gasp",
+            1: "loss-of-signal",
             2: "loss-of-signal",
             3: "loss-of-frame",
-            4: "shutdown",
+            4: "signal-fail",
+            5: "loss-of-ack",
+            6: "loss-of-ack-m",
             13: "dying-gasp",
+            30: "shutdown",
         }
 
         async for (
@@ -269,7 +272,7 @@ class GetOntInfoSnmpCommand(OLTCommand):
             objects = [
                 v3arch.ObjectType(
                     v3arch.ObjectIdentity(
-                        f"{self.OID_ONT_ONLINE_STATE}.{if_index}.{ont_id}"
+                        f"{self.OID_ONT_RUN_STATUS}.{if_index}.{ont_id}"
                     )
                 )
                 for if_index, ont_id, _ in batch
@@ -335,7 +338,7 @@ class GetOntInfoSnmpCommand(OLTCommand):
             objects = [
                 v3arch.ObjectType(
                     v3arch.ObjectIdentity(
-                        f"{self.OID_ONT_ONLINE_STATE}.{ont_index}"
+                        f"{self.OID_ONT_RUN_STATUS}.{ont_index}"
                     )
                 )
                 for ont_index, _, _ in batch
@@ -462,11 +465,14 @@ class GetOntInfoSnmpCommand(OLTCommand):
     ) -> None:
         cause_map = {
             0: "unknown",
-            1: "dying-gasp",
+            1: "loss-of-signal",
             2: "loss-of-signal",
             3: "loss-of-frame",
-            4: "shutdown",
+            4: "signal-fail",
+            5: "loss-of-ack",
+            6: "loss-of-ack-m",
             13: "dying-gasp",
+            30: "shutdown",
         }
 
         for (if_index, ont_id), value in values.items():
@@ -538,6 +544,8 @@ def _normalize_online_state(value: Any) -> tuple[Optional[str], Optional[str]]:
 
     try:
         numeric = int(value)
+        if numeric == -1:
+            return None, None
         return {1: "online", 2: "offline"}.get(numeric, "unknown"), None
     except (TypeError, ValueError):
         text = value.prettyPrint() if hasattr(value, "prettyPrint") else str(value)
@@ -546,9 +554,9 @@ def _normalize_online_state(value: Any) -> tuple[Optional[str], Optional[str]]:
             return None, None
 
         state = None
-        if "online" in lower:
+        if "online" in lower or "up" in lower:
             state = "online"
-        elif "offline" in lower:
+        elif "offline" in lower or "down" in lower:
             state = "offline"
 
         description_hint = _extract_description_hint(text)
@@ -677,7 +685,15 @@ def _apply_current_state(data_dict: Dict[str, Dict]) -> None:
         rx_invalid = _is_invalid_rx_power(ont.get("rx_power"))
         distance_valid = _is_valid_distance(ont.get("distance_m"))
         current_cause = ont.get("last_down_cause")
-        down_cause = current_cause in {"dying-gasp", "loss-of-signal", "loss-of-frame"}
+        down_cause = current_cause in {
+            "dying-gasp",
+            "loss-of-signal",
+            "loss-of-frame",
+            "signal-fail",
+            "loss-of-ack",
+            "loss-of-ack-m",
+            "shutdown",
+        }
 
         if online_state not in {"online", "offline"}:
             if rx_invalid and (down_cause or not distance_valid):

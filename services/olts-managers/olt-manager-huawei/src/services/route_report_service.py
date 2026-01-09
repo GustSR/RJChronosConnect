@@ -21,15 +21,20 @@ class RouteReportService:
     OID_RX_POWER = "1.3.6.1.4.1.2011.6.128.1.1.2.51.1.4"
     OID_LAST_DOWN_TIME = "1.3.6.1.4.1.2011.6.128.1.1.2.46.1.23"
     OID_LAST_DOWN_CAUSE = "1.3.6.1.4.1.2011.6.128.1.1.2.46.1.24"
-    OID_ONT_ONLINE_STATE = "1.3.6.1.4.1.2011.6.128.1.1.2.43.1.9"
+    OID_ONT_RUN_STATUS = "1.3.6.1.4.1.2011.6.128.1.1.2.46.1.15"
 
     OID_IFNAME = "1.3.6.1.2.1.31.1.1.1.1"
     OID_IFDESCR = "1.3.6.1.2.1.2.2.1.2"
 
     LAST_DOWN_CAUSE_MAP = {
-        1: "los",
-        2: "los",
+        1: "loss-of-signal",
+        2: "loss-of-signal",
+        3: "loss-of-frame",
+        4: "signal-fail",
+        5: "loss-of-ack",
+        6: "loss-of-ack-m",
         13: "dying-gasp",
+        30: "shutdown",
     }
 
     def __init__(
@@ -74,40 +79,52 @@ class RouteReportService:
                 "OLT",
                 "SLOT",
                 "PON",
-                "ifIndex",
-                "ONUs em LOS",
-                "Classificacao",
+                "SN",
+                "ID",
+                "Sinal",
                 "Coletado em",
             ]
         )
 
         summary = report.summary
-        summary_sheet.append(
-            [
-                summary.olt_id,
-                summary.slot,
-                summary.pon,
-                summary.if_index,
-                summary.los_count,
-                summary.classification,
-                summary.generated_at.isoformat(),
-            ]
-        )
+        if report.onus:
+            for onu in report.onus:
+                summary_sheet.append(
+                    [
+                        summary.olt_id,
+                        summary.slot,
+                        summary.pon,
+                        _resolve_onu_sn(onu),
+                        onu.ont_index,
+                        _resolve_onu_signal(onu),
+                        summary.generated_at.isoformat(),
+                    ]
+                )
+        else:
+            summary_sheet.append(
+                [
+                    summary.olt_id,
+                    summary.slot,
+                    summary.pon,
+                    None,
+                    None,
+                    None,
+                    summary.generated_at.isoformat(),
+                ]
+            )
 
         clients_sheet = workbook.create_sheet(title="Clientes")
         clients_sheet.append(
             [
                 "Cliente",
                 "Contrato",
-                "SN Equipamento",
-                "SN Atual",
+                "SN",
+                "ID",
                 "SLOT",
                 "PON",
-                "ifIndex",
-                "ontIndex",
                 "Rx Power",
                 "Last Down Time",
-                "Last Down Cause",
+                "Sinal",
             ]
         )
 
@@ -116,15 +133,13 @@ class RouteReportService:
                 [
                     onu.customer_name,
                     onu.contract,
-                    onu.equipment_sn,
-                    onu.actual_sn,
+                    _resolve_onu_sn(onu),
+                    onu.ont_index,
                     onu.slot,
                     onu.pon,
-                    onu.if_index,
-                    onu.ont_index,
                     onu.rx_power_dbm,
                     onu.last_down_time,
-                    onu.last_down_cause,
+                    _resolve_onu_signal(onu),
                 ]
             )
 
@@ -331,50 +346,25 @@ class RouteReportService:
         if not los_keys:
             return los_keys
 
-        online_states = await self._get_indexed_values(
+        run_statuses = await self._get_indexed_values(
             snmp_engine,
             auth,
             transport,
             context,
-            self.OID_ONT_ONLINE_STATE,
+            self.OID_ONT_RUN_STATUS,
             set(los_keys),
         )
-        if not online_states:
+        if not run_statuses:
             return los_keys
 
         filtered_keys = []
         for key in los_keys:
-            state = _parse_online_state(online_states.get(key))
-            if state == "online":
-                continue
-            filtered_keys.append(key)
+            state = _parse_run_status(run_statuses.get(key))
+            if state == "offline":
+                filtered_keys.append(key)
         if not filtered_keys:
             return filtered_keys
-
-        last_down_causes = await self._get_indexed_values(
-            snmp_engine,
-            auth,
-            transport,
-            context,
-            self.OID_LAST_DOWN_CAUSE,
-            set(filtered_keys),
-        )
-
-        los_filtered = []
-        for key in filtered_keys:
-            value = last_down_causes.get(key)
-            if value is None:
-                los_filtered.append(key)
-                continue
-            try:
-                cause_code = int(value)
-            except (TypeError, ValueError):
-                los_filtered.append(key)
-                continue
-            if cause_code == 2:
-                los_filtered.append(key)
-
-        return los_filtered
+        return filtered_keys
 
     async def _collect_onu_details(
         self,
@@ -696,20 +686,22 @@ def _parse_frame_slot_pon(
     return frame, slot, pon
 
 
-def _parse_online_state(value: Any) -> Optional[str]:
+def _parse_run_status(value: Any) -> Optional[str]:
     if value is None:
         return None
     try:
         numeric = int(value)
+        if numeric == -1:
+            return None
         return {1: "online", 2: "offline"}.get(numeric)
     except (TypeError, ValueError):
         text = value.prettyPrint() if hasattr(value, "prettyPrint") else str(value)
         lower = text.strip().lower()
         if not lower or lower == "-1":
             return None
-        if "online" in lower:
+        if "online" in lower or "up" in lower:
             return "online"
-        if "offline" in lower:
+        if "offline" in lower or "down" in lower:
             return "offline"
         return None
 
@@ -763,6 +755,25 @@ def _map_last_down_cause(value: Any) -> Optional[str]:
     except (TypeError, ValueError):
         return _stringify_value(value)
     return RouteReportService.LAST_DOWN_CAUSE_MAP.get(cause_code, str(cause_code))
+
+
+def _resolve_onu_sn(onu: RouteReportOnu) -> Optional[str]:
+    return onu.actual_sn or onu.equipment_sn
+
+
+def _resolve_onu_signal(onu: RouteReportOnu) -> Optional[str]:
+    if not onu.last_down_cause:
+        return None
+    normalized = onu.last_down_cause.strip().lower()
+    if normalized in {"los", "loss-of-signal"}:
+        return "LOS"
+    if normalized in {"dying-gasp", "dyinggasp"}:
+        return "DYING-GASP"
+    if normalized == "online":
+        return "Online"
+    if normalized == "offline":
+        return "Offline"
+    return onu.last_down_cause
 
 
 def _classify_route(los_count: int, threshold: int) -> str:
