@@ -10,6 +10,7 @@ export type ManagedOLT = {
   ip_address: string;
   vendor?: string | null;
   model?: string | null;
+  access_protocol?: 'ssh' | 'telnet';
   ssh_username?: string | null;
   ssh_port?: number | null;
   setup_status: OltSetupStatus;
@@ -33,6 +34,7 @@ export type OltCreatePayload = {
   ip_address: string;
   vendor?: string | null;
   model?: string | null;
+  access_protocol?: 'ssh' | 'telnet';
   snmp_community?: string | null;
   ssh_username?: string | null;
   ssh_password?: string | null;
@@ -44,6 +46,7 @@ export type OltUpdatePayload = {
   ip_address?: string | null;
   vendor?: string | null;
   model?: string | null;
+  access_protocol?: 'ssh' | 'telnet';
   snmp_community?: string | null;
   ssh_username?: string | null;
   ssh_password?: string | null;

@@ -10,6 +10,7 @@ class OLTBase(BaseModel):
 
 class OLTCreate(OLTBase):
     # Campos opcionais para configuração automática
+    access_protocol: Optional[str] = Field(default="ssh", pattern=r'^(ssh|telnet)$')
     ssh_username: Optional[str] = None
     ssh_password: Optional[str] = None
     ssh_port: Optional[int] = Field(default=22, ge=1, le=65535)
@@ -17,6 +18,7 @@ class OLTCreate(OLTBase):
 
 class OLTUpdate(OLTBase):
     # Todos os campos opcionais para update
+    access_protocol: Optional[str] = Field(default=None, pattern=r'^(ssh|telnet)$')
     name: Optional[str] = None
     ip_address: Optional[str] = None
     ssh_username: Optional[str] = None
@@ -28,6 +30,7 @@ class OLTUpdate(OLTBase):
 
 class OLT(OLTBase):
     id: int
+    access_protocol: str = "ssh"
     ssh_username: Optional[str] = None
     ssh_port: int = 22
     setup_status: str = "pending"

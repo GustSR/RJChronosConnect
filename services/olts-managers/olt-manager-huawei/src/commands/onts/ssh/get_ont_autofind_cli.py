@@ -16,6 +16,7 @@ class GetOntAutofindCliCommand(OLTCommand):
         
         connection_manager.send_command(interface_command)
         raw_output = connection_manager.send_command(command_str)
+        connection_manager.send_command("quit")
         return self._parse_output(raw_output, olt_version)
 
     def _parse_output(self, raw_output: str, olt_version: str) -> List[Dict[str, Any]]:
@@ -27,7 +28,7 @@ class GetOntAutofindCliCommand(OLTCommand):
             (?P<ont_id>\d+)\s+
             (?P<loid>\S+)\s+
             (?P<password>\S+)\s+
-            (?P<serial_number>[0-9a-fA-F]+)\s+
+            (?P<serial_number>[0-9A-Za-z]+)\s+
             (?P<equipment_id>\S+)
             """, re.VERBOSE | re.MULTILINE
         )

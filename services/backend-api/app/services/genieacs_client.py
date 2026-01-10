@@ -9,6 +9,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 import json
 import os
+from urllib.parse import quote
 
 logger = logging.getLogger(__name__)
 
@@ -218,6 +219,80 @@ class GenieACSClient:
             logger.error(f"❌ ERRO inesperado ao definir parâmetro {parameter}: {e}")
             return False
     
+    async def add_tag(self, device_id: str, tag: str) -> bool:
+        """
+        Adiciona uma tag a um dispositivo no GenieACS.
+
+        Args:
+            device_id: ID do dispositivo
+            tag: Tag a ser adicionada
+
+        Returns:
+            True se sucesso, False caso contrário
+        """
+        try:
+            encoded_tag = quote(tag, safe="")
+            url = f"{self.base_url}/devices/{device_id}/tags/{encoded_tag}"
+
+            logger.info(f"🏷️ ADICIONANDO TAG no GenieACS:")
+            logger.info(f"   Device ID: {device_id}")
+            logger.info(f"   Tag: {tag}")
+
+            response = await self.client.post(url)
+            response.raise_for_status()
+            return True
+
+        except httpx.HTTPError as e:
+            logger.error(f"❌ ERRO HTTP ao adicionar tag {tag}: {e}")
+            if hasattr(e, 'response') and e.response:
+                logger.error(f"   Response status: {e.response.status_code}")
+                logger.error(f"   Response body: {e.response.text}")
+            return False
+        except Exception as e:
+            logger.error(f"❌ ERRO inesperado ao adicionar tag {tag}: {e}")
+            return False
+
+    async def enqueue_task(
+        self,
+        device_id: str,
+        task: Dict[str, Any],
+        connection_request: bool = False,
+    ) -> bool:
+        """
+        Enfileira uma task no GenieACS.
+
+        Args:
+            device_id: ID do dispositivo
+            task: Estrutura da task (ex.: refreshObject, setParameterValues)
+            connection_request: Se True, solicita connection_request imediato
+
+        Returns:
+            True se sucesso, False caso contrário
+        """
+        try:
+            url = f"{self.base_url}/devices/{device_id}/tasks"
+            if connection_request:
+                url += "?connection_request"
+
+            logger.info(f"🧩 ENFILEIRANDO TASK no GenieACS:")
+            logger.info(f"   Device ID: {device_id}")
+            logger.info(f"   Connection request: {connection_request}")
+            logger.info(f"   Task: {task}")
+
+            response = await self.client.post(url, json=task)
+            response.raise_for_status()
+            return True
+
+        except httpx.HTTPError as e:
+            logger.error(f"❌ ERRO HTTP ao enfileirar task: {e}")
+            if hasattr(e, 'response') and e.response:
+                logger.error(f"   Response status: {e.response.status_code}")
+                logger.error(f"   Response body: {e.response.text}")
+            return False
+        except Exception as e:
+            logger.error(f"❌ ERRO inesperado ao enfileirar task: {e}")
+            return False
+
     async def refresh_wifi_passwords(self, device_id: str) -> bool:
         """
         Força refresh específico dos parâmetros de senha WiFi

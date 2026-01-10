@@ -245,7 +245,11 @@ export const OLTDetailsPage: React.FC<Props> = ({ oltId, onBack, onEdit }) => {
                     { label: 'IP da OLT', value: olt.ip_address },
                     { label: 'Fabricante', value: olt.vendor || 'N/A' },
                     { label: 'Modelo', value: olt.model || 'N/A' },
-                    { label: 'Porta SSH', value: olt.ssh_port ?? 'N/A' },
+                    {
+                      label: 'Protocolo de acesso',
+                      value: (olt.access_protocol || 'ssh').toUpperCase(),
+                    },
+                    { label: 'Porta de acesso', value: olt.ssh_port ?? 'N/A' },
                     {
                       label: 'Status de configuração',
                       value: getSetupStatusChip(olt.setup_status, olt.is_configured),

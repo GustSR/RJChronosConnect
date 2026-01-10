@@ -535,7 +535,11 @@ def _decode_serial_number(value) -> str:
     if len(raw) >= 8:
         vendor = raw[:4].decode("ascii", errors="ignore")
         serial_hex = raw[4:8].hex().upper()
-    return f"{vendor}{serial_hex}"
+        return f"{vendor}{serial_hex}"
+
+    if raw and all(32 <= b < 127 for b in raw):
+        return raw.decode("ascii", errors="ignore")
+    return raw.hex().upper()
 
 
 def _normalize_online_state(value: Any) -> tuple[Optional[str], Optional[str]]:

@@ -114,7 +114,25 @@ def _decode_octets(value) -> tuple[Optional[str], Optional[str]]:
     value_hex = raw.hex().upper()
     if raw and all(32 <= b < 127 for b in raw):
         return value_hex, raw.decode("ascii", errors="ignore")
+    serial_text = _try_decode_serial(raw)
+    if serial_text:
+        return value_hex, serial_text
     return value_hex, None
+
+
+def _try_decode_serial(raw: bytes) -> Optional[str]:
+    if len(raw) < 8:
+        return None
+    vendor_bytes = raw[:4]
+    if not all(
+        (48 <= b <= 57) or (65 <= b <= 90) for b in vendor_bytes
+    ):
+        return None
+    vendor = vendor_bytes.decode("ascii", errors="ignore")
+    serial_hex = raw[4:8].hex().upper()
+    if not vendor.strip():
+        return None
+    return f"{vendor}{serial_hex}"
 
 
 def _oid_to_tuple(oid: str) -> tuple[int, ...]:

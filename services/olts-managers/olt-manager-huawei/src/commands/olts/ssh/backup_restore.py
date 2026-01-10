@@ -85,6 +85,9 @@ class BackupConfigurationCommand(BaseCommand):
                 "message": error_msg,
                 "backup_type": self.backup_type
             }
+
+    def _parse_output(self, raw_output: str, olt_version: str) -> Dict[str, Any]:
+        return {"status": "success", "message": raw_output}
     
     def _backup_full_config(self, connection_manager) -> Dict[str, Any]:
         """Faz backup completo da configuração."""
@@ -151,24 +154,43 @@ class BackupConfigurationCommand(BaseCommand):
     def _get_dba_profiles(self, connection_manager) -> List[str]:
         """Obtém perfis DBA."""
         try:
-            output = connection_manager.send_command("display dba-profile all")
-            return output.splitlines()
+            return self._run_profile_command(
+                connection_manager,
+                [
+                    "display dba-profile all",
+                    "display dba-profile",
+                ],
+            )
         except:
             return []
     
     def _get_ont_line_profiles(self, connection_manager) -> List[str]:
         """Obtém perfis de linha ONT."""
         try:
-            output = connection_manager.send_command("display ont-lineprofile gpon all")
-            return output.splitlines()
+            return self._run_profile_command(
+                connection_manager,
+                [
+                    "display ont-lineprofile gpon all",
+                    "display ont-lineprofile gpon",
+                    "display ont-lineprofile all",
+                    "display ont-lineprofile",
+                ],
+            )
         except:
             return []
     
     def _get_ont_service_profiles(self, connection_manager) -> List[str]:
         """Obtém perfis de serviço ONT."""
         try:
-            output = connection_manager.send_command("display ont-srvprofile gpon all")
-            return output.splitlines()
+            return self._run_profile_command(
+                connection_manager,
+                [
+                    "display ont-srvprofile gpon all",
+                    "display ont-srvprofile gpon",
+                    "display ont-srvprofile all",
+                    "display ont-srvprofile",
+                ],
+            )
         except:
             return []
     
@@ -208,6 +230,22 @@ class BackupConfigurationCommand(BaseCommand):
             return safe_lines
         except:
             return []
+
+    def _run_profile_command(self, connection_manager, commands: List[str]) -> List[str]:
+        error_markers = (
+            "% unknown command",
+            "% parameter error",
+            "unknown command",
+            "parameter error",
+        )
+        last_output = ""
+        for command in commands:
+            output = connection_manager.send_command(command)
+            last_output = output or ""
+            normalized = last_output.lower()
+            if not any(marker in normalized for marker in error_markers):
+                return last_output.splitlines()
+        return last_output.splitlines() if last_output else []
 
 
 class RestoreConfigurationCommand(BaseCommand):

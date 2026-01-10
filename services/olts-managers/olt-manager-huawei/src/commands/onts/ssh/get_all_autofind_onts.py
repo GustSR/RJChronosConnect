@@ -76,3 +76,6 @@ class GetAllAutofindOntsCommand(OLTCommand):
                 gpon_boards.append(board)
         
         return gpon_boards
+
+    def _parse_output(self, raw_output: str, olt_version: str) -> Dict[str, Any]:
+        return {"status": "success", "message": raw_output}

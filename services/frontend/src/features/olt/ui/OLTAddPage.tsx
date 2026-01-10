@@ -24,6 +24,7 @@ export interface OLTFormData {
   ip_address: string;
   vendor: string;
   model: string;
+  access_protocol: 'ssh' | 'telnet';
   snmp_community: string;
   ssh_username: string;
   ssh_password: string;
@@ -45,6 +46,7 @@ export const OLTAddPage: React.FC<Props> = ({ onCancel, onSuccessNavigate }) => 
     ip_address: '',
     vendor: 'Huawei',
     model: '',
+    access_protocol: 'ssh',
     snmp_community: '',
     ssh_username: '',
     ssh_password: '',
@@ -56,6 +58,16 @@ export const OLTAddPage: React.FC<Props> = ({ onCancel, onSuccessNavigate }) => 
     []
   );
 
+  const protocolOptions = useMemo(
+    () => [
+      { label: 'SSH', value: 'ssh' },
+      { label: 'Telnet', value: 'telnet' },
+    ],
+    []
+  );
+
+  const defaultPortByProtocol = useMemo(() => ({ ssh: '22', telnet: '23' }), []);
+
   const handleInputChange =
     (field: keyof OLTFormData) =>
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,6 +76,24 @@ export const OLTAddPage: React.FC<Props> = ({ onCancel, onSuccessNavigate }) => 
       const value = target.type === 'checkbox' ? target.checked : target.value;
       setFormData((prev) => ({ ...prev, [field]: value }));
     };
+
+  const handleProtocolChange = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (event: any) => {
+      const nextProtocol = event.target.value as OLTFormData['access_protocol'];
+      setFormData((prev) => {
+        const prevDefault = defaultPortByProtocol[prev.access_protocol];
+        const nextDefault = defaultPortByProtocol[nextProtocol];
+        const nextPort = prev.ssh_port === prevDefault ? nextDefault : prev.ssh_port;
+        return {
+          ...prev,
+          access_protocol: nextProtocol,
+          ssh_port: nextPort,
+        };
+      });
+    },
+    [defaultPortByProtocol]
+  );
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -78,6 +108,7 @@ export const OLTAddPage: React.FC<Props> = ({ onCancel, onSuccessNavigate }) => 
           ip_address: formData.ip_address.trim(),
           vendor: formData.vendor.trim() || null,
           model: formData.model.trim() || null,
+          access_protocol: formData.access_protocol,
           snmp_community: formData.snmp_community.trim() || null,
           ssh_username: formData.ssh_username.trim() || null,
           ssh_password: formData.ssh_password.trim() || null,
@@ -202,8 +233,22 @@ export const OLTAddPage: React.FC<Props> = ({ onCancel, onSuccessNavigate }) => 
                 </Grid>
 
                 <Grid item xs={12} md={6}>
+                  <LabeledSelect<string>
+                    label="Protocolo de acesso"
+                    value={formData.access_protocol}
+                    onChange={handleProtocolChange}
+                  >
+                    {protocolOptions.map((protocol) => (
+                      <MenuItem key={protocol.value} value={protocol.value}>
+                        {protocol.label}
+                      </MenuItem>
+                    ))}
+                  </LabeledSelect>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
                   <LabeledTextField
-                    label="Usuário SSH"
+                    label="Usuário de acesso"
                     value={formData.ssh_username}
                     onChange={handleInputChange('ssh_username')}
                   />
@@ -211,7 +256,7 @@ export const OLTAddPage: React.FC<Props> = ({ onCancel, onSuccessNavigate }) => 
 
                 <Grid item xs={12} md={6}>
                   <LabeledTextField
-                    label="Senha SSH"
+                    label="Senha de acesso"
                     type="password"
                     value={formData.ssh_password}
                     onChange={handleInputChange('ssh_password')}
@@ -220,7 +265,7 @@ export const OLTAddPage: React.FC<Props> = ({ onCancel, onSuccessNavigate }) => 
 
                 <Grid item xs={12} md={6}>
                   <LabeledTextField
-                    label="Porta SSH"
+                    label="Porta de acesso"
                     value={formData.ssh_port}
                     onChange={handleInputChange('ssh_port')}
                     type="number"

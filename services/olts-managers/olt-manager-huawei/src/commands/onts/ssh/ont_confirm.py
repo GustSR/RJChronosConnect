@@ -23,6 +23,7 @@ class OntConfirmCommand(OLTCommand):
 
         connection_manager.send_command(interface_command)
         raw_output = connection_manager.send_command(command_str)
+        connection_manager.send_command("quit")
         
         return self._parse_output(raw_output, olt_version)
 

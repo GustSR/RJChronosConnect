@@ -5,6 +5,7 @@ from typing import Optional
 class OLTCredentials(BaseModel):
     id: int
     host: str
+    access_protocol: str = "ssh"
     username: Optional[str] = None
     password: Optional[str] = None
     snmp_community: Optional[str] = None

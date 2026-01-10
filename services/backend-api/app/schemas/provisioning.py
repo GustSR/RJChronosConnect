@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 class PendingONUModel(BaseModel):
@@ -32,6 +32,7 @@ class ProvisionedDevice(BaseModel):
 
 class ONUProvisionRequest(BaseModel):
     client_name: str
+    client_cpf_cnpj: Optional[str] = None
     client_address: str
     service_profile: str = "default"
     vlan_id: Optional[int] = 100
@@ -39,6 +40,19 @@ class ONUProvisionRequest(BaseModel):
     pppoe_username: Optional[str] = None
     pppoe_password: Optional[str] = None
     comment: Optional[str] = None
+    olt_id: Optional[int] = None
+    olt_name: Optional[str] = None
+    olt_port: Optional[str] = None
+    frame: Optional[int] = None
+    slot: Optional[int] = None
+    board: Optional[int] = None
+    port: Optional[int] = None
+    ont_id: Optional[int] = None
+    line_profile: Optional[str] = None
+    srv_profile: Optional[str] = None
+    acs_tasks: Optional[List[Dict[str, Any]]] = None
+    acs_parameters: Optional[Dict[str, Any]] = None
+    acs_connection_request: Optional[bool] = True
 
 class ClientConfigurationUpdate(BaseModel):
     client_name: Optional[str] = None

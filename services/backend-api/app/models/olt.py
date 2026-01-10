@@ -20,6 +20,7 @@ class Olt(Base):
     model = Column(String, nullable=True)
 
     # Campos de descoberta e configuração automática
+    access_protocol = Column(String, nullable=False, default="ssh", doc="Protocolo de acesso (ssh ou telnet)")
     ssh_username = Column(String, nullable=True, doc="Usuário SSH para configuração automática")
     _ssh_password_encrypted = Column(String, nullable=True, doc="Senha SSH criptografada")
     _snmp_community_encrypted = Column(String, nullable=True, doc="Community SNMP criptografada")

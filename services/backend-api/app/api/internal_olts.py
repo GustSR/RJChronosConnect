@@ -14,6 +14,7 @@ def get_olt_credentials(olt_id: int, db: Session = Depends(get_db)):
     return OLTCredentials(
         id=olt.id,
         host=str(olt.ip_address),
+        access_protocol=olt.access_protocol,
         username=olt.ssh_username,
         password=olt.ssh_password,
         snmp_community=olt.snmp_community,

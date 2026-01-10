@@ -80,6 +80,8 @@ def _get_olt_credentials(olt_id: int) -> dict:
         response.raise_for_status()
         credentials = response.json()
         logger.info(f"Credenciais para OLT ID {olt_id} obtidas com sucesso do backend-api.")
+        if "access_protocol" not in credentials:
+            credentials["access_protocol"] = "ssh"
         return credentials
     except requests.exceptions.RequestException as e:
         logger.warning(f"Falha ao buscar credenciais do backend-api: {e}. Tentando fallback para o arquivo de configuração local.")
@@ -89,6 +91,8 @@ def _get_olt_credentials(olt_id: int) -> dict:
                 for olt in config.get("olts", []):
                     if olt.get("id") == olt_id:
                         logger.info(f"Credenciais para OLT ID {olt_id} encontradas no arquivo de configuração local.")
+                        if "access_protocol" not in olt:
+                            olt["access_protocol"] = "ssh"
                         return olt
             raise Exception(f"Credenciais para OLT ID {olt_id} não encontradas no arquivo de configuração local.")
         except (FileNotFoundError, yaml.YAMLError) as ex:
@@ -103,25 +107,38 @@ def _get_olt_version(connection_manager) -> str:
     except Exception:
         return "unknown"
 
+def _resolve_access_params(credentials: Dict[str, Any]) -> Dict[str, Any]:
+    protocol = (credentials.get("access_protocol") or "ssh").lower()
+    port = credentials.get("ssh_port")
+    if not port:
+        port = 23 if protocol == "telnet" else 22
+    return {"protocol": protocol, "port": port}
+
 # Helper for CLI commands (com connection pooling)
 def _execute_cli_command(olt_id: int, command_class, **kwargs):
     credentials = _get_olt_credentials(olt_id)
     if not all([credentials.get('host'), credentials.get('username'), credentials.get('password')]):
-        raise ValueError(f"Missing SSH credentials for OLT ID {olt_id}")
+        raise ValueError(f"Missing access credentials for OLT ID {olt_id}")
     
     connection = None
     try:
+        access_params = _resolve_access_params(credentials)
         # Obtém conexão do pool
         connection = pool_manager.get_connection(
             host=credentials['host'], 
             username=credentials['username'], 
-            password=credentials['password']
+            password=credentials['password'],
+            protocol=access_params["protocol"],
+            port=access_params["port"],
         )
         
         if not connection:
-            raise Exception(f"Não foi possível obter conexão SSH para OLT ID {olt_id}")
+            raise Exception(f"Não foi possível obter conexão para OLT ID {olt_id}")
         
-        olt_version = _get_olt_version(connection)
+        if getattr(connection, "protocol", "") == "telnet":
+            olt_version = "unknown"
+        else:
+            olt_version = _get_olt_version(connection)
         command = command_class(**kwargs)
         result = command.execute(connection, olt_version)
         
@@ -137,6 +154,8 @@ def _execute_cli_command(olt_id: int, command_class, **kwargs):
             pool_manager.return_connection(
                 host=credentials['host'], 
                 username=credentials['username'], 
+                protocol=access_params["protocol"],
+                port=access_params["port"],
                 connection=connection
             )
 
@@ -156,19 +175,22 @@ def get_olt_version(olt_id: int) -> Dict[str, str]:
     """Gets the OLT version."""
     credentials = _get_olt_credentials(olt_id)
     if not all([credentials.get('host'), credentials.get('username'), credentials.get('password')]):
-        raise ValueError(f"Missing SSH credentials for OLT ID {olt_id}")
+        raise ValueError(f"Missing access credentials for OLT ID {olt_id}")
     
     connection = None
     try:
+        access_params = _resolve_access_params(credentials)
         # Obtém conexão do pool
         connection = pool_manager.get_connection(
             host=credentials['host'], 
             username=credentials['username'], 
-            password=credentials['password']
+            password=credentials['password'],
+            protocol=access_params["protocol"],
+            port=access_params["port"],
         )
         
         if not connection:
-            raise Exception(f"Não foi possível obter conexão SSH para OLT ID {olt_id}")
+            raise Exception(f"Não foi possível obter conexão para OLT ID {olt_id}")
         
         version = _get_olt_version(connection)
         return {"version": version}
@@ -182,6 +204,8 @@ def get_olt_version(olt_id: int) -> Dict[str, str]:
             pool_manager.return_connection(
                 host=credentials['host'], 
                 username=credentials['username'], 
+                protocol=access_params["protocol"],
+                port=access_params["port"],
                 connection=connection
             )
 
@@ -406,15 +430,53 @@ def change_user_password(olt_id: int, username: str, new_password: str) -> Dict[
 
 # ========== FUNÇÕES DE BACKUP E RESTORE ==========
 
+def _normalize_backup_request(backup_type: Any, include_passwords: bool) -> Dict[str, Any]:
+    if hasattr(backup_type, "backup_type"):
+        return {
+            "backup_type": backup_type.backup_type,
+            "include_passwords": getattr(backup_type, "include_passwords", False),
+        }
+    if isinstance(backup_type, dict) and "backup_type" in backup_type:
+        return {
+            "backup_type": backup_type.get("backup_type", "full"),
+            "include_passwords": backup_type.get("include_passwords", False),
+        }
+    return {"backup_type": backup_type, "include_passwords": include_passwords}
+
+
 def backup_configuration(olt_id: int, backup_type: str = "full", include_passwords: bool = False) -> Dict[str, Any]:
     """Faz backup da configuração da OLT."""
-    return _execute_cli_command(olt_id, BackupConfigurationCommand, 
-                               backup_type=backup_type, include_passwords=include_passwords)
+    normalized = _normalize_backup_request(backup_type, include_passwords)
+    return _execute_cli_command(
+        olt_id,
+        BackupConfigurationCommand,
+        backup_type=normalized["backup_type"],
+        include_passwords=normalized["include_passwords"],
+    )
+
+def _normalize_restore_request(backup_data: Any, restore_type: str) -> Dict[str, Any]:
+    if hasattr(backup_data, "backup_data"):
+        return {
+            "backup_data": backup_data.backup_data,
+            "restore_type": getattr(backup_data, "restore_type", "full"),
+        }
+    if isinstance(backup_data, dict) and "backup_data" in backup_data:
+        return {
+            "backup_data": backup_data.get("backup_data", {}),
+            "restore_type": backup_data.get("restore_type", "full"),
+        }
+    return {"backup_data": backup_data, "restore_type": restore_type}
+
 
 def restore_configuration(olt_id: int, backup_data: Dict[str, Any], restore_type: str = "full") -> Dict[str, Any]:
     """Restaura configuração da OLT a partir de backup."""
-    return _execute_cli_command(olt_id, RestoreConfigurationCommand,
-                               backup_data=backup_data, restore_type=restore_type)
+    normalized = _normalize_restore_request(backup_data, restore_type)
+    return _execute_cli_command(
+        olt_id,
+        RestoreConfigurationCommand,
+        backup_data=normalized["backup_data"],
+        restore_type=normalized["restore_type"],
+    )
 
 # ========== FUNÇÕES DE IDENTIFICAÇÃO E NAMING ==========
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Módulo de Connection Pool para gerenciar conexões SSH reutilizáveis com OLTs.
+Módulo de Connection Pool para gerenciar conexões reutilizáveis com OLTs.
 Resolve o problema de criar uma nova conexão para cada comando.
 """
 
@@ -27,28 +27,40 @@ class PooledConnection:
     is_alive: bool = True
 
 class ConnectionPool:
-    """Pool de conexões SSH para uma OLT específica."""
+    """Pool de conexões para uma OLT específica."""
     
-    def __init__(self, host: str, username: str, password: str, max_size: int = 3):
+    def __init__(
+        self,
+        host: str,
+        username: str,
+        password: str,
+        protocol: str,
+        port: int,
+        max_size: int = 3,
+    ):
         """
         Inicializa o pool de conexões para uma OLT.
         
         Args:
             host: IP/hostname da OLT
-            username: Usuário SSH
-            password: Senha SSH
+            username: Usuário de acesso
+            password: Senha de acesso
+            protocol: Protocolo de acesso (ssh ou telnet)
+            port: Porta de acesso
             max_size: Número máximo de conexões no pool
         """
         self.host = host
         self.username = username
         self.password = password
+        self.protocol = protocol
+        self.port = port
         self.max_size = max_size
         
         self._connections: List[PooledConnection] = []
         self._lock = threading.RLock()
         self._created_count = 0
         
-        logger.info(f"Pool criado para OLT {host} (max_size: {max_size})")
+        logger.info(f"Pool criado para OLT {host} ({protocol}:{port}) (max_size: {max_size})")
 
     def get_connection(self, timeout: int = 30) -> Optional[ConnectionManager]:
         """
@@ -119,14 +131,20 @@ class ConnectionPool:
             logger.warning(f"Tentativa de retornar conexão não encontrada no pool para {self.host}")
 
     def _create_connection(self) -> Optional[ConnectionManager]:
-        """Cria uma nova conexão SSH."""
+        """Cria uma nova conexão."""
         try:
-            conn = ConnectionManager(self.host, self.username, self.password)
+            conn = ConnectionManager(
+                self.host,
+                self.username,
+                self.password,
+                protocol=self.protocol,
+                port=self.port,
+            )
             conn.connect()
-            logger.debug(f"Conexão SSH criada com sucesso para {self.host}")
+            logger.debug(f"Conexão criada com sucesso para {self.host}")
             return conn
         except Exception as e:
-            logger.error(f"Falha ao criar conexão SSH para {self.host}: {e}")
+            logger.error(f"Falha ao criar conexão para {self.host}: {e}")
             return None
 
     def _test_connection(self, connection: ConnectionManager) -> bool:
@@ -186,6 +204,8 @@ class ConnectionPool:
             
             return {
                 'host': self.host,
+                'protocol': self.protocol,
+                'port': self.port,
                 'total_connections': total,
                 'in_use': in_use,
                 'available': total - in_use,
@@ -209,19 +229,28 @@ class ConnectionPoolManager:
         
         logger.info("ConnectionPoolManager inicializado")
 
-    def get_connection(self, host: str, username: str, password: str) -> Optional[ConnectionManager]:
+    def get_connection(
+        self,
+        host: str,
+        username: str,
+        password: str,
+        protocol: str,
+        port: int,
+    ) -> Optional[ConnectionManager]:
         """
         Obtém uma conexão do pool apropriado.
         
         Args:
             host: IP/hostname da OLT
-            username: Usuário SSH
-            password: Senha SSH
+            username: Usuário de acesso
+            password: Senha de acesso
+            protocol: Protocolo de acesso
+            port: Porta de acesso
             
         Returns:
             ConnectionManager: Conexão pronta para uso
         """
-        pool_key = f"{host}:{username}"
+        pool_key = f"{host}:{username}:{protocol}:{port}"
         
         with self._lock:
             if pool_key not in self._pools:
@@ -229,21 +258,32 @@ class ConnectionPoolManager:
                     host=host, 
                     username=username, 
                     password=password,
+                    protocol=protocol,
+                    port=port,
                     max_size=settings.ssh_pool_max_size
                 )
         
         return self._pools[pool_key].get_connection()
 
-    def return_connection(self, host: str, username: str, connection: ConnectionManager):
+    def return_connection(
+        self,
+        host: str,
+        username: str,
+        protocol: str,
+        port: int,
+        connection: ConnectionManager,
+    ):
         """
         Retorna uma conexão para o pool apropriado.
         
         Args:
             host: IP/hostname da OLT
-            username: Usuário SSH
+            username: Usuário de acesso
+            protocol: Protocolo de acesso
+            port: Porta de acesso
             connection: Conexão a ser retornada
         """
-        pool_key = f"{host}:{username}"
+        pool_key = f"{host}:{username}:{protocol}:{port}"
         
         with self._lock:
             if pool_key in self._pools:
