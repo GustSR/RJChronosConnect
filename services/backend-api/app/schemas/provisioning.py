@@ -5,7 +5,12 @@ from datetime import datetime
 class PendingONUModel(BaseModel):
     id: str
     serial_number: str
+    olt_id: Optional[int] = None
     olt_name: str
+    olt_port: Optional[str] = None
+    frame: Optional[int] = None
+    slot: Optional[int] = None
+    ont_id: Optional[int] = None
     board: int
     port: int
     discovered_at: datetime
@@ -31,6 +36,8 @@ class ProvisionedDevice(BaseModel):
     comment: Optional[str] = None
 
 class ONUProvisionRequest(BaseModel):
+    serial_number: Optional[str] = None
+    onu_type: Optional[str] = None
     client_name: str
     client_cpf_cnpj: Optional[str] = None
     client_address: str

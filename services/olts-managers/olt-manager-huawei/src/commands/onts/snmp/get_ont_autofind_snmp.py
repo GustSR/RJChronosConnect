@@ -17,6 +17,7 @@ class GetOntAutofindSnmpCommand(OLTCommand):
     OID_AUTOFIND_STATE = "1.3.6.1.4.1.2011.6.128.1.1.2.48.1.4"
     OID_AUTOFIND_IFINDEX = "1.3.6.1.4.1.2011.6.128.1.1.2.48.1.5"
     OID_AUTOFIND_TIME = "1.3.6.1.4.1.2011.6.128.1.1.2.48.1.6"
+    OID_AUTOFIND_EQUIPMENT_ID = "1.3.6.1.4.1.2011.6.128.1.1.2.48.1.7"
 
     def __init__(
         self,
@@ -54,6 +55,7 @@ class GetOntAutofindSnmpCommand(OLTCommand):
                 "state": self.OID_AUTOFIND_STATE,
                 "if_index": self.OID_AUTOFIND_IFINDEX,
                 "autofind_time": self.OID_AUTOFIND_TIME,
+                "equipment_id": self.OID_AUTOFIND_EQUIPMENT_ID,
             }
 
             for key, base_oid in oids_to_walk.items():
@@ -139,10 +141,10 @@ class GetOntAutofindSnmpCommand(OLTCommand):
 
                 if key == "serial_number":
                     entry[key] = _decode_serial_number(value)
+                elif key in ("ont_type", "equipment_id"):
+                    entry[key] = _decode_text(value)
                 elif key == "if_index":
                     entry[key] = _safe_int(value.prettyPrint())
-                elif key == "ont_type":
-                    entry[key] = _decode_text(value)
                 else:
                     entry[key] = value.prettyPrint()
 
@@ -164,8 +166,22 @@ def _decode_text(value) -> str:
         return value.prettyPrint()
 
     raw = as_octets()
-    if raw and all(32 <= b < 127 for b in raw):
-        return raw.decode("ascii", errors="ignore")
+    if raw:
+        trimmed = raw.rstrip(b"\x00")
+        if trimmed and all(32 <= b < 127 for b in trimmed):
+            return trimmed.decode("ascii", errors="ignore")
+
+        pretty = value.prettyPrint()
+        if isinstance(pretty, str) and pretty.startswith("0x"):
+            try:
+                hex_bytes = bytes.fromhex(pretty[2:])
+            except ValueError:
+                return pretty
+            hex_trimmed = hex_bytes.rstrip(b"\x00")
+            if hex_trimmed and all(32 <= b < 127 for b in hex_trimmed):
+                return hex_trimmed.decode("ascii", errors="ignore")
+            return pretty
+
     return value.prettyPrint()
 
 

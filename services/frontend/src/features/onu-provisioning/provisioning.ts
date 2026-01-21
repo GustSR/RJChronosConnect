@@ -2,7 +2,12 @@
 export interface PendingONU {
   id: string;
   serialNumber: string;
+  oltId?: number;
   oltName: string;
+  oltPort?: string;
+  frame?: number;
+  slot?: number;
+  ontId?: number;
   board: number;
   port: number;
   discoveredAt: string;

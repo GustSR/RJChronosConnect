@@ -27,9 +27,6 @@ export class GenieACSApiService {
    * Buscar ONUs pendentes de autorização/provisionamento
    */
   async getPendingONUs(): Promise<Record<string, unknown>[]> {
-    if (devConfig.useMockData) {
-      return fakeDataService.getPendingONUs();
-    }
     return httpClient.get<Record<string, unknown>[]>('/provisioning/pending');
   }
 
@@ -40,16 +37,25 @@ export class GenieACSApiService {
     onuId: string,
     provisionData: {
       client_name: string;
+      client_cpf_cnpj?: string;
       client_address: string;
+      serial_number?: string;
+      onu_type?: string;
       service_profile?: string;
       vlan_id?: number;
       wan_mode?: string;
       comment?: string;
+      olt_id?: number;
+      olt_port?: string;
+      frame?: number;
+      slot?: number;
+      board?: number;
+      port?: number;
+      ont_id?: number;
+      line_profile?: string;
+      srv_profile?: string;
     }
   ): Promise<Record<string, unknown>> {
-    if (devConfig.useMockData) {
-      return fakeDataService.authorizeONU(onuId, provisionData);
-    }
     return httpClient.post(
       `/provisioning/${onuId}/authorize`,
       provisionData
@@ -63,9 +69,6 @@ export class GenieACSApiService {
     onuId: string,
     reason?: string
   ): Promise<Record<string, unknown>> {
-    if (devConfig.useMockData) {
-      return fakeDataService.rejectONU(onuId, reason);
-    }
     const endpoint = reason
       ? `/provisioning/${onuId}/reject?reason=${encodeURIComponent(reason)}`
       : `/provisioning/${onuId}/reject`;

@@ -6,10 +6,7 @@ import React, {
   ReactNode,
 } from 'react';
 import { PendingONU, ProvisionedONU } from './provisioning';
-import {
-  mockPendingONUs,
-  mockProvisionedONUs,
-} from '../../__fakeData__/provisioning';
+import { mockProvisionedONUs } from '../../__fakeData__/provisioning';
 import { genieacsApi } from '@shared/api/genieacsApi';
 
 interface ProvisioningContextType {
@@ -21,13 +18,14 @@ interface ProvisioningContextType {
     onuId: string,
     clientData: {
       client_name: string;
+      client_cpf_cnpj?: string;
       client_address: string;
       service_profile?: string;
       vlan_id?: number;
       wan_mode?: string;
       comment?: string;
     }
-  ) => Promise<boolean>;
+  ) => Promise<{ success: boolean; message?: string; genieacsAvailable?: boolean }>;
   rejectONU: (onuId: string, reason?: string) => Promise<boolean>;
   updateProvisionedONU: (
     onuId: string,
@@ -40,6 +38,28 @@ interface ProvisioningContextType {
 const ProvisioningContext = createContext<ProvisioningContextType | undefined>(
   undefined
 );
+
+const getProvisionFailureMessage = (result: Record<string, unknown>): string => {
+  const rawMessage =
+    typeof result.message === 'string' ? result.message.trim() : '';
+  if (rawMessage) {
+    return rawMessage;
+  }
+
+  const details = result.details as
+    | { olt?: { message?: string }; genieacs?: { message?: string } }
+    | undefined;
+  const oltMessage = details?.olt?.message;
+  if (typeof oltMessage === 'string' && oltMessage.trim()) {
+    return oltMessage.trim();
+  }
+  const genieacsMessage = details?.genieacs?.message;
+  if (typeof genieacsMessage === 'string' && genieacsMessage.trim()) {
+    return genieacsMessage.trim();
+  }
+
+  return 'Erro ao provisionar ONU';
+};
 
 export const useProvisioning = () => {
   const context = useContext(ProvisioningContext);
@@ -72,27 +92,35 @@ export const ProvisioningProvider: React.FC<ProvisioningProviderProps> = ({
 
       // Converter dados do backend para o formato esperado pelo frontend
       const convertedPendingONUs = data.map(
-        (item: Record<string, unknown>) => ({
-          id: item.id,
-          serialNumber: item.serial_number,
-          oltName: item.olt_name,
-          board: item.board,
-          port: item.port,
-          discoveredAt: item.discovered_at,
-          distance: item.distance || 0,
-          onuType: item.onu_type,
-          status: item.status,
-          rxPower: item.rx_power,
-          temperature: item.temperature,
-        })
+        (item: Record<string, unknown>) => {
+          const serialNumber = String(item.serial_number ?? '');
+          const id = String(item.id ?? serialNumber);
+
+          return {
+            id,
+            serialNumber,
+          oltId: item.olt_id as number | undefined,
+          oltName: String(item.olt_name ?? ''),
+          oltPort: item.olt_port as string | undefined,
+          frame: item.frame as number | undefined,
+          slot: item.slot as number | undefined,
+          ontId: item.ont_id as number | undefined,
+          board: Number(item.board ?? 0),
+          port: Number(item.port ?? 0),
+          discoveredAt: String(item.discovered_at ?? new Date().toISOString()),
+          distance: Number(item.distance ?? 0),
+          onuType: String(item.onu_type ?? 'ONU'),
+          status: (item.status as PendingONU['status']) ?? 'pending',
+          rxPower: item.rx_power as number | undefined,
+          temperature: item.temperature as number | undefined,
+          };
+        }
       );
 
       setPendingONUs(convertedPendingONUs);
     } catch (err) {
       console.error('Erro ao carregar ONUs pendentes:', err);
       setError('Erro ao carregar ONUs pendentes');
-      // Fallback para dados mock em caso de erro
-      setPendingONUs(mockPendingONUs);
     } finally {
       setLoading(false);
     }
@@ -186,35 +214,58 @@ export const ProvisioningProvider: React.FC<ProvisioningProviderProps> = ({
     onuId: string,
     clientData: {
       client_name: string;
+      client_cpf_cnpj?: string;
       client_address: string;
       service_profile?: string;
       vlan_id?: number;
       wan_mode?: string;
       comment?: string;
     }
-  ): Promise<boolean> => {
+  ): Promise<{ success: boolean; message?: string; genieacsAvailable?: boolean }> => {
     try {
       setLoading(true);
       setError(null);
 
       // Chamar API para autorizar a ONU
-      const result = await genieacsApi.authorizeONU(onuId, clientData);
+      const pendingONU = pendingONUs.find((onu) => onu.id === onuId);
+      const result = await genieacsApi.authorizeONU(onuId, {
+        ...clientData,
+        serial_number: pendingONU?.serialNumber,
+        onu_type: pendingONU?.onuType,
+        olt_id: pendingONU?.oltId,
+        olt_port: pendingONU?.oltPort,
+        frame: pendingONU?.frame,
+        slot: pendingONU?.slot,
+        board: pendingONU?.board,
+        port: pendingONU?.port,
+        ont_id: pendingONU?.ontId,
+      });
 
-      if (result.success) {
+      const isSuccess = result.success === true;
+      const details = result.details as { genieacs?: { status?: string } } | undefined;
+      const genieacsAvailable = details?.genieacs?.status === 'success';
+      const successMessage =
+        typeof result.message === 'string' && result.message.trim()
+          ? result.message.trim()
+          : 'ONU autorizada com sucesso';
+      const failureMessage = getProvisionFailureMessage(result);
+
+      if (isSuccess) {
         // Remover da lista de pendentes
         setPendingONUs((prev) => prev.filter((onu) => onu.id !== onuId));
 
         // Recarregar lista de provisionadas para incluir a nova
         await refreshProvisionedONUs();
 
-        return true;
+        return { success: true, message: successMessage, genieacsAvailable };
       }
 
-      return false;
+      return { success: false, message: failureMessage, genieacsAvailable };
     } catch (err) {
       console.error('Erro ao provisionar ONU:', err);
-      setError('Erro ao provisionar ONU');
-      return false;
+      const errorMessage =
+        err instanceof Error ? err.message : 'Erro ao provisionar ONU';
+      return { success: false, message: errorMessage };
     } finally {
       setLoading(false);
     }

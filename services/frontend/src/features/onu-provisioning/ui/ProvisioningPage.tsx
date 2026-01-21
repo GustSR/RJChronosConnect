@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Add, CheckCircle, FilterList, Refresh, Schedule, Search, TrendingUp, Warning } from '@mui/icons-material';
-import { Alert, Box, Button, Chip, Container, FormControl, Grid, InputAdornment, InputLabel, LinearProgress, MenuItem, Paper, Select, Snackbar, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, Container, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, Grid, InputAdornment, InputLabel, LinearProgress, MenuItem, Paper, Select, Snackbar, TextField, Typography } from '@mui/material';
 import { AnimatedCard, PromptDialog } from '@shared/ui/components';
 import PendingOnuCard from '@entities/onu/ui/PendingOnuCard';
 import type { PendingONU } from '../provisioning';
@@ -10,7 +10,17 @@ type Props = {
   loading: boolean;
   error: string | null;
   onRefresh: () => Promise<void> | void;
-  onProvision: (onuId: string, data: { client_name: string; client_address: string; service_profile?: string; vlan_id?: number; wan_mode?: string }) => Promise<boolean>;
+  onProvision: (
+    onuId: string,
+    data: {
+      client_name: string;
+      client_cpf_cnpj?: string;
+      client_address: string;
+      service_profile?: string;
+      vlan_id?: number;
+      wan_mode?: string;
+    }
+  ) => Promise<{ success: boolean; message?: string; genieacsAvailable?: boolean }>;
   onReject: (onuId: string, reason?: string) => Promise<boolean>;
   onNavigateToConfig: (onuId: string) => void;
 };
@@ -31,6 +41,15 @@ export const ProvisioningPage: React.FC<Props> = ({
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectOnuId, setRejectOnuId] = useState<string>('');
   const [rejectReason, setRejectReason] = useState('');
+
+  const [provisionDialogOpen, setProvisionDialogOpen] = useState(false);
+  const [provisionOnuId, setProvisionOnuId] = useState<string>('');
+  const [provisionFormTouched, setProvisionFormTouched] = useState(false);
+  const [provisionForm, setProvisionForm] = useState({
+    client_name: '',
+    client_cpf_cnpj: '',
+    client_address: '',
+  });
 
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -66,29 +85,72 @@ export const ProvisioningPage: React.FC<Props> = ({
 
   const uniqueOlts = useMemo(() => [...new Set(pendingONUs.map((onu) => onu.oltName))], [pendingONUs]);
 
+  const openProvisionDialog = useCallback(
+    (onuId: string) => {
+      setProvisionOnuId(onuId);
+      setProvisionFormTouched(false);
+      setProvisionForm({ client_name: '', client_cpf_cnpj: '', client_address: '' });
+      setProvisionDialogOpen(true);
+    },
+    []
+  );
+
+  const closeProvisionDialog = useCallback(() => {
+    setProvisionDialogOpen(false);
+    setProvisionOnuId('');
+    setProvisionFormTouched(false);
+  }, []);
+
   const handleProvision = useCallback(
     async (onuId: string) => {
       try {
-        const success = await onProvision(onuId, {
-          client_name: `Cliente ${onuId.slice(-6)}`,
-          client_address: 'Endereço a ser configurado',
+        setProvisionFormTouched(true);
+        const clientName = provisionForm.client_name.trim();
+        const clientAddress = provisionForm.client_address.trim();
+        if (!clientName || !clientAddress) {
+          return;
+        }
+
+        const result = await onProvision(onuId, {
+          client_name: clientName,
+          client_cpf_cnpj: provisionForm.client_cpf_cnpj.trim() || undefined,
+          client_address: clientAddress,
           service_profile: 'default',
           vlan_id: 100,
           wan_mode: 'dhcp',
         });
 
-        if (success) {
-          onNavigateToConfig(onuId);
+        if (result.success) {
+          setSnackbar({
+            open: true,
+            severity: result.genieacsAvailable ? 'success' : 'info',
+            message: result.message || 'Provisionamento concluído.',
+          });
+          if (result.genieacsAvailable) {
+            onNavigateToConfig(onuId);
+          }
+          closeProvisionDialog();
         } else {
-          setSnackbar({ open: true, severity: 'error', message: 'Erro ao autorizar ONU. Tente novamente.' });
+          setSnackbar({
+            open: true,
+            severity: 'error',
+            message: result.message || 'Erro ao autorizar ONU. Tente novamente.',
+          });
         }
       } catch (caught) {
         console.error('Erro no provisionamento:', caught);
-        setSnackbar({ open: true, severity: 'error', message: 'Erro ao processar provisionamento' });
+        const message =
+          caught instanceof Error
+            ? caught.message
+            : 'Erro ao processar provisionamento';
+        setSnackbar({ open: true, severity: 'error', message });
       }
     },
-    [onNavigateToConfig, onProvision]
+    [closeProvisionDialog, onNavigateToConfig, onProvision, provisionForm]
   );
+
+  const nameError = provisionFormTouched && !provisionForm.client_name.trim();
+  const addressError = provisionFormTouched && !provisionForm.client_address.trim();
 
   const openRejectDialog = useCallback((onuId: string) => {
     setRejectOnuId(onuId);
@@ -312,13 +374,86 @@ export const ProvisioningPage: React.FC<Props> = ({
             {filteredONUs.map((onu, index) => (
               <Grid item xs={12} md={6} lg={4} key={onu.id}>
                 <AnimatedCard delay={600 + index * 100} disableHoverEffect={true} sx={{ boxShadow: 'none !important', bgcolor: 'transparent !important' }}>
-                  <PendingOnuCard onu={onu} onProvision={handleProvision} onReject={openRejectDialog} />
+                  <PendingOnuCard onu={onu} onProvision={openProvisionDialog} onReject={openRejectDialog} />
                 </AnimatedCard>
               </Grid>
             ))}
           </Grid>
         )}
       </Container>
+
+      <Dialog
+        open={provisionDialogOpen}
+        onClose={closeProvisionDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Vincular cliente antes do provisionamento</DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Informe os dados do cliente para concluir o provisionamento.
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                required
+                label="Nome do cliente"
+                value={provisionForm.client_name}
+                onChange={(event) =>
+                  setProvisionForm((prev) => ({
+                    ...prev,
+                    client_name: event.target.value,
+                  }))
+                }
+                error={nameError}
+                helperText={nameError ? 'Informe o nome do cliente.' : ' '}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="CPF/CNPJ (opcional)"
+                value={provisionForm.client_cpf_cnpj}
+                onChange={(event) =>
+                  setProvisionForm((prev) => ({
+                    ...prev,
+                    client_cpf_cnpj: event.target.value,
+                  }))
+                }
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                required
+                label="Endereco"
+                value={provisionForm.client_address}
+                onChange={(event) =>
+                  setProvisionForm((prev) => ({
+                    ...prev,
+                    client_address: event.target.value,
+                  }))
+                }
+                error={addressError}
+                helperText={addressError ? 'Informe o endereco do cliente.' : ' '}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={closeProvisionDialog} variant="outlined">
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => handleProvision(provisionOnuId)}
+            variant="contained"
+            disabled={!provisionOnuId}
+          >
+            Provisionar
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <PromptDialog
         open={rejectDialogOpen}

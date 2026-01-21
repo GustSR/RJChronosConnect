@@ -11,3 +11,4 @@ class OntAutofindSnmpInfo(BaseModel):
     port: Optional[str] = None
     ont_id: Optional[int] = None
     autofind_time: Optional[str] = None
+    equipment_id: Optional[str] = None

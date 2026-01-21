@@ -191,3 +191,7 @@ volumes:
 networks:
   rjchronos-net:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 10.250.10.0/24
+          gateway: 10.250.10.1
