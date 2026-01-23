@@ -128,9 +128,6 @@ export class GenieACSApiService {
    * Buscar todas as ONUs provisionadas (clientes) preservando dados salvos
    */
   async getONUs(query?: DeviceQuery): Promise<ONU[]> {
-    if (devConfig.useMockData) {
-      return fakeDataService.getONUs(query);
-    }
     return httpClient.get<ONU[]>(
       '/provisioning/clients',
       query as Record<string, unknown>

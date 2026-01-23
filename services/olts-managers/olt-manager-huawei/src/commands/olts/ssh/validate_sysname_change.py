@@ -87,6 +87,13 @@ class ValidateSysnameChangeCommand(OLTCommand):
                 "validation_timestamp": int(time.time())
             }
 
+    def _parse_output(self, raw_output: str, olt_version: str) -> Dict[str, Any]:
+        """
+        Parsing não aplicável para validação (não há saída CLI).
+        """
+        output = raw_output.strip() if isinstance(raw_output, str) else raw_output
+        return {"success": True, "raw_output": output}
+
     def _get_current_sysname(self, connection_manager) -> str:
         """
         Obtém o sysname atual da OLT via SSH.
@@ -187,6 +194,33 @@ class GetSysnameCommand(OLTCommand):
                 "message": f"Erro ao obter sysname: {str(e)}",
                 "timestamp": int(time.time())
             }
+
+    def _parse_output(self, raw_output: str, olt_version: str) -> Dict[str, Any]:
+        """
+        Processa a saída bruta para extrair o sysname/hostname.
+        """
+        sysname = None
+        for line in raw_output.splitlines():
+            line = line.strip()
+            lower_line = line.lower()
+            if lower_line.startswith("sysname ") or lower_line.startswith("hostname "):
+                sysname = line.split(None, 1)[1].strip()
+                break
+
+            if "sysname" in lower_line or "hostname" in lower_line:
+                parts = line.split()
+                for i, part in enumerate(parts):
+                    if part.lower() in {"sysname", "hostname"} and i + 1 < len(parts):
+                        sysname = parts[i + 1].strip()
+                        break
+                if sysname:
+                    break
+
+        return {
+            "success": sysname is not None,
+            "sysname": sysname,
+            "raw_output": raw_output.strip()
+        }
 
     def _get_current_sysname(self, connection_manager) -> str:
         """Obtém o sysname atual da OLT via SSH."""

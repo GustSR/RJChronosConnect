@@ -65,6 +65,18 @@ export const CustomerDetailsPage: React.FC<Props> = ({
       const onuProvisionada = provisionedONUs.find((onu) => onu.id === customerId);
 
       if (onuProvisionada) {
+        const clientName = onuProvisionada.clientName?.trim() || '';
+        const clientAddress = onuProvisionada.clientAddress?.trim() || '';
+        const matchingOnus = clientName
+          ? provisionedONUs.filter((onu) => {
+              const name = (onu.clientName || '').trim();
+              if (!name || name !== clientName) return false;
+              if (!clientAddress) return true;
+              return (onu.clientAddress || '').trim() === clientAddress;
+            })
+          : [onuProvisionada];
+        const resolvedOnus = matchingOnus.length ? matchingOnus : [onuProvisionada];
+
         const clienteMock: Cliente = {
           id: onuProvisionada.id,
           nome: onuProvisionada.clientName,
@@ -80,22 +92,22 @@ export const CustomerDetailsPage: React.FC<Props> = ({
         setCliente(clienteMock);
         setDadosEdicao(clienteMock);
 
-        const onuDoCliente: ONUDoCliente = {
-          id: onuProvisionada.id,
-          serialNumber: onuProvisionada.serialNumber,
-          modelo: onuProvisionada.onuType,
-          oltName: onuProvisionada.oltName,
-          board: onuProvisionada.board.toString(),
-          port: onuProvisionada.port.toString(),
-          endereco: onuProvisionada.clientAddress,
-          comentario: `ONU ${onuProvisionada.onuType} - Modo ${onuProvisionada.onuMode}`,
-          vlan: onuProvisionada.attachedVlans.join(','),
-          status: onuProvisionada.status === 'disabled' ? 'admin_disabled' : onuProvisionada.status,
-          sinal: onuProvisionada.onuRx,
-          dataAutorizacao: onuProvisionada.authorizedAt,
-        };
+        const onusDoCliente = resolvedOnus.map((onu) => ({
+          id: onu.id,
+          serialNumber: onu.serialNumber,
+          modelo: onu.onuType,
+          oltName: onu.oltName,
+          board: onu.board.toString(),
+          port: onu.port.toString(),
+          endereco: onu.clientAddress,
+          comentario: `ONU ${onu.onuType} - Modo ${onu.onuMode}`,
+          vlan: onu.attachedVlans.join(','),
+          status: onu.status === 'disabled' ? 'admin_disabled' : onu.status,
+          sinal: onu.onuRx,
+          dataAutorizacao: onu.authorizedAt,
+        }));
 
-        setOnusDoCliente([onuDoCliente]);
+        setOnusDoCliente(onusDoCliente);
       } else {
         setCliente(null);
         setOnusDoCliente([]);
@@ -384,4 +396,3 @@ export const CustomerDetailsPage: React.FC<Props> = ({
     </Container>
   );
 };
-

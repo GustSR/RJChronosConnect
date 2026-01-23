@@ -1,3 +1,4 @@
+import inspect
 import requests
 from typing import List, Dict, Any, Optional
 
@@ -139,8 +140,35 @@ def _execute_cli_command(olt_id: int, command_class, **kwargs):
             olt_version = "unknown"
         else:
             olt_version = _get_olt_version(connection)
-        command = command_class(**kwargs)
-        result = command.execute(connection, olt_version)
+        def _init_accepts_kwargs() -> bool:
+            if not kwargs:
+                return True
+            params = inspect.signature(command_class.__init__).parameters
+            if any(param.kind == param.VAR_KEYWORD for param in params.values()):
+                return True
+            allowed = {
+                name
+                for name, param in params.items()
+                if name != "self" and param.kind in (param.POSITIONAL_OR_KEYWORD, param.KEYWORD_ONLY)
+            }
+            return set(kwargs.keys()).issubset(allowed)
+
+        def _execute_accepts_kwargs(command) -> bool:
+            params = inspect.signature(command.execute).parameters
+            return any(param.kind == param.VAR_KEYWORD for param in params.values())
+
+        init_accepts_kwargs = _init_accepts_kwargs()
+        command = command_class(**kwargs) if init_accepts_kwargs else command_class()
+        execute_accepts_kwargs = _execute_accepts_kwargs(command)
+        if kwargs and not init_accepts_kwargs and not execute_accepts_kwargs:
+            raise TypeError(
+                f"{command_class.__name__} não aceita parâmetros: {', '.join(sorted(kwargs.keys()))}"
+            )
+
+        if execute_accepts_kwargs:
+            result = command.execute(connection, olt_version, **kwargs)
+        else:
+            result = command.execute(connection, olt_version)
         
         logger.debug(f"Comando {command_class.__name__} executado com sucesso via pool")
         return result

@@ -108,8 +108,8 @@ const ONUInventoryCard: React.FC<ONUInventoryCardProps> = ({
     return 'Fraco';
   };
 
-  const getOnuIcon = (modelo: string) => {
-    const type = modelo.toLowerCase();
+  const getOnuIcon = (modelo?: string) => {
+    const type = (modelo || 'ONU').toLowerCase();
     if (type.includes('zte')) return '🔷';
     if (type.includes('huawei')) return '🔴';
     if (type.includes('fiberhome')) return '🟢';
@@ -157,7 +157,7 @@ const ONUInventoryCard: React.FC<ONUInventoryCardProps> = ({
             </Box>
             <Box>
               <Typography variant="h6" fontWeight="600" fontSize="16px">
-                {onu.modelo}
+                {onu.modelo || 'ONU'}
               </Typography>
               <Typography
                 variant="body2"

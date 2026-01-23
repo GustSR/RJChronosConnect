@@ -175,6 +175,15 @@ class RollbackSysnameCommand(OLTCommand):
             "raw_output": raw_output.strip()
         }
 
+    def _parse_output(self, raw_output: str, olt_version: str, **kwargs) -> Dict[str, Any]:
+        """
+        Parser genérico para compatibilidade com OLTCommand.
+        """
+        expected_sysname = kwargs.get("expected_sysname")
+        if expected_sysname:
+            return self._parse_rollback_output(raw_output, olt_version, expected_sysname)
+        return {"success": True, "raw_output": raw_output.strip()}
+
     def _get_current_sysname(self, connection_manager) -> str:
         """Obtém o sysname atual da OLT via SSH."""
         try:
@@ -303,6 +312,13 @@ class SysnameAuditCommand(OLTCommand):
                 "olt_id": kwargs.get('olt_id'),
                 "timestamp": int(time.time())
             }
+
+    def _parse_output(self, raw_output: str, olt_version: str) -> Dict[str, Any]:
+        """
+        Parser genérico para compatibilidade com OLTCommand.
+        """
+        output = raw_output.strip() if isinstance(raw_output, str) else raw_output
+        return {"success": True, "raw_output": output}
 
     def _validate_input(self, **kwargs) -> bool:
         """Valida parâmetros para auditoria."""

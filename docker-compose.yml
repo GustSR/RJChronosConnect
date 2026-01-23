@@ -1,197 +1,195 @@
-version: '3.8'
+version: "3.8"
 
 # Arquivo base do Docker Compose.
 # Contém a definição de todos os serviços, redes e volumes que são comuns
 # a todos os ambientes (desenvolvimento, produção, etc.).
 
 services:
-  edge:
-    build:
-      context: .
-      dockerfile: services/edge/Dockerfile
-    ports:
-      - "8081:8081"
-    environment:
-      - EDGE_HOST=0.0.0.0
-      - EDGE_PORT=8081
-      - BACKEND_INTERNAL_URL=http://backend:8000
-      - GENIEACS_UI_INTERNAL_URL=http://genieacs:3000
-      - BETTER_AUTH_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
-      - BETTER_AUTH_BASE_PATH=/api/auth
-      - BETTER_AUTH_BASE_URL=${BETTER_AUTH_BASE_URL}
-      - BETTER_AUTH_TRUSTED_ORIGINS=${BETTER_AUTH_TRUSTED_ORIGINS}
-      - EDGE_LEGACY_AUTH_PROXY_ENABLED=${EDGE_LEGACY_AUTH_PROXY_ENABLED}
-      - EDGE_LEGACY_AUTH_PROXY_HEADER=${EDGE_LEGACY_AUTH_PROXY_HEADER}
-      - EDGE_LEGACY_AUTH_PROXY_TOKEN=${EDGE_LEGACY_AUTH_PROXY_TOKEN}
-    networks:
-      - rjchronos-net
-    depends_on:
-      - backend
-      - db-app
+    edge:
+        build:
+            context: .
+            dockerfile: services/edge/Dockerfile
+        ports:
+            - "8081:8081"
+        environment:
+            - EDGE_HOST=0.0.0.0
+            - EDGE_PORT=8081
+            - BACKEND_INTERNAL_URL=http://backend:8000
+            - GENIEACS_UI_INTERNAL_URL=http://genieacs:3000
+            - BETTER_AUTH_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
+            - BETTER_AUTH_BASE_PATH=/api/auth
+            - BETTER_AUTH_BASE_URL=${BETTER_AUTH_BASE_URL}
+            - BETTER_AUTH_TRUSTED_ORIGINS=${BETTER_AUTH_TRUSTED_ORIGINS}
+            - EDGE_LEGACY_AUTH_PROXY_ENABLED=${EDGE_LEGACY_AUTH_PROXY_ENABLED}
+            - EDGE_LEGACY_AUTH_PROXY_HEADER=${EDGE_LEGACY_AUTH_PROXY_HEADER}
+            - EDGE_LEGACY_AUTH_PROXY_TOKEN=${EDGE_LEGACY_AUTH_PROXY_TOKEN}
+        networks:
+            - rjchronos-net
+        depends_on:
+            - backend
+            - db-app
 
-  backend:
-    build:
-      context: ./services/backend-api
-    environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
-      - GENIACS_API_URL=http://genieacs:7557/
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-    networks:
-      - rjchronos-net
-    depends_on:
-      - db-app
+    backend:
+        build:
+            context: ./services/backend-api
+        environment:
+            - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
+            - GENIACS_API_URL=http://genieacs:7557/
+            - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+            - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+        networks:
+            - rjchronos-net
+        depends_on:
+            - db-app
 
-  genieacs:
-    build:
-      context: ./services/genieacs
-    ports:
-      - "7547:7547"
-      - "7557:7557"
-      - "7567:7567"
-      - "3001:3000"
-    environment:
-      - GENIEACS_MONGODB_CONNECTION_URL=mongodb://db-acs:27017/genieacs
-      - GENIEACS_REDIS_HOST=redis
-      - GENIEACS_UI_JWT_SECRET=${UI_JWT_SECRET}
-    networks:
-      - rjchronos-net
-    depends_on:
-      - db-acs
-      - redis
+    genieacs:
+        build:
+            context: ./services/genieacs
+        network_mode: "host"
+        environment:
+            - GENIEACS_MONGODB_CONNECTION_URL=mongodb://127.0.0.1:27017/genieacs
+            - GENIEACS_REDIS_HOST=127.0.0.1
+            - GENIEACS_UI_JWT_SECRET=${UI_JWT_SECRET}
+            - GENIEACS_DEBUG_FILE=/var/log/genieacs/genieacs-debug.yaml
+            - GENIEACS_DEBUG_FORMAT=yaml
+        depends_on:
+            - db-acs
+            - redis
 
-  db-app:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-    networks:
-      - rjchronos-net
+    db-app:
+        image: postgres:15-alpine
+        environment:
+            - POSTGRES_USER=${POSTGRES_USER}
+            - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+            - POSTGRES_DB=${POSTGRES_DB}
+        networks:
+            - rjchronos-net
 
-  db-acs:
-    image: mongo:8.0
-    networks:
-      - rjchronos-net
+    db-acs:
+        image: mongo:8.0
+        ports:
+            - "27017:27017"
+        networks:
+            - rjchronos-net
 
-  redis:
-    image: redis:alpine
-    networks:
-      - rjchronos-net
+    redis:
+        image: redis:alpine
+        networks:
+            - rjchronos-net
 
-  # Sistema de logging centralizado
-  rabbitmq:
-    image: rabbitmq:3.12-management-alpine
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-      - ./infrastructure/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
-      - ./infrastructure/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
-    networks:
-      - rjchronos-net
+    # Sistema de logging centralizado
+    rabbitmq:
+        image: rabbitmq:3.12-management-alpine
+        ports:
+            - "5672:5672"
+            - "15672:15672"
+        environment:
+            - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+            - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+        volumes:
+            - rabbitmq_data:/var/lib/rabbitmq
+            - ./infrastructure/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+            - ./infrastructure/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+        networks:
+            - rjchronos-net
 
-  clickhouse:
-    image: clickhouse/clickhouse-server:23.8-alpine
-    ports:
-      - "8123:8123"
-      - "9000:9000"
-    environment:
-      - CLICKHOUSE_DB=logs
-      - CLICKHOUSE_USER=default
-      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
-    volumes:
-      - clickhouse_data:/var/lib/clickhouse
-      - clickhouse_logs:/var/log/clickhouse-server
-      - ./infrastructure/clickhouse/config.xml:/etc/clickhouse-server/config.xml:ro
-    networks:
-      - rjchronos-net
+    clickhouse:
+        image: clickhouse/clickhouse-server:23.8-alpine
+        ports:
+            - "8123:8123"
+            - "9000:9000"
+        environment:
+            - CLICKHOUSE_DB=logs
+            - CLICKHOUSE_USER=default
+            - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+        volumes:
+            - clickhouse_data:/var/lib/clickhouse
+            - clickhouse_logs:/var/log/clickhouse-server
+            - ./infrastructure/clickhouse/config.xml:/etc/clickhouse-server/config.xml:ro
+        networks:
+            - rjchronos-net
 
-  # Consumers de log
-  log-consumer-postgresql:
-    build:
-      context: ./services/log-consumer-postgresql
-    environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
-      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
-      - RABBITMQ_EXCHANGE=system.logs
-      - RABBITMQ_CRITICAL_QUEUE=logs.postgresql.critical
-      - RABBITMQ_PREFETCH_COUNT=10
-      - RABBITMQ_TIMEOUT=30
-      - DB_ECHO=false
-      - DB_POOL_SIZE=10
-      - DB_MAX_OVERFLOW=20
-    networks:
-      - rjchronos-net
-    depends_on:
-      - db-app
-      - rabbitmq
-    restart: unless-stopped
+    # Consumers de log
+    log-consumer-postgresql:
+        build:
+            context: ./services/log-consumer-postgresql
+        environment:
+            - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
+            - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
+            - RABBITMQ_EXCHANGE=system.logs
+            - RABBITMQ_CRITICAL_QUEUE=logs.postgresql.critical
+            - RABBITMQ_PREFETCH_COUNT=10
+            - RABBITMQ_TIMEOUT=30
+            - DB_ECHO=false
+            - DB_POOL_SIZE=10
+            - DB_MAX_OVERFLOW=20
+        networks:
+            - rjchronos-net
+        depends_on:
+            - db-app
+            - rabbitmq
+        restart: unless-stopped
 
-  log-consumer-clickhouse:
-    build:
-      context: ./services/log-consumer-clickhouse
-    environment:
-      - CLICKHOUSE_HOST=clickhouse
-      - CLICKHOUSE_PORT=8123
-      - CLICKHOUSE_USER=default
-      - CLICKHOUSE_PASSWORD=
-      - CLICKHOUSE_DATABASE=logs
-      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
-      - RABBITMQ_EXCHANGE=system.logs
-      - RABBITMQ_OPERATIONAL_QUEUE=logs.clickhouse.operational
-      - RABBITMQ_PREFETCH_COUNT=100
-      - RABBITMQ_TIMEOUT=30
-      - CLICKHOUSE_BATCH_SIZE=1000
-      - CLICKHOUSE_BATCH_TIMEOUT=30
-    networks:
-      - rjchronos-net
-    depends_on:
-      - clickhouse
-      - rabbitmq
-    restart: unless-stopped
+    log-consumer-clickhouse:
+        build:
+            context: ./services/log-consumer-clickhouse
+        environment:
+            - CLICKHOUSE_HOST=clickhouse
+            - CLICKHOUSE_PORT=8123
+            - CLICKHOUSE_USER=default
+            - CLICKHOUSE_PASSWORD=
+            - CLICKHOUSE_DATABASE=logs
+            - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
+            - RABBITMQ_EXCHANGE=system.logs
+            - RABBITMQ_OPERATIONAL_QUEUE=logs.clickhouse.operational
+            - RABBITMQ_PREFETCH_COUNT=100
+            - RABBITMQ_TIMEOUT=30
+            - CLICKHOUSE_BATCH_SIZE=1000
+            - CLICKHOUSE_BATCH_TIMEOUT=30
+        networks:
+            - rjchronos-net
+        depends_on:
+            - clickhouse
+            - rabbitmq
+        restart: unless-stopped
 
-  # Monitor do sistema de logging
-  log-monitor:
-    build:
-      context: ./services/log-monitor
-    ports:
-      - "8100:8000"  # Prometheus metrics
-      - "8080:8080"  # Health check API
-    environment:
-      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
-      - CLICKHOUSE_HOST=clickhouse
-      - CLICKHOUSE_PORT=8123
-      - CLICKHOUSE_USER=default
-      - CLICKHOUSE_PASSWORD=
-      - CLICKHOUSE_DATABASE=logs
-      - POSTGRESQL_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
-    networks:
-      - rjchronos-net
-    depends_on:
-      - rabbitmq
-      - clickhouse
-      - db-app
-      - log-consumer-postgresql
-      - log-consumer-clickhouse
-    restart: unless-stopped
+    # Monitor do sistema de logging
+    log-monitor:
+        build:
+            context: ./services/log-monitor
+        ports:
+            - "8100:8000" # Prometheus metrics
+            - "8080:8080" # Health check API
+        environment:
+            - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
+            - CLICKHOUSE_HOST=clickhouse
+            - CLICKHOUSE_PORT=8123
+            - CLICKHOUSE_USER=default
+            - CLICKHOUSE_PASSWORD=
+            - CLICKHOUSE_DATABASE=logs
+            - POSTGRESQL_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
+        networks:
+            - rjchronos-net
+        depends_on:
+            - rabbitmq
+            - clickhouse
+            - db-app
+            - log-consumer-postgresql
+            - log-consumer-clickhouse
+        restart: unless-stopped
 
 volumes:
-  postgres_app_data:
-  mongo_acs_data:
-  rabbitmq_data:
-  clickhouse_data:
-  clickhouse_logs:
+    postgres_app_data:
+    mongo_acs_data:
+    rabbitmq_data:
+    clickhouse_data:
+    clickhouse_logs:
 
 networks:
-  rjchronos-net:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 10.250.10.0/24
-          gateway: 10.250.10.1
+    rjchronos-net:
+        driver: bridge
+        ipam:
+            config:
+                - subnet: 10.250.10.0/24
+                  gateway: 10.250.10.1

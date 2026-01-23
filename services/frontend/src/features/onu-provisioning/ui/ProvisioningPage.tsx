@@ -1,12 +1,13 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Add, CheckCircle, FilterList, Refresh, Schedule, Search, TrendingUp, Warning } from '@mui/icons-material';
-import { Alert, Box, Button, Chip, Container, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, Grid, InputAdornment, InputLabel, LinearProgress, MenuItem, Paper, Select, Snackbar, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, Container, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormHelperText, Grid, InputAdornment, InputLabel, LinearProgress, MenuItem, Paper, Select, Snackbar, TextField, Typography } from '@mui/material';
 import { AnimatedCard, PromptDialog } from '@shared/ui/components';
 import PendingOnuCard from '@entities/onu/ui/PendingOnuCard';
-import type { PendingONU } from '../provisioning';
+import type { PendingONU, ProvisionedONU } from '../provisioning';
 
 type Props = {
   pendingONUs: PendingONU[];
+  provisionedONUs: ProvisionedONU[];
   loading: boolean;
   error: string | null;
   onRefresh: () => Promise<void> | void;
@@ -27,6 +28,7 @@ type Props = {
 
 export const ProvisioningPage: React.FC<Props> = ({
   pendingONUs,
+  provisionedONUs,
   loading,
   error,
   onRefresh,
@@ -45,6 +47,7 @@ export const ProvisioningPage: React.FC<Props> = ({
   const [provisionDialogOpen, setProvisionDialogOpen] = useState(false);
   const [provisionOnuId, setProvisionOnuId] = useState<string>('');
   const [provisionFormTouched, setProvisionFormTouched] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [provisionForm, setProvisionForm] = useState({
     client_name: '',
     client_cpf_cnpj: '',
@@ -84,11 +87,37 @@ export const ProvisioningPage: React.FC<Props> = ({
   );
 
   const uniqueOlts = useMemo(() => [...new Set(pendingONUs.map((onu) => onu.oltName))], [pendingONUs]);
+  const mockCustomers = useMemo(() => {
+    const seen = new Set<string>();
+    return provisionedONUs.reduce(
+      (acc, onu) => {
+        const name = onu.clientName?.trim();
+        if (!name) {
+          return acc;
+        }
+        const address = onu.clientAddress?.trim() || 'Endereco nao informado';
+        const key = `${name}||${address}`;
+        if (seen.has(key)) {
+          return acc;
+        }
+        seen.add(key);
+        acc.push({
+          id: onu.id,
+          name,
+          address,
+          cpfCnpj: undefined,
+        });
+        return acc;
+      },
+      [] as Array<{ id: string; name: string; address: string; cpfCnpj?: string }>
+    );
+  }, [provisionedONUs]);
 
   const openProvisionDialog = useCallback(
     (onuId: string) => {
       setProvisionOnuId(onuId);
       setProvisionFormTouched(false);
+      setSelectedCustomerId('');
       setProvisionForm({ client_name: '', client_cpf_cnpj: '', client_address: '' });
       setProvisionDialogOpen(true);
     },
@@ -99,7 +128,22 @@ export const ProvisioningPage: React.FC<Props> = ({
     setProvisionDialogOpen(false);
     setProvisionOnuId('');
     setProvisionFormTouched(false);
+    setSelectedCustomerId('');
   }, []);
+
+  const handleCustomerChange = useCallback(
+    (customerId: string) => {
+      setSelectedCustomerId(customerId);
+      const selectedCustomer = mockCustomers.find((customer) => customer.id === customerId);
+      setProvisionForm((prev) => ({
+        ...prev,
+        client_name: selectedCustomer?.name ?? '',
+        client_address: selectedCustomer?.address ?? '',
+        client_cpf_cnpj: selectedCustomer?.cpfCnpj ?? '',
+      }));
+    },
+    [mockCustomers]
+  );
 
   const handleProvision = useCallback(
     async (onuId: string) => {
@@ -149,7 +193,7 @@ export const ProvisioningPage: React.FC<Props> = ({
     [closeProvisionDialog, onNavigateToConfig, onProvision, provisionForm]
   );
 
-  const nameError = provisionFormTouched && !provisionForm.client_name.trim();
+  const customerError = provisionFormTouched && !selectedCustomerId;
   const addressError = provisionFormTouched && !provisionForm.client_address.trim();
 
   const openRejectDialog = useCallback((onuId: string) => {
@@ -395,20 +439,26 @@ export const ProvisioningPage: React.FC<Props> = ({
           </Typography>
           <Grid container spacing={2}>
             <Grid item xs={12}>
-              <TextField
-                fullWidth
-                required
-                label="Nome do cliente"
-                value={provisionForm.client_name}
-                onChange={(event) =>
-                  setProvisionForm((prev) => ({
-                    ...prev,
-                    client_name: event.target.value,
-                  }))
-                }
-                error={nameError}
-                helperText={nameError ? 'Informe o nome do cliente.' : ' '}
-              />
+              <FormControl fullWidth required error={customerError}>
+                <InputLabel id="provisioning-customer-label">Cliente</InputLabel>
+                <Select
+                  labelId="provisioning-customer-label"
+                  label="Cliente"
+                  value={selectedCustomerId}
+                  onChange={(event) => handleCustomerChange(event.target.value)}
+                  MenuProps={{ disableScrollLock: true }}
+                  disabled={mockCustomers.length === 0}
+                >
+                  {mockCustomers.map((customer) => (
+                    <MenuItem key={customer.id} value={customer.id}>
+                      {customer.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <FormHelperText>
+                  {customerError ? 'Selecione um cliente.' : ' '}
+                </FormHelperText>
+              </FormControl>
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
@@ -429,12 +479,7 @@ export const ProvisioningPage: React.FC<Props> = ({
                 required
                 label="Endereco"
                 value={provisionForm.client_address}
-                onChange={(event) =>
-                  setProvisionForm((prev) => ({
-                    ...prev,
-                    client_address: event.target.value,
-                  }))
-                }
+                InputProps={{ readOnly: true }}
                 error={addressError}
                 helperText={addressError ? 'Informe o endereco do cliente.' : ' '}
               />
@@ -448,7 +493,7 @@ export const ProvisioningPage: React.FC<Props> = ({
           <Button
             onClick={() => handleProvision(provisionOnuId)}
             variant="contained"
-            disabled={!provisionOnuId}
+            disabled={!provisionOnuId || !selectedCustomerId}
           >
             Provisionar
           </Button>

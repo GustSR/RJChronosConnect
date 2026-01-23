@@ -136,14 +136,20 @@ export const ProvisioningProvider: React.FC<ProvisioningProviderProps> = ({
       // Converter dados do backend para o formato esperado pelo frontend
       const convertedProvisionedONUs = data.map(
         (item: Record<string, unknown>) => ({
-          id: item.id,
-          serialNumber: item.serial_number,
-          oltName: item.olt_id, // OLT ID do backend
+          id:
+            item.id != null
+              ? String(item.id)
+              : item.serial_number != null
+              ? String(item.serial_number)
+              : '',
+          serialNumber:
+            item.serial_number != null ? String(item.serial_number) : '',
+          oltName: item.olt_id != null ? String(item.olt_id) : '', // OLT ID do backend
           board: 1, // Seria extraído dos dados reais
           port: parseInt(item.pon_port?.split('/')[1]) || 1,
           onuId: Math.floor(Math.random() * 100) + 1,
           authorizedAt: item.created_at,
-          onuType: item.model,
+          onuType: item.model ?? 'ONU',
 
           // Dados do cliente (obtidos do backend após salvamento)
           clientName:

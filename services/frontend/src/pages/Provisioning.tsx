@@ -8,11 +8,12 @@ const Provisioning: React.FC = () => {
   useTitle('Provisionamento');
 
   const navigate = useNavigate();
-  const { pendingONUs, loading, error, provisionONU, rejectONU, refreshPendingONUs } = useProvisioning();
+  const { pendingONUs, provisionedONUs, loading, error, provisionONU, rejectONU, refreshPendingONUs } = useProvisioning();
 
   return (
     <ProvisioningPage
       pendingONUs={pendingONUs}
+      provisionedONUs={provisionedONUs}
       loading={loading}
       error={error}
       onRefresh={refreshPendingONUs}

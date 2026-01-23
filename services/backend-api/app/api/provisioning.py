@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Optional, Dict, Any, Tuple
 from datetime import datetime
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 import asyncio
@@ -26,6 +26,7 @@ from .helpers import ensure_device_exists
 from ..models.subscriber import Subscriber
 from ..models.olt import Olt
 from ..models.olt_port import OltPort
+from ..models.device import Device
 from ..core.config import settings
 
 import logging
@@ -403,10 +404,21 @@ async def authorize_onu(onu_id: str, provision_data: ONUProvisionRequest, db: Se
             # Create Subscriber if it doesn't exist
             subscriber = crud_subscriber.get_subscriber_by_cpf_cnpj(db, cpf_cnpj)
             if not subscriber:
-                subscriber = Subscriber(full_name=provision_data.client_name, cpf_cnpj=cpf_cnpj)
+                subscriber = Subscriber(
+                    full_name=provision_data.client_name,
+                    cpf_cnpj=cpf_cnpj,
+                    address_street=provision_data.client_address,
+                )
                 db.add(subscriber)
                 db.commit()
                 db.refresh(subscriber)
+            elif provision_data.client_address:
+                new_address = provision_data.client_address.strip()
+                if new_address and not subscriber.address_street:
+                    subscriber.address_street = new_address
+                    db.add(subscriber)
+                    db.commit()
+                    db.refresh(subscriber)
 
         # Create OLT and OLT Port if they don't exist
         olt = _resolve_olt(db, provision_data)
@@ -539,6 +551,8 @@ async def authorize_onu(onu_id: str, provision_data: ONUProvisionRequest, db: Se
                 "line_profile": resolved_line_profile,
                 "srv_profile": resolved_srv_profile,
             }
+            if provision_data.client_name:
+                olt_payload["description"] = provision_data.client_name.strip()
             olt_response = await _post_olt_manager(
                 f"/api/v1/olts/{olt.id}/onts",
                 olt_payload,
@@ -737,8 +751,33 @@ async def get_provisioned_clients(db: Session = Depends(get_db)):
     """
     Retorna lista de todos os clientes provisionados
     """
-    devices = crud_device.get_devices(db)
-    return devices
+    devices = (
+        db.query(Device)
+        .options(
+            selectinload(Device.subscriber),
+            selectinload(Device.olt_port).selectinload(OltPort.olt),
+        )
+        .all()
+    )
+    result: List[Dict[str, Any]] = []
+    for device in devices:
+        subscriber = device.subscriber
+        olt_port = device.olt_port
+        result.append(
+            {
+                "id": device.id,
+                "serial_number": device.serial_number,
+                "olt_id": olt_port.olt_id if olt_port else None,
+                "pon_port": f"{olt_port.slot}/{olt_port.port_number}"
+                if olt_port
+                else None,
+                "created_at": device.created_at,
+                "status": "online" if device.status_id == 1 else "offline",
+                "customer_name": subscriber.full_name if subscriber else None,
+                "customer_address": subscriber.address_street if subscriber else None,
+            }
+        )
+    return result
 
 @router.get("/clients/{onu_id}")
 async def get_client_configuration(onu_id: int, db: Session = Depends(get_db)):

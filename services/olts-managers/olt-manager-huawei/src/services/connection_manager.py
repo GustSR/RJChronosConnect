@@ -65,6 +65,17 @@ class ConnectionManager:
                 self.prompt = self.connection.find_prompt()
             except Exception:
                 self.prompt = None
+            try:
+                self.connection.disable_paging(
+                    command="screen-length 0 temporary",
+                    cmd_verify=False,
+                )
+            except Exception as exc:
+                logger.debug(
+                    "Nao foi possivel desativar paginacao para %s: %s",
+                    self.device_params["host"],
+                    exc,
+                )
         except Exception as e:
             logger.error(f"Falha ao conectar a {self.device_params['host']}: {e}")
             self.connection = None

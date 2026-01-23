@@ -87,23 +87,6 @@ export const OLTManagementPage: React.FC<Props> = ({ onAdd, onViewDetails }) => 
     }));
 
     try {
-      const liveInfo = await oltManagementApi.getOltLiveInfo(olt.id).catch(
-        () => null
-      );
-      if (liveInfo?.reachable) {
-        setConnectionStatus((prev) => ({
-          ...prev,
-          [key]: {
-            loading: false,
-            reachable: true,
-            sysname: liveInfo.sysname ?? null,
-            version: liveInfo.version ?? null,
-            error: null,
-          },
-        }));
-        return;
-      }
-
       const snmpInfo = await oltManagerApi.getOltSnmpInfo(olt.id);
       setConnectionStatus((prev) => ({
         ...prev,
