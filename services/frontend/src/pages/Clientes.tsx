@@ -20,6 +20,7 @@ const Clientes: React.FC = () => {
       setLoading(true);
       setError(null);
       const data = await genieacsApi.getSubscribers();
+      console.log('Dados recebidos da API (subscribers):', data);
       setSubscribers(data);
     } catch (err) {
       console.error('Erro ao carregar clientes:', err);
@@ -63,7 +64,11 @@ const Clientes: React.FC = () => {
   }, []);
 
   const customers = useMemo(
-    () => subscribers.map(convertSubscriberToCustomer),
+    () => {
+      const mapped = subscribers.map(convertSubscriberToCustomer);
+      console.log('Clientes mapeados para frontend:', mapped);
+      return mapped;
+    },
     [subscribers, convertSubscriberToCustomer]
   );
 
