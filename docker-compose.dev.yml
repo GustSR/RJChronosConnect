@@ -35,7 +35,7 @@ services:
     frontend:
         container_name: rjchronos_frontend_dev
         ports:
-            - "8080:3000"
+            - "8088:3000"
         build:
             context: ./services/frontend
             dockerfile: Dockerfile.dev
