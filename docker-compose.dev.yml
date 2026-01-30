@@ -10,9 +10,9 @@ services:
             dockerfile: services/edge/Dockerfile.dev
         ports:
             - "8081:8081"
-        volumes:
-            - ./services/edge:/app
-            - /app/node_modules
+        # volumes:
+        #     - ./services/edge:/app
+        #     - /app/node_modules
         environment:
             - EDGE_HOST=0.0.0.0
             - EDGE_PORT=8081
@@ -40,9 +40,9 @@ services:
             context: ./services/frontend
             dockerfile: Dockerfile.dev
         command: bun run dev
-        volumes:
-            - ./services/frontend:/app
-            - /app/node_modules # Impede que o node_modules local sobrescreva o do contêiner
+        # volumes:
+        #     - ./services/frontend:/app
+        #     - /app/node_modules # Impede que o node_modules local sobrescreva o do contêiner
         networks:
             - rjchronos-net
         depends_on:
@@ -62,9 +62,9 @@ services:
         build:
             context: ./services/backend-api
             dockerfile: Dockerfile.dev
-        volumes:
-            - ./services/backend-api:/app
-            - ./shared:/app/shared
+        # volumes:
+        #     - ./services/backend-api:/app
+        #     - ./shared:/app/shared
         ports:
             - "8090:8000"
         command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
@@ -124,8 +124,8 @@ services:
             context: ./services/olts-managers/olt-manager-huawei
             dockerfile: Dockerfile.dev
         container_name: rjchronos_olt_manager_huawei_dev
-        volumes:
-            - ./services/olts-managers/olt-manager-huawei/src:/app/src
+        # volumes:
+        #     - ./services/olts-managers/olt-manager-huawei/src:/app/src
         ports:
             - "8001:8001"
         networks:
