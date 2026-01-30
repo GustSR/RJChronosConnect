@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.database.session import get_db
+from ..database.database import get_db
 from app.crud import subscriber as crud_subscriber
 from app.schemas.subscriber import (
     SubscriberCreate,
