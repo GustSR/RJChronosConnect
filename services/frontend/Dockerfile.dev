@@ -21,8 +21,8 @@ COPY . .
 
 # Expor a porta padrão do Vite para o ambiente Docker
 # O mapeamento final será feito no docker-compose.yml
-EXPOSE 3000
+EXPOSE 3001
 
 # Comando para iniciar o servidor de desenvolvimento do Vite
 # O script "dev" já contém o "--host" necessário para o Docker.
-CMD ["bun", "run", "dev"]
+CMD ["bun", "run", "dev", "--", "--port", "3001"]

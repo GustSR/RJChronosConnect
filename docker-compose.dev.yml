@@ -18,7 +18,7 @@ services:
             - EDGE_PORT=8081
             - BACKEND_INTERNAL_URL=http://backend:8000
             - GENIEACS_UI_INTERNAL_URL=http://10.250.10.1:3000
-            - FRONTEND_DEV_URL=http://frontend:3000
+            - FRONTEND_DEV_URL=http://frontend:3001
             - BETTER_AUTH_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
             - BETTER_AUTH_BASE_PATH=/api/auth
             - BETTER_AUTH_BASE_URL=${BETTER_AUTH_BASE_URL}
@@ -35,11 +35,11 @@ services:
     frontend:
         container_name: rjchronos_frontend_dev
         ports:
-            - "8088:3000"
+            - "8088:3001"
         build:
             context: ./services/frontend
             dockerfile: Dockerfile.dev
-        command: bun run dev
+        command: bun run dev -- --port 3001
         # volumes:
         #     - ./services/frontend:/app
         #     - /app/node_modules # Impede que o node_modules local sobrescreva o do contêiner
@@ -51,7 +51,7 @@ services:
             - VITE_BACKEND_PROXY_TARGET=http://backend:8000
             - VITE_OLT_MANAGER_PROXY_TARGET=http://olt-manager-huawei:8001
         healthcheck:
-            test: ["CMD-SHELL", "bun -e \"fetch('http://localhost:3000').then(r => {if(!r.ok) process.exit(1)}).catch(() => process.exit(1))\""]
+            test: ["CMD-SHELL", "bun -e \"fetch('http://localhost:3001').then(r => {if(!r.ok) process.exit(1)}).catch(() => process.exit(1))\""]
             interval: 10s
             timeout: 5s
             retries: 5
