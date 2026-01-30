@@ -5,5 +5,7 @@ WORKDIR /app
 COPY services/edge/package.json ./
 RUN bun install
 
+COPY services/edge .
+
 EXPOSE 8081
 CMD ["bun", "--hot", "src/index.ts"]

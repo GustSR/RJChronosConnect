@@ -17,11 +17,13 @@ WORKDIR /app
 # Copiar o arquivo de dependências e instalar PRIMEIRO
 # Otimização de cache: as dependências só serão reinstaladas
 # se o arquivo requirements.txt for alterado.
-COPY requirements.txt .
+COPY services/backend-api/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copiar o restante do código-fonte do backend
-COPY . .
+COPY services/backend-api .
+# Copiar o módulo shared
+COPY shared ./shared
 
 # Expor a porta em que o Uvicorn irá rodar
 EXPOSE 8000

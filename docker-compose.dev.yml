@@ -60,8 +60,8 @@ services:
     backend:
         container_name: rjchronos_backend_dev
         build:
-            context: ./services/backend-api
-            dockerfile: Dockerfile.dev
+            context: .
+            dockerfile: services/backend-api/Dockerfile.dev
         # volumes:
         #     - ./services/backend-api:/app
         #     - ./shared:/app/shared
