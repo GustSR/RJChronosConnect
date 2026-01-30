@@ -12,21 +12,25 @@ Este guia mostra como conectar e provisionar um roteador real usando o GenieACS.
 ## 🌐 Configuração de Rede
 
 ### Seu IP Local
+Defina o IP do host que o roteador enxerga (ex.: IP da sua maquina na mesma rede).
 ```
-IP do Notebook: 192.168.7.119
+IP do host: <SEU_IP_HOST>
 ```
 
 ### URLs do GenieACS (a serem usadas no roteador)
+> No `docker-compose.yml`, o GenieACS usa `network_mode: "host"`.
+> Portanto use o IP do host (e nao o IP do container).
 ```
-ACS URL (TR-069):    http://192.168.7.119:7547
-GenieACS UI:         http://192.168.7.119:3000
-GenieACS NBI API:    http://192.168.7.119:7557
-File Server:         http://192.168.7.119:7567
+ACS URL (TR-069):    http://<SEU_IP_HOST>:7547
+GenieACS UI:         http://<SEU_IP_HOST>:3000
+GenieACS NBI API:    http://<SEU_IP_HOST>:7557
+File Server:         http://<SEU_IP_HOST>:7567
 ```
 
 ### Frontend do Sistema
 ```
-RJChronos Frontend:  http://192.168.7.119:8081
+RJChronos (dev):     http://localhost:3000
+RJChronos (edge):    http://localhost:8081
 ```
 
 ## 🔧 Configuração do Roteador
@@ -84,22 +88,22 @@ uci commit cwmp
 ## 📊 Verificação do Provisionamento
 
 ### 1. Verifique no GenieACS UI
-- Acesse: http://192.168.7.233:3000
+- Acesse: http://<SEU_IP_HOST>:3000
 - Vá em "Devices" para ver se o roteador apareceu
 - O device deve mostrar status "online" após alguns minutos
 
 ### 2. Verifique no RJChronos
-- Acesse: http://192.168.7.233:8081
+- Acesse: http://localhost:3000 (dev) ou http://localhost:8081 (edge)
 - No Dashboard, veja se o total de dispositivos aumentou
 - Vá em "Inventory" para ver detalhes do dispositivo
 
-### 3. Verifique via API
+### 3. Verifique via API (Edge)
 ```bash
 # Ver dispositivos conectados
-curl -s "http://192.168.7.233:8081/api/devices/cpes" | json_pp
+curl -s "http://localhost:8081/api/devices/cpes" | json_pp
 
 # Ver métricas do dashboard
-curl -s "http://192.168.7.233:8081/api/dashboard/metrics" | json_pp
+curl -s "http://localhost:8081/api/dashboard/metrics" | json_pp
 ```
 
 ## 🛠️ Troubleshooting
@@ -108,7 +112,7 @@ curl -s "http://192.168.7.233:8081/api/dashboard/metrics" | json_pp
 
 1. **Verifique conectividade**:
    ```bash
-   ping 192.168.7.233  # Do roteador para o notebook
+   ping <SEU_IP_HOST>  # Do roteador para o host
    ```
 
 2. **Verifique logs do GenieACS**:

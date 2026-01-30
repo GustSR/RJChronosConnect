@@ -1,4 +1,4 @@
-# 🔄 Guia de Migração: Fake API → Backend Real
+# 🔄 Guia de Migracao: Fake Data → Backend Real
 
 > **Guia passo-a-passo para substituir dados mockados por endpoints reais**
 
@@ -16,7 +16,7 @@ Este guia orienta como **migrar de dados mockados** para **endpoints reais do ba
 
 1. ✅ **Backend implementa o endpoint**
 2. ✅ **Testa o endpoint com Postman/curl**  
-3. ✅ **Remove endpoint da Fake API** (opcional)
+3. ✅ **Remove endpoint da Fake Data** (opcional)
 4. ✅ **Testa frontend com endpoint real**
 5. ✅ **Documenta mudanças**
 
@@ -32,7 +32,7 @@ Este guia orienta como **migrar de dados mockados** para **endpoints reais do ba
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up backend
 
 # Verificar se backend está acessível
-curl http://localhost:8081/api/
+curl http://localhost:8000/
 ```
 
 ### **1.2 Verificar Estado Atual do Frontend**
@@ -40,10 +40,9 @@ curl http://localhost:8081/api/
 # Console do navegador deve mostrar:
 🔧 DevConfig: { useMockData: true, ... }
 
-# Para testar endpoint real temporariamente:
-localStorage.setItem('FORCE_REAL_API', 'true')
-# Ou no .env:
-VITE_USE_MOCK_DATA=false
+# Para testar endpoint real:
+# - defina REACT_APP_USE_MOCK=false
+# - defina REACT_APP_API_URL (se aplicavel)
 ```
 
 ---
@@ -75,7 +74,7 @@ curl http://localhost:8081/api/dashboard/metrics
 // Temporariamente forçar uso do endpoint real
 async getDashboardMetrics(): Promise<DashboardMetrics> {
   // Comentar a linha do mock:
-  // if (devConfig.useMockData) { return fakeApi.getDashboardMetrics(); }
+  // if (devConfig.useMockData) { return fakeDataService.getDashboardMetrics(); }
   
   // Testar endpoint real:
   return httpClient.get<DashboardMetrics>('/dashboard/metrics');
@@ -92,7 +91,7 @@ async getDashboardMetrics(): Promise<DashboardMetrics> {
 // Manter a condição, mas endpoint real funcionando:
 async getDashboardMetrics(): Promise<DashboardMetrics> {
   if (devConfig.useMockData) {
-    return fakeApi.getDashboardMetrics();
+    return fakeDataService.getDashboardMetrics();
   }
   return httpClient.get<DashboardMetrics>('/dashboard/metrics'); // ✅ Pronto
 }
@@ -126,7 +125,7 @@ curl "http://localhost:8081/api/wifi/configs/pending-demo-1?band=2.4GHz"
 // Já está pronto! Só precisa do backend implementar
 async getWiFiConfigByBand(deviceId: string, band: '2.4GHz' | '5GHz'): Promise<WiFiConfig> {
   if (devConfig.useMockData) {
-    return fakeApi.getWiFiConfigByBand(deviceId, band);
+    return fakeDataService.getWiFiConfigByBand(deviceId, band);
   }
   return httpClient.get<WiFiConfig>(`/wifi/configs/${deviceId}?band=${encodeURIComponent(band)}`);
 }
@@ -167,29 +166,29 @@ curl -X POST "http://localhost:8081/api/provisioning/pending-demo-1/authorize" \
 
 #### **Opção 1: Variável de Ambiente**
 ```bash
-# .env.production
-VITE_USE_MOCK_DATA=false
-VITE_API_URL=http://backend:8000
+# .env.production (ou .env local)
+REACT_APP_USE_MOCK=false
+REACT_APP_API_URL=http://backend:8000
 ```
 
 #### **Opção 2: Build de Produção**
 ```typescript
 // api.ts - Configuração para produção
 export const devConfig = {
-  useMockData: 
-    import.meta.env.MODE === 'development' && 
-    import.meta.env.VITE_USE_MOCK_DATA !== 'false',
-  // Em produção, useMockData será sempre false
+  useMockData:
+    process.env.NODE_ENV === 'development' ||
+    process.env.REACT_APP_USE_MOCK === 'true' ||
+    !process.env.REACT_APP_API_URL,
 };
 ```
 
 ### **3.2 Verificar Migração Completa**
 ```bash
-# Build de produção não deve incluir __fakeApi__
-npm run build
+# Build de produção não deve incluir __fakeData__
+bun run build
 
-# Verificar se não há referências a fakeApi no bundle
-grep -r "fakeApi" dist/ || echo "✅ Nenhuma referência a fakeApi encontrada"
+# Verificar se não há referências a fakeData no bundle
+grep -r "fakeData" dist/ || echo "✅ Nenhuma referência a fakeData encontrada"
 ```
 
 ---
@@ -276,18 +275,15 @@ Se algum endpoint real falhar em produção:
 ```typescript
 // Temporariamente volta para mock:
 async getDashboardMetrics(): Promise<DashboardMetrics> {
-  // Força mock temporariamente:
-  if (devConfig.useMockData || EMERGENCY_USE_MOCK) {
-    return fakeApi.getDashboardMetrics();
+  if (devConfig.useMockData) {
+    return fakeDataService.getDashboardMetrics();
   }
   return httpClient.get<DashboardMetrics>('/dashboard/metrics');
 }
 ```
 
-### **Rollback via Feature Flag:**
-```typescript
-const EMERGENCY_USE_MOCK = localStorage.getItem('emergency_mock') === 'true';
-```
+### **Rollback via variavel de ambiente:**
+- Ajuste `REACT_APP_USE_MOCK=true` para forcar mock.
 
 ---
 
@@ -299,7 +295,7 @@ const EMERGENCY_USE_MOCK = localStorage.getItem('emergency_mock') === 'true';
 async getDashboardMetrics(): Promise<DashboardMetrics> {
   if (devConfig.useMockData) {
     console.log('📝 Usando dados MOCK para dashboard metrics');
-    return fakeApi.getDashboardMetrics();
+    return fakeDataService.getDashboardMetrics();
   }
   
   console.log('🔗 Buscando dados REAIS para dashboard metrics');

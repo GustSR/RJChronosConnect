@@ -1,51 +1,47 @@
-# 📋 Índice do Projeto RJChronosConnect
+# Indice do Projeto RJChronosConnect
 
-## 🎯 O que tem neste projeto?
+## O que tem neste projeto?
 
-### 📱 **Sistema Principal**
-- `services/frontend/` - Interface do usuário (React)
-- `services/backend-api/` - API principal (FastAPI) - **Login aqui**
-- `services/genieacs/` - Gerenciamento TR-069
+### Sistema principal
+- `services/edge/` - Gateway publico (Bun + Elysia + Better Auth)
+- `services/frontend/` - Interface do usuario (React + Vite)
+- `services/backend-api/` - API principal (FastAPI)
+- `services/genieacs/` - Gerenciamento TR-069 (GenieACS)
+- `services/works/` - Worker para tarefas assincronas
 
-### 🛠️ **Gerenciamento de OLTs**
-- `services/olts-managers/olt-manager-huawei/` - Comandos para OLTs Huawei
+### Gerenciamento de OLTs
+- `services/olts-managers/olt-manager-huawei/` - OLT Huawei
+- `services/olts-managers/olt-manager-fiberhome/` - OLT FiberHome
 
-### 📊 **Sistema de Logging** (NOVO - implementado agora)
-- `shared/logging/` - Biblioteca para registrar ações
-- `services/log-consumer-postgresql/` - Guarda logs importantes
+### Sistema de logging
+- `shared/logging/` - Biblioteca para registrar acoes
+- `services/log-consumer-postgresql/` - Guarda logs criticos
 - `services/log-consumer-clickhouse/` - Guarda logs operacionais
-- `services/log-monitor/` - Monitora se tudo está funcionando
+- `services/log-monitor/` - Monitora o pipeline de logs
 
-### ⚙️ **Infraestrutura**
-- `infrastructure/` - Configurações de bancos e filas
-- `docker-compose.yml` - Orquestração de todos os serviços
+### Infraestrutura
+- `infrastructure/` - Configuracoes de bancos e filas
+- `docker-compose.yml` - Base do ambiente
+- `docker-compose.dev.yml` - Overrides para desenvolvimento
 
-### 📚 **Documentação**
-- `docs/LOGGING_SYSTEM.md` - Documentação técnica completa
-- `README_LOGGING.md` - Explicação simples do sistema de logging
-- `CLAUDE.md` - Diretrizes para desenvolvimento
-
-### 🔧 **Scripts**
+### Scripts
 - `scripts/setup_logging_system.sh` - Instala sistema de logging
+- `scripts/genieacs-config.sh` - Helper de configuracao do GenieACS
 
-## 🚀 Como começar?
+## Como comecar?
 
-### 1. **Sistema básico** (já existia):
+### 1. Ambiente dev completo (Docker)
 ```bash
-docker-compose up frontend backend genieacs
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
-### 2. **Com sistema de logging** (novo):
+### 2. Para parar
 ```bash
-./scripts/setup_logging_system.sh
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
 ```
 
-## 📞 Ajuda rápida:
-
-- **Dúvida sobre logging?** → Leia `README_LOGGING.md`
-- **Documentação técnica?** → Veja `docs/LOGGING_SYSTEM.md`
-- **Problema na instalação?** → Execute `scripts/setup_logging_system.sh`
-- **Sistema não funciona?** → Verifique http://localhost:8080/health
-
----
-**Última atualização**: Sistema de logging implementado para compliance LGPD/ANATEL
+## Ajuda rapida
+- Duvida sobre logging? Leia `docs/README_LOGGING.md`
+- Documentacao tecnica? Veja `docs/LOGGING_SYSTEM.md`
+- Problema na instalacao? Execute `scripts/setup_logging_system.sh`
+- Sistema nao funciona? Verifique http://localhost:8083/health

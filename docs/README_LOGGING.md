@@ -120,7 +120,7 @@ chmod +x scripts/setup_logging_system.sh
 ```
 
 ### Para ver se está funcionando:
-- http://localhost:8080/health - Mostra se sistema está OK
+- http://localhost:8083/health - Mostra se sistema está OK
 - http://localhost:15672 - Interface do RabbitMQ (filas)
 
 ### No código (exemplo simples):

@@ -17,7 +17,7 @@ services:
             - EDGE_HOST=0.0.0.0
             - EDGE_PORT=8081
             - BACKEND_INTERNAL_URL=http://backend:8000
-            - GENIEACS_UI_INTERNAL_URL=http://genieacs:3000
+            - GENIEACS_UI_INTERNAL_URL=http://10.250.10.1:3000
             - FRONTEND_DEV_URL=http://frontend:3000
             - BETTER_AUTH_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
             - BETTER_AUTH_BASE_PATH=/api/auth
@@ -35,7 +35,7 @@ services:
     frontend:
         container_name: rjchronos_frontend_dev
         ports:
-            - "3000:3000"
+            - "8080:3000"
         build:
             context: ./services/frontend
             dockerfile: Dockerfile.dev
@@ -73,7 +73,7 @@ services:
             - rabbitmq
         environment:
             - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
-            - GENIACS_API_URL=http://genieacs:7557/
+            - GENIACS_API_URL=http://10.250.10.1:7557/
             - OLT_MANAGER_URL=http://olt-manager-huawei:8001
             - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
             - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
@@ -81,42 +81,42 @@ services:
             - CREDENTIAL_ENCRYPTION_KEY=${CREDENTIAL_ENCRYPTION_KEY}
 
     # --- Novos Serviços ---
-    rabbitmq:
-        image: rabbitmq:3-management-alpine
-        container_name: rjchronos_rabbitmq_dev
-        ports:
-            - "5672:5672"
-            - "15672:15672"
-        networks:
-            - rjchronos-net
-        environment:
-            - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-            - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
-        volumes:
-            - rabbitmq_data_dev:/var/lib/rabbitmq # Persistência de dados em dev
-        healthcheck:
-            test: ["CMD", "rabbitmq-diagnostics", "check_running", "-q"]
-            interval: 30s
-            timeout: 10s
-            retries: 5
+    # rabbitmq:
+    #     image: rabbitmq:3-management-alpine
+    #     container_name: rjchronos_rabbitmq_dev
+    #     ports:
+    #         - "5672:5672"
+    #         - "15672:15672"
+    #     networks:
+    #         - rjchronos-net
+    #     environment:
+    #         - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+    #         - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+    #     volumes:
+    #         - rabbitmq_data_dev:/var/lib/rabbitmq # Persistência de dados em dev
+    #     healthcheck:
+    #         test: ["CMD", "rabbitmq-diagnostics", "check_running", "-q"]
+    #         interval: 30s
+    #         timeout: 10s
+    #         retries: 5
 
-    works:
-        build:
-            context: ./services/works
-            dockerfile: Dockerfile.dev
-        container_name: rjchronos_works_dev
-        volumes:
-            - ./services/works:/app
-        networks:
-            - rjchronos-net
-        depends_on:
-            - rabbitmq
-            - redis
-        command: python -u main.py
-        environment:
-            - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-            - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
-            - REDIS_PASSWORD=${REDIS_PASSWORD}
+    # works:
+    #     build:
+    #         context: ./services/works
+    #         dockerfile: Dockerfile.dev
+    #     container_name: rjchronos_works_dev
+    #     volumes:
+    #         - ./services/works:/app
+    #     networks:
+    #         - rjchronos-net
+    #     depends_on:
+    #         - rabbitmq
+    #         - redis
+    #     command: python -u main.py
+    #     environment:
+    #         - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+    #         - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+    #         - REDIS_PASSWORD=${REDIS_PASSWORD}
 
     olt-manager-huawei:
         build:
@@ -150,52 +150,66 @@ services:
             - TRAP_LISTENER_PORT=162
             - SNMP_COMMUNITY=${SNMP_COMMUNITY:-1wAdehYft0c[}
 
-    olt-manager-fiberhome:
-        build:
-            context: ./services/olts-managers/olt-manager-fiberhome
-            dockerfile: Dockerfile.dev
-        container_name: rjchronos_olt_manager_fiberhome_dev
-        volumes:
-            - ./services/olts-managers/olt-manager-fiberhome/src:/app/src
-        ports:
-            - "8002:8002"
-        networks:
-            - rjchronos-net
-        depends_on:
-            - rabbitmq
-        command: uvicorn src.main:app --host 0.0.0.0 --port 8002 --reload
-        environment:
-            - BACKEND_API_URL=http://backend:8000
-            - SNMP_COMMUNITY=${SNMP_COMMUNITY:-public}
+    # olt-manager-fiberhome:
+    #     build:
+    #         context: ./services/olts-managers/olt-manager-fiberhome
+    #         dockerfile: Dockerfile.dev
+    #     container_name: rjchronos_olt_manager_fiberhome_dev
+    #     volumes:
+    #         - ./services/olts-managers/olt-manager-fiberhome/src:/app/src
+    #     ports:
+    #         - "8002:8002"
+    #     networks:
+    #         - rjchronos-net
+    #     depends_on:
+    #         - rabbitmq
+    #     command: uvicorn src.main:app --host 0.0.0.0 --port 8002 --reload
+    #     environment:
+    #         - BACKEND_API_URL=http://backend:8000
+    #         - SNMP_COMMUNITY=${SNMP_COMMUNITY:-public}
 
-    genieacs-sim:
-        image: drumsergio/genieacs-sim:latest
-        container_name: "rjchronos_genieacs-sim_dev"
-        networks:
-            - rjchronos-net
-        depends_on:
-            - genieacs
+    # genieacs-sim:
+    #     image: drumsergio/genieacs-sim:latest
+    #     container_name: "rjchronos_genieacs-sim_dev"
+    #     networks:
+    #         - rjchronos-net
+    #     depends_on:
+    #         - genieacs
 
-    genieacs-mcp:
-        image: drumsergio/genieacs-mcp:latest
-        container_name: "rjchronos_genieacs-mcp_dev"
-        environment:
-            - ACS_URL=http://genieacs:7557
-            - ACS_USER=admin
-            - ACS_PASS=admin
-        ports:
-            - "8082:8080"
-        networks:
-            - rjchronos-net
-        depends_on:
-            - genieacs
+    # genieacs-mcp:
+    #     image: drumsergio/genieacs-mcp:latest
+    #     container_name: "rjchronos_genieacs-mcp_dev"
+    #     environment:
+    #         - ACS_URL=http://10.250.10.1:7557
+    #         - ACS_USER=admin
+    #         - ACS_PASS=admin
+    #     ports:
+    #         - "8082:8080"
+    #     networks:
+    #         - rjchronos-net
+    #     depends_on:
+    #         - genieacs
 
     # --- Nomes e Volumes Específicos para DEV ---
     genieacs:
         container_name: rjchronos_genieacs_dev
+        build:
+            context: ./services/genieacs
+        network_mode: "host"
+        environment:
+            - GENIEACS_MONGODB_CONNECTION_URL=mongodb://127.0.0.1:27017/genieacs
+            - GENIEACS_REDIS_HOST=127.0.0.1
+            - GENIEACS_UI_JWT_SECRET=${UI_JWT_SECRET}
+            - GENIEACS_DEBUG_FILE=/var/log/genieacs/genieacs-debug.yaml
+            - GENIEACS_DEBUG_FORMAT=yaml
 
     db-app:
         container_name: rjchronos_db_app_dev
+        image: postgres:15-alpine
+        environment:
+            - POSTGRES_USER=${POSTGRES_USER}
+            - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+            - POSTGRES_DB=${POSTGRES_DB}
         ports:
             - "5432:5432"
         volumes:
@@ -203,11 +217,13 @@ services:
 
     db-acs:
         container_name: rjchronos_db_acs_dev
+        image: mongo:8.0
         volumes:
             - mongo_acs_data_dev:/data/db
 
     redis:
         container_name: rjchronos_redis_dev
+        image: redis:alpine
         ports:
             - "6379:6379"
         environment:

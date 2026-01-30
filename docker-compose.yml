@@ -15,7 +15,7 @@ services:
             - EDGE_HOST=0.0.0.0
             - EDGE_PORT=8081
             - BACKEND_INTERNAL_URL=http://backend:8000
-            - GENIEACS_UI_INTERNAL_URL=http://genieacs:3000
+            - GENIEACS_UI_INTERNAL_URL=http://10.250.10.1:3000
             - BETTER_AUTH_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
             - BETTER_AUTH_BASE_PATH=/api/auth
             - BETTER_AUTH_BASE_URL=${BETTER_AUTH_BASE_URL}
@@ -34,7 +34,7 @@ services:
             context: ./services/backend-api
         environment:
             - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
-            - GENIACS_API_URL=http://genieacs:7557/
+            - GENIACS_API_URL=http://10.250.10.1:7557/
             - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
             - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
             - REDIS_PASSWORD=${REDIS_PASSWORD}
@@ -53,6 +53,8 @@ services:
             - GENIEACS_UI_JWT_SECRET=${UI_JWT_SECRET}
             - GENIEACS_DEBUG_FILE=/var/log/genieacs/genieacs-debug.yaml
             - GENIEACS_DEBUG_FORMAT=yaml
+        networks:
+            - rjchronos-net
         depends_on:
             - db-acs
             - redis
@@ -160,7 +162,7 @@ services:
             context: ./services/log-monitor
         ports:
             - "8100:8000" # Prometheus metrics
-            - "8080:8080" # Health check API
+            - "8083:8080" # Health check API
         environment:
             - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
             - CLICKHOUSE_HOST=clickhouse

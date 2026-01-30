@@ -292,8 +292,8 @@ final_verification() {
     fi
 
     # Verificar Log Monitor
-    if curl -s http://localhost:8080/health > /dev/null; then
-        log_info "✅ Log Monitor disponível em http://localhost:8080"
+    if curl -s http://localhost:8083/health > /dev/null; then
+        log_info "✅ Log Monitor disponível em http://localhost:8083"
     else
         log_warn "⚠️ Log Monitor não disponível"
     fi
@@ -315,8 +315,8 @@ show_summary() {
     echo "📊 Endpoints Disponíveis:"
     echo "   • RabbitMQ Management: http://localhost:15672"
     echo "   • ClickHouse: http://localhost:8123"
-    echo "   • Log Monitor Health: http://localhost:8080/health"
-    echo "   • Log Monitor Metrics: http://localhost:8080/metrics/detailed"
+    echo "   • Log Monitor Health: http://localhost:8083/health"
+    echo "   • Log Monitor Metrics: http://localhost:8083/metrics/detailed"
     echo "   • Prometheus Metrics: http://localhost:8000"
     echo ""
     echo "🔑 Credenciais (definidas no .env):"
@@ -328,7 +328,7 @@ show_summary() {
     echo "   • Ver logs: docker-compose logs -f [serviço]"
     echo "   • Status: docker-compose ps"
     echo "   • Parar: docker-compose down"
-    echo "   • Health check: curl http://localhost:8080/health"
+    echo "   • Health check: curl http://localhost:8083/health"
     echo ""
     echo "📁 Localização dos Logs:"
     echo "   • Backend API: logs/backend-api/"

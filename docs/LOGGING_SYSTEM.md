@@ -69,7 +69,7 @@ RJChronosConnect/
 ├── infrastructure/
 │   ├── rabbitmq/                      # Configurações RabbitMQ
 │   └── clickhouse/                    # Configurações ClickHouse
-└── setup_logging_system.sh           # Script de instalação
+└── scripts/setup_logging_system.sh   # Script de instalação
 ```
 
 ## 🚀 Instalação e Setup
@@ -78,10 +78,10 @@ RJChronosConnect/
 
 ```bash
 # Tornar script executável
-chmod +x setup_logging_system.sh
+chmod +x scripts/setup_logging_system.sh
 
 # Executar setup completo
-./setup_logging_system.sh
+./scripts/setup_logging_system.sh
 ```
 
 ### 2. Setup Manual
@@ -198,13 +198,13 @@ await logger.error("api_error", "Erro na API", error_details=details)
 
 ## 🔧 Endpoints e Monitoramento
 
-### Health Check API (Porta 8080)
+### Health Check API (Porta 8083)
 ```bash
 # Status geral
-curl http://localhost:8080/health
+curl http://localhost:8083/health
 
 # Métricas detalhadas
-curl http://localhost:8080/metrics/detailed
+curl http://localhost:8083/metrics/detailed
 ```
 
 ### Prometheus Metrics (Porta 8000)
@@ -312,7 +312,7 @@ docker-compose logs -f log-consumer-postgresql
 docker-compose logs -f log-consumer-clickhouse
 
 # Health check completo
-curl http://localhost:8080/metrics/detailed | jq
+curl http://localhost:8083/metrics/detailed | jq
 ```
 
 ### Problemas Comuns
@@ -405,9 +405,9 @@ await logger.warning(
 
 Para dúvidas ou problemas:
 
-1. **Health Check**: http://localhost:8080/health
+1. **Health Check**: http://localhost:8083/health
 2. **Logs**: `docker-compose logs -f [serviço]`
-3. **Métricas**: http://localhost:8080/metrics/detailed
+3. **Métricas**: http://localhost:8083/metrics/detailed
 4. **RabbitMQ**: http://localhost:15672
 
 ---

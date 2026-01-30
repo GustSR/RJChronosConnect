@@ -1,10 +1,10 @@
-# ✅ Status da Fake API - RJChronos Frontend-First
+# ✅ Status da Fake Data - RJChronos Frontend-First
 
 ## 🎯 **PROBLEMA RESOLVIDO**
 
 Os endpoints de **WiFi Configuration** estavam tentando acessar o backend real mesmo no modo de desenvolvimento, causando os erros 500. 
 
-**Agora todos os endpoints estão usando a Fake API quando `devConfig.useMockData = true`.**
+**Agora todos os endpoints estão usando a Fake Data quando `devConfig.useMockData = true`.**
 
 ---
 
@@ -14,8 +14,8 @@ Os endpoints de **WiFi Configuration** estavam tentando acessar o backend real m
 ```typescript
 export const devConfig = {
   useMockData:
-    process.env.NODE_ENV === 'development' || 
-    process.env.REACT_APP_USE_MOCK === 'true' || 
+    process.env.NODE_ENV === 'development' ||
+    process.env.REACT_APP_USE_MOCK === 'true' ||
     !process.env.REACT_APP_API_URL,
 };
 ```
@@ -29,7 +29,7 @@ export const devConfig = {
 ## 📡 **Endpoints WiFi Agora Funcionando com Mock**
 
 ### **Dados Mock Criados:**
-- ✅ `__fakeApi__/data/wifi.ts` - Configurações WiFi para dispositivos
+- ✅ `__fakeData__/data/wifi.ts` - Configurações WiFi para dispositivos
 - ✅ Suporte para bandas 2.4GHz e 5GHz
 - ✅ Dados realísticos para `pending-demo-1`, `pending-demo-2`, etc.
 
@@ -69,14 +69,14 @@ Abra DevTools e procure por:
 
 ### **3. Verificar Network Tab:**
 - Não devem aparecer mais requests para `/api/wifi/configs/`
-- Dados devem vir da Fake API com delay simulado (300-800ms)
+- Dados devem vir da Fake Data com delay simulado (300-800ms)
 
 ---
 
-## 📊 **Estrutura Final da Fake API**
+## 📊 **Estrutura Final da Fake Data**
 
 ```
-__fakeApi__/
+__fakeData__/
 ├── data/
 │   ├── dashboard.ts      ✅ Métricas do dashboard
 │   ├── devices.ts        ✅ ONUs, CPEs, OLTs, Stats
@@ -88,7 +88,7 @@ __fakeApi__/
 │   ├── wifi.ts          ✅ **NOVO** - Configurações WiFi
 │   └── index.ts         ✅ Re-exports centralizados
 ├── fakeApiSimulator.ts  ✅ Simulador principal com WiFi
-└── index.ts             ✅ Export do fakeApi
+└── index.ts             ✅ Export do fakeDataService
 ```
 
 ---
@@ -96,7 +96,7 @@ __fakeApi__/
 ## 🎉 **Resultado Final**
 
 **Problema:** Erro 500 nos endpoints WiFi durante autorização de ONU
-**Solução:** Fake API completa com dados WiFi realísticos
+**Solução:** Fake Data completa com dados WiFi realísticos
 **Status:** ✅ **RESOLVIDO - Totalmente funcional**
 
 ---

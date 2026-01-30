@@ -79,12 +79,12 @@ chmod +x scripts/setup_logging_system.sh
 
 ### 2. Verificar se funcionou:
 ```bash
-curl http://localhost:8080/health
+curl http://localhost:8083/health
 ```
 
 ### 3. Ver os logs sendo gerados:
 - RabbitMQ: http://localhost:15672
-- Monitor: http://localhost:8080
+- Monitor: http://localhost:8083
 
 ## ✅ **O que foi adicionado ao projeto existente:**
 
@@ -124,7 +124,7 @@ curl http://localhost:8080/health
 1. **Quer entender melhor?** → Leia `README_LOGGING.md`
 2. **Documentação técnica?** → Veja `docs/LOGGING_SYSTEM.md`
 3. **Como instalar?** → Execute `scripts/setup_logging_system.sh`
-4. **Está funcionando?** → Acesse http://localhost:8080/health
+4. **Está funcionando?** → Acesse http://localhost:8083/health
 
 ---
 
