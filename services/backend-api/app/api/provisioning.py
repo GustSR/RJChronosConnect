@@ -27,6 +27,7 @@ from ..models.subscriber import Subscriber
 from ..models.olt import Olt
 from ..models.olt_port import OltPort
 from ..models.device import Device
+from ..models.device_status import DeviceStatus
 from ..core.config import settings
 
 import logging
@@ -446,12 +447,22 @@ async def authorize_onu(onu_id: str, provision_data: ONUProvisionRequest, db: Se
             db.commit()
             db.refresh(olt_port)
 
+        # Get 'ativo' status ID dynamically, creating if necessary
+        active_status = db.query(DeviceStatus).filter(DeviceStatus.name == "ativo").first()
+        if not active_status:
+            active_status = DeviceStatus(name="ativo")
+            db.add(active_status)
+            db.commit()
+            db.refresh(active_status)
+        
+        status_id_val = active_status.id
+
         device = existing_device
         if existing_device:
             updates = {
                 "subscriber_id": subscriber.id,
                 "olt_port_id": olt_port.id,
-                "status_id": 1,
+                "status_id": status_id_val,
             }
             if genieacs_available:
                 updates["genieacs_id"] = onu_id
@@ -473,7 +484,9 @@ async def authorize_onu(onu_id: str, provision_data: ONUProvisionRequest, db: Se
                     genieacs_id=onu_id if genieacs_available else None,
                     subscriber_id=subscriber.id,
                     olt_port_id=olt_port.id,
-                    status_id=1 # Online
+                    subscriber_id=subscriber.id,
+                    olt_port_id=olt_port.id,
+                    status_id=status_id_val # 'ativo' status
                 ))
             except IntegrityError:
                 db.rollback()
