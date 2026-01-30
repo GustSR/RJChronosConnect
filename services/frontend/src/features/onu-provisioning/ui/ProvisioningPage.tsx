@@ -172,7 +172,7 @@ export const ProvisioningPage: React.FC<Props> = ({
   );
 
   const customerError = provisionFormTouched && !selectedCustomerId;
-  const customerError = provisionFormTouched && !selectedCustomerId;
+
 
   const openRejectDialog = useCallback((onuId: string) => {
     setRejectOnuId(onuId);
