@@ -14,6 +14,9 @@ ENV PYTHONUNBUFFERED 1
 # Definir o diretório de trabalho
 WORKDIR /app
 
+# Instalar netcat para o script de espera do banco
+RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
+
 # Copiar o arquivo de dependências e instalar PRIMEIRO
 # Otimização de cache: as dependências só serão reinstaladas
 # se o arquivo requirements.txt for alterado.
