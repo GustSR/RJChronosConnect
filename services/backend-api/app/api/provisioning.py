@@ -484,8 +484,6 @@ async def authorize_onu(onu_id: str, provision_data: ONUProvisionRequest, db: Se
                     genieacs_id=onu_id if genieacs_available else None,
                     subscriber_id=subscriber.id,
                     olt_port_id=olt_port.id,
-                    subscriber_id=subscriber.id,
-                    olt_port_id=olt_port.id,
                     status_id=status_id_val # 'ativo' status
                 ))
             except IntegrityError:
