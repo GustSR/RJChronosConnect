@@ -196,10 +196,18 @@ services:
         container_name: rjchronos_genieacs_dev
         build:
             context: ./services/genieacs
-        network_mode: "host"
+        ports:
+            - "3000:3000"
+            - "7547:7547"
+            - "7557:7557"
+        networks:
+            - rjchronos-net
+        depends_on:
+            - db-acs
+            - redis
         environment:
-            - GENIEACS_MONGODB_CONNECTION_URL=mongodb://127.0.0.1:27017/genieacs
-            - GENIEACS_REDIS_HOST=127.0.0.1
+            - GENIEACS_MONGODB_CONNECTION_URL=mongodb://db-acs:27017/genieacs
+            - GENIEACS_REDIS_HOST=redis
             - GENIEACS_UI_JWT_SECRET=${UI_JWT_SECRET}
             - GENIEACS_DEBUG_FILE=/var/log/genieacs/genieacs-debug.yaml
             - GENIEACS_DEBUG_FORMAT=yaml
