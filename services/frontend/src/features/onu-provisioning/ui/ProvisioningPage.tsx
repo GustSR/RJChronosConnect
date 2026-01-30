@@ -1,13 +1,15 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import PendingOnuCard from '@entities/onu/ui/PendingOnuCard';
 import { Add, CheckCircle, FilterList, Refresh, Schedule, Search, TrendingUp, Warning } from '@mui/icons-material';
 import { Alert, Box, Button, Chip, Container, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormHelperText, Grid, InputAdornment, InputLabel, LinearProgress, MenuItem, Paper, Select, Snackbar, TextField, Typography } from '@mui/material';
+import { Subscriber } from '@shared/api/types';
 import { AnimatedCard, PromptDialog } from '@shared/ui/components';
-import PendingOnuCard from '@entities/onu/ui/PendingOnuCard';
+import React, { useCallback, useMemo, useState } from 'react';
 import type { PendingONU, ProvisionedONU } from '../provisioning';
 
 type Props = {
   pendingONUs: PendingONU[];
   provisionedONUs: ProvisionedONU[];
+  customers: Subscriber[];
   loading: boolean;
   error: string | null;
   onRefresh: () => Promise<void> | void;
@@ -29,6 +31,7 @@ type Props = {
 export const ProvisioningPage: React.FC<Props> = ({
   pendingONUs,
   provisionedONUs,
+  customers,
   loading,
   error,
   onRefresh,
@@ -87,31 +90,6 @@ export const ProvisioningPage: React.FC<Props> = ({
   );
 
   const uniqueOlts = useMemo(() => [...new Set(pendingONUs.map((onu) => onu.oltName))], [pendingONUs]);
-  const mockCustomers = useMemo(() => {
-    const seen = new Set<string>();
-    return provisionedONUs.reduce(
-      (acc, onu) => {
-        const name = onu.clientName?.trim();
-        if (!name) {
-          return acc;
-        }
-        const address = onu.clientAddress?.trim() || 'Endereco nao informado';
-        const key = `${name}||${address}`;
-        if (seen.has(key)) {
-          return acc;
-        }
-        seen.add(key);
-        acc.push({
-          id: onu.id,
-          name,
-          address,
-          cpfCnpj: undefined,
-        });
-        return acc;
-      },
-      [] as Array<{ id: string; name: string; address: string; cpfCnpj?: string }>
-    );
-  }, [provisionedONUs]);
 
   const openProvisionDialog = useCallback(
     (onuId: string) => {
@@ -134,15 +112,15 @@ export const ProvisioningPage: React.FC<Props> = ({
   const handleCustomerChange = useCallback(
     (customerId: string) => {
       setSelectedCustomerId(customerId);
-      const selectedCustomer = mockCustomers.find((customer) => customer.id === customerId);
+      const selectedCustomer = customers.find((customer) => String(customer.id) === String(customerId));
       setProvisionForm((prev) => ({
         ...prev,
-        client_name: selectedCustomer?.name ?? '',
-        client_address: selectedCustomer?.address ?? '',
-        client_cpf_cnpj: selectedCustomer?.cpfCnpj ?? '',
+        client_name: selectedCustomer?.full_name ?? '',
+        client_address: selectedCustomer?.address_street ?? '',
+        client_cpf_cnpj: selectedCustomer?.cpf_cnpj ?? '',
       }));
     },
-    [mockCustomers]
+    [customers]
   );
 
   const handleProvision = useCallback(
@@ -447,11 +425,11 @@ export const ProvisioningPage: React.FC<Props> = ({
                   value={selectedCustomerId}
                   onChange={(event) => handleCustomerChange(event.target.value)}
                   MenuProps={{ disableScrollLock: true }}
-                  disabled={mockCustomers.length === 0}
+                  disabled={customers.length === 0}
                 >
-                  {mockCustomers.map((customer) => (
+                  {customers.map((customer) => (
                     <MenuItem key={customer.id} value={customer.id}>
-                      {customer.name}
+                      {customer.full_name}
                     </MenuItem>
                   ))}
                 </Select>
