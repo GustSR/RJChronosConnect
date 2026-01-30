@@ -51,7 +51,7 @@ services:
             - VITE_BACKEND_PROXY_TARGET=http://backend:8000
             - VITE_OLT_MANAGER_PROXY_TARGET=http://olt-manager-huawei:8001
         healthcheck:
-            test: ["CMD", "curl", "-f", "http://localhost:3000"]
+            test: ["CMD-SHELL", "bun -e \"fetch('http://localhost:3000').then(r => {if(!r.ok) process.exit(1)}).catch(() => process.exit(1))\""]
             interval: 10s
             timeout: 5s
             retries: 5
