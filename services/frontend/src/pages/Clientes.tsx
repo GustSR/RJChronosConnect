@@ -80,6 +80,7 @@ const Clientes: React.FC = () => {
       email: string;
       cpfCnpj: string;
       phone: string;
+      address: string;
     }) => {
       try {
         const subscriberData: SubscriberCreate = {
@@ -87,6 +88,7 @@ const Clientes: React.FC = () => {
           cpf_cnpj: data.cpfCnpj,
           email: data.email || undefined,
           phone_number: data.phone || undefined,
+          address_street: data.address || undefined,
         };
 
         await genieacsApi.createSubscriber(subscriberData);

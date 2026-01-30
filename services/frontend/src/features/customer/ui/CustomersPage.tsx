@@ -19,6 +19,7 @@ type Props = {
     email: string;
     cpfCnpj: string;
     phone: string;
+    address: string;
   }) => Promise<{ success: boolean; error?: string }>;
   onUpdateCustomer?: (
     customerId: string,
@@ -28,6 +29,7 @@ type Props = {
       email: string;
       cpfCnpj: string;
       phone: string;
+      address?: string;
     }
   ) => Promise<{ success: boolean; error?: string }>;
   onDeleteCustomer?: (customerId: string) => Promise<{ success: boolean; error?: string }>;
@@ -83,6 +85,7 @@ export const CustomersPage: React.FC<Props> = ({
     email: '',
     cpfCnpj: '',
     phone: '',
+    address: '',
     avatar: DEFAULT_AVATAR_PATH,
   });
 
@@ -627,13 +630,14 @@ export const CustomersPage: React.FC<Props> = ({
             <TextField label="Email" value={newCustomerData.email} onChange={(e) => handleNewCustomerDataChange('email', e.target.value)} fullWidth size="small" type="email" required />
             <TextField label="CPF/CNPJ" value={newCustomerData.cpfCnpj} onChange={(e) => handleNewCustomerDataChange('cpfCnpj', e.target.value)} fullWidth size="small" placeholder="000.000.000-00 ou 00.000.000/0000-00" required />
             <TextField label="Telefone" value={newCustomerData.phone} onChange={(e) => handleNewCustomerDataChange('phone', e.target.value)} fullWidth size="small" type="tel" placeholder="(00) 00000-0000" required />
+            <TextField label="Endereço" value={newCustomerData.address} onChange={(e) => handleNewCustomerDataChange('address', e.target.value)} fullWidth size="small" placeholder="Rua, Número, Bairro, Cidade - UF" required />
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button
             variant="contained"
             onClick={handleSaveNewCustomer}
-            disabled={!newCustomerData.firstName || !newCustomerData.lastName || !newCustomerData.email || !newCustomerData.cpfCnpj || !newCustomerData.phone}
+            disabled={!newCustomerData.firstName || !newCustomerData.lastName || !newCustomerData.email || !newCustomerData.cpfCnpj || !newCustomerData.phone || !newCustomerData.address}
           >
             Salvar
           </Button>

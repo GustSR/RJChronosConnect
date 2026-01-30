@@ -116,7 +116,7 @@ export const ProvisioningPage: React.FC<Props> = ({
       setProvisionForm((prev) => ({
         ...prev,
         client_name: selectedCustomer?.full_name ?? '',
-        client_address: selectedCustomer?.address_street ?? '',
+        client_address: selectedCustomer?.address_street || 'Endereço não informado',
         client_cpf_cnpj: selectedCustomer?.cpf_cnpj ?? '',
       }));
     },
@@ -129,7 +129,7 @@ export const ProvisioningPage: React.FC<Props> = ({
         setProvisionFormTouched(true);
         const clientName = provisionForm.client_name.trim();
         const clientAddress = provisionForm.client_address.trim();
-        if (!clientName || !clientAddress) {
+        if (!clientName) {
           return;
         }
 
@@ -172,7 +172,7 @@ export const ProvisioningPage: React.FC<Props> = ({
   );
 
   const customerError = provisionFormTouched && !selectedCustomerId;
-  const addressError = provisionFormTouched && !provisionForm.client_address.trim();
+  const customerError = provisionFormTouched && !selectedCustomerId;
 
   const openRejectDialog = useCallback((onuId: string) => {
     setRejectOnuId(onuId);
@@ -454,12 +454,9 @@ export const ProvisioningPage: React.FC<Props> = ({
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                required
-                label="Endereco"
+                label="Endereço"
                 value={provisionForm.client_address}
                 InputProps={{ readOnly: true }}
-                error={addressError}
-                helperText={addressError ? 'Informe o endereco do cliente.' : ' '}
               />
             </Grid>
           </Grid>
