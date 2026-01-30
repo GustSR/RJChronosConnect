@@ -1,22 +1,25 @@
-import { httpClient, devConfig } from './api';
 import { fakeDataService } from '@/__fakeData__';
+import { devConfig, httpClient } from './api';
 import {
-  ONU,
-  OLT,
-  CPE,
+  ActivityLog,
   Alert,
+  AlertQuery,
+  BandwidthStats,
+  ConnectionRequest,
+  CPE,
   DashboardMetrics,
+  DeviceParameter,
+  DeviceQuery,
+  GenieACSTask,
+  OLT,
+  OLTPerformanceStats,
+  ONU,
+  Subscriber,
+  SubscriberCreate,
+  SubscriberUpdate,
+  TrafficSourcesStats,
   WiFiConfig,
   WiFiConfigUpdate,
-  ActivityLog,
-  BandwidthStats,
-  TrafficSourcesStats,
-  OLTPerformanceStats,
-  DeviceQuery,
-  AlertQuery,
-  GenieACSTask,
-  ConnectionRequest,
-  DeviceParameter,
 } from './types';
 
 // Serviço específico para integração com GenieACS via backend FastAPI
@@ -609,6 +612,63 @@ export class GenieACSApiService {
     }
     // TODO: Implementar endpoint real no backend
     return fakeDataService.getOLTPerformanceStats();
+  }
+
+  // ===== SUBSCRIBERS (CLIENTES) =====
+
+  /**
+   * Listar todos os subscribers (clientes)
+   */
+  async getSubscribers(params?: {
+    skip?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<Subscriber[]> {
+    return httpClient.get<Subscriber[]>(
+      '/subscribers',
+      params as Record<string, unknown>
+    );
+  }
+
+  /**
+   * Buscar subscriber por ID
+   */
+  async getSubscriberById(subscriberId: number): Promise<Subscriber> {
+    return httpClient.get<Subscriber>(`/subscribers/${subscriberId}`);
+  }
+
+  /**
+   * Criar novo subscriber (cliente)
+   */
+  async createSubscriber(data: SubscriberCreate): Promise<Subscriber> {
+    return httpClient.post<Subscriber>('/subscribers', data);
+  }
+
+  /**
+   * Atualizar subscriber existente
+   */
+  async updateSubscriber(
+    subscriberId: number,
+    data: SubscriberUpdate
+  ): Promise<Subscriber> {
+    return httpClient.put<Subscriber>(`/subscribers/${subscriberId}`, data);
+  }
+
+  /**
+   * Deletar subscriber
+   */
+  async deleteSubscriber(subscriberId: number): Promise<void> {
+    return httpClient.delete(`/subscribers/${subscriberId}`);
+  }
+
+  /**
+   * Contar total de subscribers
+   */
+  async getSubscribersCount(search?: string): Promise<{ count: number }> {
+    return httpClient.get<{ count: number }>(
+      '/subscribers/count',
+      search ? { search } : undefined
+    );
   }
 }
 

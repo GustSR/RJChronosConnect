@@ -1,16 +1,36 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import type { Customer } from '@entities/customer/model/customerTypes';
 import { Add as AddIcon, Apps as AppsIcon, ArrowDownward as ArrowDownwardIcon, Badge as BadgeIcon, Delete as DeleteIcon, Edit as EditIcon, Email as EmailIcon, FormatListBulleted as FormatListIcon, Phone as PhoneIcon, Visibility as VisibilityIcon } from '@mui/icons-material';
 import { Avatar, Box, Button, Card, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, Grid, IconButton, MenuItem, Pagination, Select, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, TextField, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import type { Customer } from '@entities/customer/model/customerTypes';
 import { getComparator, stableSort } from '@shared/lib/hooks/useMuiTable';
 import { ConfirmDialog, FlexBox, SearchInput } from '@shared/ui/components';
+import React, { useCallback, useMemo, useState } from 'react';
 import { DEFAULT_AVATAR_PATH, getRandomAvatarPath } from '../lib';
 import { CustomerCard } from './CustomerCard';
 
 type Props = {
   customers: Customer[];
+  loading?: boolean;
+  error?: string | null;
   onViewCustomer?: (customerId: string) => void;
+  onCreateCustomer?: (data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    cpfCnpj: string;
+    phone: string;
+  }) => Promise<{ success: boolean; error?: string }>;
+  onUpdateCustomer?: (
+    customerId: string,
+    data: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      cpfCnpj: string;
+      phone: string;
+    }
+  ) => Promise<{ success: boolean; error?: string }>;
+  onDeleteCustomer?: (customerId: string) => Promise<{ success: boolean; error?: string }>;
 };
 
 const StyledFlexBox = styled(FlexBox)(({ theme }) => ({
@@ -36,7 +56,15 @@ const ViewToggleContainer = styled(Box)(() => ({
   padding: '4px',
 }));
 
-export const CustomersPage: React.FC<Props> = ({ customers, onViewCustomer }) => {
+export const CustomersPage: React.FC<Props> = ({
+  customers,
+  loading,
+  error,
+  onViewCustomer,
+  onCreateCustomer,
+  onUpdateCustomer,
+  onDeleteCustomer,
+}) => {
   const [searchValue, setSearchValue] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | undefined>();
   const [currentView, setCurrentView] = useState<'list' | 'grid'>('list');
@@ -122,10 +150,25 @@ export const CustomersPage: React.FC<Props> = ({ customers, onViewCustomer }) =>
     });
   }, []);
 
-  const handleSaveNewCustomer = useCallback(() => {
-    console.log('Salvar novo cliente:', newCustomerData);
-    handleCloseAddModal();
-  }, [newCustomerData, handleCloseAddModal]);
+  const [saving, setSaving] = useState(false);
+
+  const handleSaveNewCustomer = useCallback(async () => {
+    if (!onCreateCustomer) {
+      console.log('Salvar novo cliente:', newCustomerData);
+      handleCloseAddModal();
+      return;
+    }
+    
+    setSaving(true);
+    const result = await onCreateCustomer(newCustomerData);
+    setSaving(false);
+    
+    if (result.success) {
+      handleCloseAddModal();
+    } else {
+      alert(result.error || 'Erro ao criar cliente');
+    }
+  }, [newCustomerData, handleCloseAddModal, onCreateCustomer]);
 
   const handleNewCustomerDataChange = useCallback((field: string, value: string) => {
     setNewCustomerData((prev) => ({ ...prev, [field]: value }));
@@ -157,13 +200,28 @@ export const CustomersPage: React.FC<Props> = ({ customers, onViewCustomer }) =>
     [customers]
   );
 
-  const confirmDeleteCustomer = useCallback(() => {
+  const confirmDeleteCustomer = useCallback(async () => {
     if (!customerToDelete) return;
-    console.log('Deletar cliente:', customerToDelete.id);
-    if (selectedCustomer?.id === customerToDelete.id) setSelectedCustomer(undefined);
-    setDeleteModalOpen(false);
-    setCustomerToDelete(null);
-  }, [customerToDelete, selectedCustomer]);
+    
+    if (onDeleteCustomer) {
+      setSaving(true);
+      const result = await onDeleteCustomer(customerToDelete.id);
+      setSaving(false);
+      
+      if (result.success) {
+        if (selectedCustomer?.id === customerToDelete.id) setSelectedCustomer(undefined);
+        setDeleteModalOpen(false);
+        setCustomerToDelete(null);
+      } else {
+        alert(result.error || 'Erro ao excluir cliente');
+      }
+    } else {
+      console.log('Deletar cliente:', customerToDelete.id);
+      if (selectedCustomer?.id === customerToDelete.id) setSelectedCustomer(undefined);
+      setDeleteModalOpen(false);
+      setCustomerToDelete(null);
+    }
+  }, [customerToDelete, selectedCustomer, onDeleteCustomer]);
 
   const handleCloseEditModal = useCallback(() => {
     setEditModalOpen(false);

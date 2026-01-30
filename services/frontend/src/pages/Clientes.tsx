@@ -1,52 +1,162 @@
-import React, { useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { CustomersPage, getRandomAvatarPath } from '@features/customer';
 import type { Customer } from '@entities/customer/model/customerTypes';
-import { useProvisioning } from '@features/onu-provisioning';
-import type { ProvisionedONU } from '@features/onu-provisioning/provisioning';
+import { CustomersPage, getRandomAvatarPath } from '@features/customer';
+import { genieacsApi } from '@shared/api/genieacsApi';
+import type { Subscriber, SubscriberCreate, SubscriberUpdate } from '@shared/api/types';
 import { useTitle } from '@shared/lib/hooks';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Clientes: React.FC = () => {
   useTitle('Clientes');
 
   const navigate = useNavigate();
-  const { provisionedONUs } = useProvisioning();
+  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const convertProvisionedToCustomer = useCallback((onu: ProvisionedONU): Customer => {
-    const status =
-      onu.status === 'disabled' ? 'admin_disabled' : (onu.status as Customer['status']);
+  // Carregar subscribers da API
+  const loadSubscribers = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await genieacsApi.getSubscribers();
+      setSubscribers(data);
+    } catch (err) {
+      console.error('Erro ao carregar clientes:', err);
+      setError('Erro ao carregar clientes');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
+  useEffect(() => {
+    loadSubscribers();
+  }, [loadSubscribers]);
+
+  // Converter subscriber para formato Customer
+  const convertSubscriberToCustomer = useCallback((subscriber: Subscriber): Customer => {
     return {
-      id: onu.id,
-      name: onu.clientName,
+      id: String(subscriber.id),
+      name: subscriber.full_name,
       position: 'Subscriber',
       company: 'Telecom',
-      email: `${onu.clientName.toLowerCase().replace(/\\s+/g, '.')}@example.com`,
-      phone: '(21) 9999-9999',
-      cpfCnpj: Math.random() > 0.5 ? '123.456.789-00' : '12.345.678/0001-90',
+      email: subscriber.email || '-',
+      phone: subscriber.phone_number || '-',
+      cpfCnpj: subscriber.cpf_cnpj,
       avatar: getRandomAvatarPath(),
-
-      status,
-      serialNumber: onu.serialNumber,
-      oltName: onu.oltName,
-      board: `${onu.board}/${onu.port}`,
-      port: onu.port.toString(),
-      sinal: onu.onuRx,
-      modo: onu.onuMode,
-      vlan: onu.attachedVlans.join(','),
-      voip: onu.voipEnabled || false,
-      dataAutenticacao: onu.authorizedAt,
-      tipoOnu: onu.onuType,
-      endereco: onu.clientAddress,
-      rxPower: onu.onuRx,
+      
+      // Campos padrão (não aplicáveis a subscribers puros)
+      status: 'online' as const,
+      serialNumber: '-',
+      oltName: '-',
+      board: '-',
+      port: '-',
+      sinal: 0,
+      modo: 'routing' as const,
+      vlan: '-',
+      voip: false,
+      dataAutenticacao: subscriber.created_at,
+      tipoOnu: '-',
+      endereco: subscriber.address_street || '-',
+      rxPower: 0,
     };
   }, []);
 
-  const customers = useMemo(() => provisionedONUs.map(convertProvisionedToCustomer), [provisionedONUs, convertProvisionedToCustomer]);
+  const customers = useMemo(
+    () => subscribers.map(convertSubscriberToCustomer),
+    [subscribers, convertSubscriberToCustomer]
+  );
 
-  const handleViewCustomer = useCallback((customerId: string) => navigate(`/clientes/${customerId}`), [navigate]);
+  const handleViewCustomer = useCallback(
+    (customerId: string) => navigate(`/clientes/${customerId}`),
+    [navigate]
+  );
 
-  return <CustomersPage customers={customers} onViewCustomer={handleViewCustomer} />;
+  // Criar novo subscriber
+  const handleCreateCustomer = useCallback(
+    async (data: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      cpfCnpj: string;
+      phone: string;
+    }) => {
+      try {
+        const subscriberData: SubscriberCreate = {
+          full_name: `${data.firstName} ${data.lastName}`.trim(),
+          cpf_cnpj: data.cpfCnpj,
+          email: data.email || undefined,
+          phone_number: data.phone || undefined,
+        };
+
+        await genieacsApi.createSubscriber(subscriberData);
+        await loadSubscribers(); // Recarregar lista
+        return { success: true };
+      } catch (err) {
+        console.error('Erro ao criar cliente:', err);
+        return { success: false, error: 'Erro ao criar cliente' };
+      }
+    },
+    [loadSubscribers]
+  );
+
+  // Atualizar subscriber existente
+  const handleUpdateCustomer = useCallback(
+    async (
+      customerId: string,
+      data: {
+        firstName: string;
+        lastName: string;
+        email: string;
+        cpfCnpj: string;
+        phone: string;
+      }
+    ) => {
+      try {
+        const subscriberData: SubscriberUpdate = {
+          full_name: `${data.firstName} ${data.lastName}`.trim(),
+          cpf_cnpj: data.cpfCnpj,
+          email: data.email || undefined,
+          phone_number: data.phone || undefined,
+        };
+
+        await genieacsApi.updateSubscriber(Number(customerId), subscriberData);
+        await loadSubscribers(); // Recarregar lista
+        return { success: true };
+      } catch (err) {
+        console.error('Erro ao atualizar cliente:', err);
+        return { success: false, error: 'Erro ao atualizar cliente' };
+      }
+    },
+    [loadSubscribers]
+  );
+
+  // Deletar subscriber
+  const handleDeleteCustomer = useCallback(
+    async (customerId: string) => {
+      try {
+        await genieacsApi.deleteSubscriber(Number(customerId));
+        await loadSubscribers(); // Recarregar lista
+        return { success: true };
+      } catch (err) {
+        console.error('Erro ao excluir cliente:', err);
+        return { success: false, error: 'Erro ao excluir cliente' };
+      }
+    },
+    [loadSubscribers]
+  );
+
+  return (
+    <CustomersPage
+      customers={customers}
+      loading={loading}
+      error={error}
+      onViewCustomer={handleViewCustomer}
+      onCreateCustomer={handleCreateCustomer}
+      onUpdateCustomer={handleUpdateCustomer}
+      onDeleteCustomer={handleDeleteCustomer}
+    />
+  );
 };
 
 export default Clientes;

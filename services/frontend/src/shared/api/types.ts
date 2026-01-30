@@ -232,10 +232,14 @@ export interface AlertQuery {
 export interface GenieACSTask {
   id: string;
   device_id: string;
-  name: string;
-  timestamp: string;
+  name?: string;
+  task_type?: string;
+  status?: string;
+  created_at?: string;
+  timestamp?: string;
   parameter_names?: string[];
   parameter_values?: Record<string, unknown>;
+  parameters?: Record<string, unknown>;
   file_type?: string;
   file_name?: string;
   target_filename?: string;
@@ -244,19 +248,23 @@ export interface GenieACSTask {
 // TR-069 Connection Request
 export interface ConnectionRequest {
   device_id: string;
-  url: string;
+  url?: string;
+  status?: string;
+  message?: string;
   username?: string;
   password?: string;
-  timestamp: string;
+  timestamp?: string;
 }
 
 // Device Parameters - Para TR-069 parameter paths
 export interface DeviceParameter {
-  path: string;
+  name?: string;
+  path?: string;
   value: unknown;
   type: 'string' | 'int' | 'boolean' | 'dateTime' | 'base64';
-  writable: boolean;
-  timestamp: string;
+  writable?: boolean;
+  timestamp?: string;
+  last_updated?: string;
 }
 
 // Error Types
@@ -298,4 +306,32 @@ export interface OLTPerformanceData {
 export interface OLTPerformanceStats {
   performance_data: OLTPerformanceData[];
   period: string;
+}
+
+// Subscriber (Cliente) - Corresponde à tabela subscribers no backend
+export interface Subscriber {
+  id: number;
+  full_name: string;
+  cpf_cnpj: string;
+  email?: string;
+  phone_number?: string;
+  address_street?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubscriberCreate {
+  full_name: string;
+  cpf_cnpj: string;
+  email?: string;
+  phone_number?: string;
+  address_street?: string;
+}
+
+export interface SubscriberUpdate {
+  full_name?: string;
+  cpf_cnpj?: string;
+  email?: string;
+  phone_number?: string;
+  address_street?: string;
 }
