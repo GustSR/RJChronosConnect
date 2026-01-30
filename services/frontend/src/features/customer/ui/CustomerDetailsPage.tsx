@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import ONUInventoryCard from '@entities/onu/ui/ONUInventoryCard';
+import type { PendingONU, ProvisionedONU } from '@features/onu-provisioning/provisioning';
+import AddOnuModal from '@features/onu-provisioning/ui/AddOnuModal';
 import { Add, ArrowBack, Edit, Email, LocationOn, Person, Phone, Schedule } from '@mui/icons-material';
 import { Alert, Avatar, Box, Button, Card, CardContent, Chip, Container, Divider, FormControl, Grid, IconButton, InputLabel, MenuItem, Modal, Select, Stack, TextField, Typography } from '@mui/material';
 import { AnimatedCard } from '@shared/ui/components';
-import ONUInventoryCard from '@entities/onu/ui/ONUInventoryCard';
-import AddOnuModal from '@features/onu-provisioning/ui/AddOnuModal';
-import type { PendingONU, ProvisionedONU } from '@features/onu-provisioning/provisioning';
+import React, { useEffect, useState } from 'react';
 
 type ClienteStatus = 'ativo' | 'inativo' | 'suspenso';
 
@@ -43,6 +43,10 @@ type Props = {
   onConfigureOnu: (onuId: string) => void;
 };
 
+import { genieacsApi } from '@shared/api/genieacsApi';
+
+// ... (imports permanecem)
+
 export const CustomerDetailsPage: React.FC<Props> = ({
   customerId,
   provisionedONUs,
@@ -59,70 +63,71 @@ export const CustomerDetailsPage: React.FC<Props> = ({
 
   useEffect(() => {
     const loadClienteData = async () => {
-      setLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const onuProvisionada = provisionedONUs.find((onu) => onu.id === customerId);
-
-      if (onuProvisionada) {
-        const clientName = onuProvisionada.clientName?.trim() || '';
-        const clientAddress = onuProvisionada.clientAddress?.trim() || '';
-        const matchingOnus = clientName
-          ? provisionedONUs.filter((onu) => {
-              const name = (onu.clientName || '').trim();
-              if (!name || name !== clientName) return false;
-              if (!clientAddress) return true;
-              return (onu.clientAddress || '').trim() === clientAddress;
-            })
-          : [onuProvisionada];
-        const resolvedOnus = matchingOnus.length ? matchingOnus : [onuProvisionada];
-
-        const clienteMock: Cliente = {
-          id: onuProvisionada.id,
-          nome: onuProvisionada.clientName,
-          endereco: onuProvisionada.clientAddress,
-          telefone: '(21) 99999-9999',
-          email: `${onuProvisionada.clientName.toLowerCase().replace(/\\s+/g, '.')}@email.com`,
-          documento: '123.456.789-00',
-          observacoes: 'Cliente residencial',
-          status: 'ativo',
-          dataCadastro: onuProvisionada.authorizedAt,
-        };
-
-        setCliente(clienteMock);
-        setDadosEdicao(clienteMock);
-
-        const onusDoCliente = resolvedOnus.map((onu) => ({
-          id: onu.id,
-          serialNumber: onu.serialNumber,
-          modelo: onu.onuType,
-          oltName: onu.oltName,
-          board: onu.board.toString(),
-          port: onu.port.toString(),
-          endereco: onu.clientAddress,
-          comentario: `ONU ${onu.onuType} - Modo ${onu.onuMode}`,
-          vlan: onu.attachedVlans.join(','),
-          status: onu.status === 'disabled' ? 'admin_disabled' : onu.status,
-          sinal: onu.onuRx,
-          dataAutorizacao: onu.authorizedAt,
-        }));
-
-        setOnusDoCliente(onusDoCliente);
-      } else {
-        setCliente(null);
-        setOnusDoCliente([]);
+      if (!customerId) {
+        setLoading(false);
+        return;
       }
 
-      setLoading(false);
+      setLoading(true);
+      try {
+        // 1. Buscar dados do subscriber via API
+        const subscriber = await genieacsApi.getSubscriberById(Number(customerId));
+
+        if (subscriber) {
+          const clienteData: Cliente = {
+            id: String(subscriber.id),
+            nome: subscriber.full_name,
+            endereco: subscriber.address_street || '-',
+            telefone: subscriber.phone_number || '-',
+            email: subscriber.email || '-',
+            documento: subscriber.cpf_cnpj,
+            observacoes: 'Cliente cadastrado no sistema', // TODO: Adicionar campo observações no backend
+            status: 'ativo', // TODO: Adicionar status no backend
+            dataCadastro: subscriber.created_at,
+          };
+
+          setCliente(clienteData);
+          setDadosEdicao(clienteData);
+
+          // 2. Buscar ONUs vinculadas a este cliente (por CPF ou Nome por enquanto)
+          // Idealmente o backend retornaria as ONUs do cliente, mas vamos filtrar do contexto local
+          const clientNameNormalized = subscriber.full_name.trim().toLowerCase();
+          const clientDocNormalized = subscriber.cpf_cnpj.replace(/\D/g, '');
+
+          const onusFiltradas = provisionedONUs.filter(onu => {
+            // Tenta casar por nome ou algum identificador se disponível
+            // Como ainda não temos vínculo forte ID -> ONU, vamos por nome/endereço por enquanto
+            // ou assumir que ONUs provisionadas não estão linkadas corretamente ainda
+            // Mas para visualização, se o cliente veio de uma ONU, o nome deve bater
+            return (onu.clientName?.toLowerCase().includes(clientNameNormalized));
+          });
+
+          const onusDoClienteMap = onusFiltradas.map((onu) => ({
+            id: onu.id,
+            serialNumber: onu.serialNumber,
+            modelo: onu.onuType,
+            oltName: onu.oltName,
+            board: onu.board.toString(),
+            port: onu.port.toString(),
+            endereco: onu.clientAddress,
+            comentario: `ONU ${onu.onuType} - Modo ${onu.onuMode}`,
+            vlan: onu.attachedVlans.join(','),
+            status: onu.status === 'disabled' ? 'admin_disabled' : onu.status,
+            sinal: onu.onuRx,
+            dataAutorizacao: onu.authorizedAt,
+          }));
+
+          setOnusDoCliente(onusDoClienteMap as ONUDoCliente[]);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar cliente:', error);
+        setCliente(null);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    if (customerId) {
-      loadClienteData();
-    } else {
-      setLoading(false);
-      setCliente(null);
-      setOnusDoCliente([]);
-    }
+    loadClienteData();
   }, [customerId, provisionedONUs]);
 
   const handleOpenEditModal = () => {
