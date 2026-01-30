@@ -218,7 +218,7 @@ services:
 
     db-acs:
         container_name: rjchronos_db_acs_dev
-        image: mongo:8.0
+        image: mongo:4.4
         volumes:
             - mongo_acs_data_dev:/data/db
 
