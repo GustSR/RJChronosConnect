@@ -70,7 +70,7 @@ services:
         depends_on:
             - db-app
             - redis
-            - rabbitmq
+            # - rabbitmq
         environment:
             - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
             - GENIACS_API_URL=http://10.250.10.1:7557/
@@ -129,8 +129,8 @@ services:
             - "8001:8001"
         networks:
             - rjchronos-net
-        depends_on:
-            - rabbitmq
+        # depends_on:
+        #     - rabbitmq
         command: uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload
         environment:
             # Configurações de conexão com outros serviços
