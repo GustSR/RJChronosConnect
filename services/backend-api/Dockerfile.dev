@@ -25,9 +25,11 @@ COPY services/backend-api .
 # Copiar o módulo shared
 COPY shared ./shared
 
+# Tornar o script de inicialização executável (caso permissões se percam no copy)
+RUN chmod +x start.sh
+
 # Expor a porta em que o Uvicorn irá rodar
 EXPOSE 8000
 
-# Comando para iniciar o servidor FastAPI com auto-reload
-# Ideal para desenvolvimento, reinicia o servidor a cada mudança no código.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Comando para iniciar o servidor usando o script que roda migrações
+CMD ["./start.sh"]
