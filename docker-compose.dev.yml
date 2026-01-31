@@ -71,7 +71,7 @@ services:
         depends_on:
             - db-app
             - redis
-            # - rabbitmq
+            - rabbitmq
         environment:
             - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
             - GENIACS_API_URL=http://10.250.10.1:7557/
@@ -82,24 +82,24 @@ services:
             - CREDENTIAL_ENCRYPTION_KEY=${CREDENTIAL_ENCRYPTION_KEY}
 
     # --- Novos Serviços ---
-    # rabbitmq:
-    #     image: rabbitmq:3-management-alpine
-    #     container_name: rjchronos_rabbitmq_dev
-    #     ports:
-    #         - "5672:5672"
-    #         - "15672:15672"
-    #     networks:
-    #         - rjchronos-net
-    #     environment:
-    #         - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-    #         - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
-    #     volumes:
-    #         - rabbitmq_data_dev:/var/lib/rabbitmq # Persistência de dados em dev
-    #     healthcheck:
-    #         test: ["CMD", "rabbitmq-diagnostics", "check_running", "-q"]
-    #         interval: 30s
-    #         timeout: 10s
-    #         retries: 5
+    rabbitmq:
+        image: rabbitmq:3-management-alpine
+        container_name: rjchronos_rabbitmq_dev
+        ports:
+            - "5672:5672"
+            - "15672:15672"
+        networks:
+            - rjchronos-net
+        environment:
+            - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+            - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+        volumes:
+            - rabbitmq_data_dev:/var/lib/rabbitmq # Persistência de dados em dev
+        healthcheck:
+            test: ["CMD", "rabbitmq-diagnostics", "check_running", "-q"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
 
     # works:
     #     build:
@@ -130,8 +130,8 @@ services:
             - "8001:8001"
         networks:
             - rjchronos-net
-        # depends_on:
-        #     - rabbitmq
+        depends_on:
+            - rabbitmq
         command: uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload
         environment:
             # Configurações de conexão com outros serviços
