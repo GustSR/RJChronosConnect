@@ -198,10 +198,11 @@ services:
             context: ./services/genieacs
         ports:
             - "3000:3000"
-            - "7547:7547"
             - "7557:7557"
         networks:
-            - rjchronos-net
+            rjchronos-net:
+            onu_management_net:
+                ipv4_address: 10.200.7.253
         depends_on:
             - db-acs
             - redis
@@ -211,6 +212,15 @@ services:
             - GENIEACS_UI_JWT_SECRET=${UI_JWT_SECRET}
             - GENIEACS_DEBUG_FILE=/var/log/genieacs/genieacs-debug.yaml
             - GENIEACS_DEBUG_FORMAT=yaml
+            # Configurações Dual-Homed
+            - GENIEACS_CWMP_INTERFACE=10.200.7.253
+            - GENIEACS_CWMP_PORT=7547
+            - GENIEACS_FS_INTERFACE=10.200.7.253
+            - GENIEACS_FS_PORT=7567
+            - GENIEACS_NBI_INTERFACE=0.0.0.0
+            - GENIEACS_NBI_PORT=7557
+            - GENIEACS_UI_INTERFACE=0.0.0.0
+            - GENIEACS_UI_PORT=3000
 
     db-app:
         container_name: rjchronos_db_app_dev
@@ -255,3 +265,12 @@ volumes:
 networks:
     rjchronos-net:
         driver: bridge
+    onu_management_net:
+        driver: macvlan
+        driver_opts:
+            parent: ens19
+        ipam:
+            config:
+                - subnet: 10.200.0.0/21
+                  gateway: 10.200.0.1
+                  ip_range: 10.200.7.240/28
