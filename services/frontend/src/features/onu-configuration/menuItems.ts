@@ -1,5 +1,5 @@
 import type { SvgIconComponent } from '@mui/icons-material';
-import { Assignment, BugReport, Cable, Computer, DeviceHub, NetworkWifi, Security, Settings } from '@mui/icons-material';
+import { Assignment, BugReport, Cable, Computer, DeviceHub, NetworkWifi, Router, Security, Settings } from '@mui/icons-material';
 import type { ConfigurationTabId } from './types';
 
 export type ConfigurationMenuItem = {
@@ -10,6 +10,7 @@ export type ConfigurationMenuItem = {
 
 export const menuItems: ConfigurationMenuItem[] = [
   { id: 'general', label: 'Geral', icon: Settings },
+  { id: 'wan-tr069', label: 'WAN & TR-069', icon: Router },
   { id: 'lan-dhcp', label: 'LAN DHCP', icon: Cable },
   { id: 'wifi', label: 'WI-FI', icon: NetworkWifi },
   { id: 'hosts', label: 'Hosts', icon: Computer },

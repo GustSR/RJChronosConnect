@@ -1,5 +1,5 @@
 import type { ConfigurationTabId, ONUDetails } from '@features/onu-configuration';
-import { connectedHosts, DeviceLogsPanel, GeneralPanel, HistoricoAlteracoesModal, historicoAlteracoes, HostsPanel, initialLanDhcpConfig, initialSecurityConfig, initialWifiNetworks, LanDhcpPanel, LanPortsPanel, menuItems, SecurityPanel, TroubleshootingPanel, WifiPanel } from '@features/onu-configuration';
+import { connectedHosts, DeviceLogsPanel, GeneralPanel, HistoricoAlteracoesModal, historicoAlteracoes, HostsPanel, initialLanDhcpConfig, initialSecurityConfig, initialWifiNetworks, LanDhcpPanel, LanPortsPanel, menuItems, SecurityPanel, TroubleshootingPanel, WifiPanel, WanTr069Panel } from '@features/onu-configuration';
 import { useProvisioning } from '@features/onu-provisioning';
 import { ArrowBack, RouterOutlined } from '@mui/icons-material';
 import { Box, Card, CardContent, Container, Grid, IconButton, Link, Stack, Typography } from '@mui/material';
@@ -131,6 +131,8 @@ export default function ONUConfiguration() {
     switch (selectedMenuItem) {
       case 'general':
         return <GeneralPanel onuDetails={onuDetails} />;
+      case 'wan-tr069':
+        return <WanTr069Panel onuDetails={onuDetails} />;
       case 'lan-dhcp':
         return (
           <LanDhcpPanel

@@ -27,6 +27,8 @@ from ..commands.onts.ssh.get_ont_failed_cli import GetOntFailedCliCommand
 from ..commands.onts.ssh.add_service_port import AddServicePortCommand
 from ..commands.onts.ssh.get_ont_register_info_cli import GetOntRegisterInfoCliCommand
 from ..commands.onts.ssh.get_mac_address_cli import GetMacAddressCliCommand
+from ..commands.onts.ssh.configure_ont_wan import ConfigureOntWanCommand
+from ..commands.onts.ssh.configure_ont_tr069 import ConfigureOntTr069Command
 
 # Imports de comandos OLT (equipamento)
 from ..commands.olts.ssh.add_dba_profile import AddDbaProfileCommand
@@ -52,7 +54,8 @@ from ..schemas.ont import (
     ont_add_request,
     ont_line_profile_add_request,
     ont_srv_profile_add_request,
-    ont_confirm_request
+    ont_confirm_request,
+    ont_wan_config_request
 )
 
 # Imports de schemas OLT
@@ -289,7 +292,68 @@ def get_ont_optical_info(olt_id: int, port: str, ont_id_on_port: int) -> Dict[st
     return _execute_snmp_command(olt_id, GetOntOpticalInfoSnmpCommand, port=port, ont_id=ont_id_on_port)
 
 def provision_ont(olt_id: int, ont_data: ont_add_request.ONTAddRequest) -> Dict[str, Any]:
-    return _execute_cli_command(olt_id, AddOntCommand, **ont_data.dict())
+    # 1. Provisionamento Básico (Cria a ONT na OLT)
+    # Filtra os campos que o AddOntCommand não aceita (os novos campos de WAN/TR069)
+    # Como passamos **ont_data.dict(), precisamos garantir que AddOntCommand ignore kwargs extras ou filtrar antes.
+    # O helper _execute_cli_command já trata kwargs, mas o AddOntCommand.__init__ pode não aceitar.
+    # Vamos passar apenas os campos que o AddOntCommand espera.
+    
+    # Campos padrão do AddOntCommand (baseado no schema original)
+    basic_params = {
+        "port": ont_data.port,
+        "ont_id": ont_data.ont_id,
+        "serial_number": ont_data.serial_number,
+        "line_profile": ont_data.line_profile,
+        "srv_profile": ont_data.srv_profile,
+        "description": ont_data.description,
+        "ont_type": ont_data.ont_type
+    }
+    
+    result = _execute_cli_command(olt_id, AddOntCommand, **basic_params)
+    
+    # Se falhou o provisionamento básico, aborta
+    if isinstance(result, dict) and result.get("status") == "error":
+        return result
+
+    # 2. Configurações Extras (WAN e TR-069)
+    extra_logs = []
+
+    if ont_data.mgmt_vlan:
+        try:
+            wan_result = _execute_cli_command(
+                olt_id, 
+                ConfigureOntWanCommand, 
+                port=ont_data.port, 
+                ont_id=ont_data.ont_id,
+                vlan=ont_data.mgmt_vlan,
+                ip_mode=ont_data.ip_mode,
+                ip_address=ont_data.ip_address,
+                mask=ont_data.mask,
+                gateway=ont_data.gateway
+            )
+            extra_logs.append({"step": "wan_config", "result": wan_result})
+        except Exception as e:
+            logger.error(f"Erro ao configurar WAN: {e}")
+            extra_logs.append({"step": "wan_config", "status": "error", "message": str(e)})
+
+    if ont_data.tr069_profile_id:
+        try:
+            tr069_result = _execute_cli_command(
+                olt_id,
+                ConfigureOntTr069Command,
+                port=ont_data.port,
+                ont_id=ont_data.ont_id,
+                profile_id=ont_data.tr069_profile_id
+            )
+            extra_logs.append({"step": "tr069_config", "result": tr069_result})
+        except Exception as e:
+             logger.error(f"Erro ao configurar TR-069: {e}")
+             extra_logs.append({"step": "tr069_config", "status": "error", "message": str(e)})
+
+    if isinstance(result, dict):
+        result["configuration_steps"] = extra_logs
+        
+    return result
 
 def reboot_ont(olt_id: int, port: str, ont_id_on_port: int) -> Dict[str, Any]:
     return _execute_cli_command(olt_id, RebootOntCommand, port=port, ont_id=ont_id_on_port)
@@ -639,3 +703,45 @@ def list_gpon_ports(
 ) -> List[Dict[str, Any]]:
     service = get_route_report_service(olt_id, timeout=timeout, retries=retries)
     return service.list_gpon_ports()
+
+
+def configure_ont_wan_tr069(olt_id: int, ont_id: int, config_data: ont_wan_config_request.OntWanConfigRequest) -> Dict[str, Any]:
+    """Configura WAN e TR-069 em uma ONU existente."""
+    
+    logs = []
+    
+    # 1. Configurar WAN
+    try:
+        wan_result = _execute_cli_command(
+            olt_id, 
+            ConfigureOntWanCommand, 
+            port=config_data.port, 
+            ont_id=ont_id,
+            vlan=config_data.mgmt_vlan,
+            ip_mode=config_data.ip_mode,
+            ip_address=config_data.ip_address,
+            mask=config_data.mask,
+            gateway=config_data.gateway,
+            ip_index=config_data.ip_index
+        )
+        logs.append({"step": "wan_config", "result": wan_result})
+    except Exception as e:
+        logger.error(f"Erro ao configurar WAN na reconfiguração: {e}")
+        logs.append({"step": "wan_config", "status": "error", "message": str(e)})
+
+    # 2. Configurar TR-069
+    try:
+        tr069_result = _execute_cli_command(
+            olt_id,
+            ConfigureOntTr069Command,
+            port=config_data.port,
+            ont_id=ont_id,
+            profile_id=config_data.tr069_profile_id
+        )
+        logs.append({"step": "tr069_config", "result": tr069_result})
+    except Exception as e:
+        logger.error(f"Erro ao configurar TR-069 na reconfiguração: {e}")
+        logs.append({"step": "tr069_config", "status": "error", "message": str(e)})
+        
+    return {"status": "completed", "steps": logs}
+

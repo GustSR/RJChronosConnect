@@ -29,7 +29,8 @@ from ..schemas.ont import (
     ont_confirm_request as ont_confirm_schema,
     ont_failed as ont_failed_schema,
     ont_line_profile_add_request as ont_line_profile_add_request_schema,
-    ont_srv_profile_add_request as ont_srv_profile_add_request_schema
+    ont_srv_profile_add_request as ont_srv_profile_add_request_schema,
+    ont_wan_config_request as ont_wan_config_request_schema
 )
 
 # Imports de schemas compartilhados
@@ -133,6 +134,13 @@ def reboot_ont(olt_id: int, frame: int, slot: int, pon_port: int, ont_id_on_port
     port_str = _build_port(frame, slot, pon_port)
     validate_ont_id(ont_id_on_port)
     return olt_service.reboot_ont(olt_id, port_str, ont_id_on_port)
+
+@router.post("/olts/{olt_id}/onts/{ont_id}/configure-wan", response_model=command_response_schema.CommandResponse, summary="Configure ONT WAN/TR-069")
+def configure_ont_wan(olt_id: int, ont_id: int, request: ont_wan_config_request_schema.OntWanConfigRequest):
+    """Configura parâmetros de WAN (VLAN, IP) e TR-069 em uma ONU existente."""
+    validate_olt_id(olt_id)
+    validate_ont_id(ont_id)
+    return olt_service.configure_ont_wan_tr069(olt_id, ont_id, request)
 
 # ============================================================================
 # ENDPOINTS DE DESCOBERTA E AUTOFIND

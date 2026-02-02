@@ -20,7 +20,8 @@ export type ConfigurationTabId =
   | 'lan-ports'
   | 'device-logs'
   | 'troubleshooting'
-  | 'security';
+  | 'security'
+  | 'wan-tr069';
 
 export type LanDhcpConfig = {
   lanIpInterface: string;
