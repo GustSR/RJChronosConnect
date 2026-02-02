@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, BigInteger, ForeignKey
+from sqlalchemy import Column, String, DateTime, BigInteger, ForeignKey, Integer
 from sqlalchemy.dialects.postgresql import MACADDR
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -15,6 +15,7 @@ class Device(Base):
     serial_number = Column(String, unique=True, index=True, nullable=False)
     mac_address = Column(MACADDR, nullable=True)
     genieacs_id = Column(String, unique=True, nullable=True, doc="O _id do dispositivo no GenieACS")
+    ont_id = Column(Integer, nullable=True, doc="ID da ONT na porta PON (0-127)")
 
     # Chaves Estrangeiras
     subscriber_id = Column(BigInteger, ForeignKey("subscribers.id"), nullable=False)

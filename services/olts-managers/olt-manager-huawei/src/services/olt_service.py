@@ -29,6 +29,7 @@ from ..commands.onts.ssh.get_ont_register_info_cli import GetOntRegisterInfoCliC
 from ..commands.onts.ssh.get_mac_address_cli import GetMacAddressCliCommand
 from ..commands.onts.ssh.configure_ont_wan import ConfigureOntWanCommand
 from ..commands.onts.ssh.configure_ont_tr069 import ConfigureOntTr069Command
+from ..commands.onts.ssh.get_ont_info_by_sn import GetOntInfoBySnCliCommand
 
 # Imports de comandos OLT (equipamento)
 from ..commands.olts.ssh.add_dba_profile import AddDbaProfileCommand

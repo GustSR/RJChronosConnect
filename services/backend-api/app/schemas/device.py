@@ -8,6 +8,7 @@ class DeviceBase(BaseModel):
     serial_number: str
     mac_address: Optional[str] = None
     genieacs_id: Optional[str] = None
+    ont_id: Optional[int] = None
     subscriber_id: int
     olt_port_id: int
     status_id: int

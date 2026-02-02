@@ -699,6 +699,10 @@ async def authorize_onu(onu_id: str, provision_data: ONUProvisionRequest, db: Se
             overall_success = olt_result["status"] == "success"
 
         if overall_success:
+            if resolved_ont_id is not None:
+                device.ont_id = resolved_ont_id
+                db.add(device)
+                db.commit()
             message = f"ONU {onu_id} autorizada com sucesso"
         elif not genieacs_available and olt_result["status"] == "skipped":
             olt_message = olt_result.get("message")
@@ -778,6 +782,7 @@ async def get_provisioned_clients(db: Session = Depends(get_db)):
             {
                 "id": device.id,
                 "serial_number": device.serial_number,
+                "ont_id": device.ont_id,
                 "olt_id": olt_port.olt_id if olt_port else None,
                 "pon_port": f"{olt_port.slot}/{olt_port.port_number}"
                 if olt_port
