@@ -267,7 +267,7 @@ def set_port_mode(olt_id: int, port: str, port_mode_data: port_mode_set_request.
     return _execute_cli_command(olt_id, SetPortModeCommand, port=port, **port_mode_data.dict())
 
 def get_ont_info_by_sn(olt_id: int, serial_number: str) -> List[Dict[str, Any]]:
-    return _execute_snmp_command(olt_id, GetOntInfoSnmpCommand, serial_number=serial_number)
+    return _execute_cli_command(olt_id, GetOntInfoBySnCliCommand, serial_number=serial_number)
 
 def get_onts_on_port(olt_id: int, port: str) -> List[Dict[str, Any]]:
     """Gets a summary of all ONTs on a specific port."""
