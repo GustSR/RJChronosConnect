@@ -5,7 +5,7 @@ from ....services.connection_manager import ConnectionManager
 logger = get_logger(__name__)
 
 class ConfigureOntTr069Command:
-    def __init__(self, port: str, ont_id: int, profile_id: int, ip_index: int = 3):
+    def __init__(self, port: str, ont_id: int, profile_id: int, ip_index: int = 0):
         self.port = port
         self.ont_id = ont_id
         self.profile_id = profile_id

@@ -760,17 +760,14 @@ def configure_ont_wan_tr069(olt_id: int, config_data: ont_wan_config_request.Ont
             # Mantem o que veio do request como fallback
 
     # 0. Descobrir índice livre para a WAN
-    target_index = 3 # Padrão
+    target_index = 0 # Padrão para Gerência (IPHost)
     try:
+        # Para gerência TR-069, quase sempre usamos o index 0 (Host stack)
+        # Mas vamos manter a busca para logar o que existe
         used_indices = _execute_cli_command(olt_id, GetOntWanIndicesCommand, port=target_port, ont_id=target_ont_id)
-        if 3 in used_indices:
-            for i in range(1, 9):
-                if i not in used_indices:
-                    target_index = i
-                    break
-        logger.info(f"Índice IP selecionado para ONU {target_ont_id}: {target_index}")
+        logger.info(f"Índices detectados: {used_indices}. Usando 0 para gerência.")
     except Exception as e:
-        logger.warning(f"Erro ao buscar índices usados, tentando usar o 3 como fallback: {e}")
+        logger.warning(f"Erro ao buscar índices usados: {e}")
 
     # 1. Configurar WAN
     try:

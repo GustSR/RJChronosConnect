@@ -24,17 +24,22 @@ class RebootOntCommand:
             connection.send_command("config")
             connection.send_command(interface_cmd)
             
-            # Usar timing para lidar com o dialogo y/n
-            connection.send_command_timing(f"ont reset {ont_port_idx} {self.ont_id}")
-            output = connection.send_command_timing("y")
+            # Envia comando e aguarda um pouco mais
+            cmd = f"ont reset {ont_port_idx} {self.ont_id}"
+            output = connection.send_command(cmd, expect_string=r"y/n|#", read_timeout=10)
+
+            if "y/n" in output:
+                logger.info("Confirmando reset (y)...")
+                # Envia 'y' e volta para o prompt normal
+                output += connection.send_command("y", expect_string=r"#", read_timeout=10)
             
             connection.send_command("return")
-
-            return {"status": "success", "message": "Reboot command sent", "details": output}
+            return {"status": "success", "message": "Reboot command sent"}
 
         except Exception as e:
+            logger.error(f"Erro no reboot: {e}")
             try:
                 connection.send_command("return")
             except:
                 pass
-            raise e
+            return {"status": "error", "message": str(e)}
