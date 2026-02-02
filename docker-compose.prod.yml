@@ -68,6 +68,8 @@ services:
     restart: always
     networks:
       - rjchronos-net
+    environment:
+      - NETMIKO_SESSION_LOG=${NETMIKO_SESSION_LOG:-true}
 
   olt-manager-fiberhome:
     build:
