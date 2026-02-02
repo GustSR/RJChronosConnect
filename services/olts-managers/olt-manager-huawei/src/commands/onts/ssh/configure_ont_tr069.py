@@ -29,24 +29,34 @@ class ConfigureOntTr069Command:
             connection.send_command("config")
             connection.send_command(interface_cmd)
 
-            # 1. Vincular o servidor
+            # 1. Vincular o servidor (Validando saída)
             cmd_profile = f"ont tr069-server-config {ont_port_idx} {self.ont_id} profile-id {self.profile_id}"
-            connection.send_command(cmd_profile)
+            out_profile = connection.send_command(cmd_profile)
             
-            # 2. Definir por qual interface IP a gerência vai sair (O PULO DO GATO)
+            if "Failure" in out_profile or "Error" in out_profile:
+                logger.error(f"Falha no binding do profile TR-069: {out_profile}")
+                connection.send_command("return")
+                return {"status": "error", "message": f"Binding failed: {out_profile}"}
+
+            # 2. Definir por qual interface IP a gerência vai sair
             cmd_mgmt = f"ont tr069-management {ont_port_idx} {self.ont_id} ip-index {self.ip_index}"
-            output = connection.send_command(cmd_mgmt)
+            out_mgmt = connection.send_command(cmd_mgmt)
             
             connection.send_command("return")
 
-            if "Failure" in output or "Error" in output:
-                 logger.error(f"Falha ao configurar TR-069 Management: {output}")
-                 return {"status": "error", "message": output}
+            if "Failure" in out_mgmt or "Error" in out_mgmt:
+                 logger.error(f"Falha ao configurar TR-069 Management: {out_mgmt}")
+                 return {"status": "error", "message": f"Management config failed: {out_mgmt}"}
 
-            logger.info("TR-069 configurado com sucesso.")
-            return {"status": "success", "message": "TR-069 configured", "details": output}
+            logger.info("TR-069 (Binding + Management) configurado com sucesso.")
+            return {
+                "status": "success", 
+                "message": "TR-069 configured", 
+                "details": {"profile": out_profile, "management": out_mgmt}
+            }
             
         except Exception as e:
+            logger.error(f"Erro inesperado no ConfigureOntTr069Command: {e}")
             try:
                 connection.send_command("return")
             except:

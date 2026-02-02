@@ -10,34 +10,41 @@ class RebootOntCommand:
         self.ont_id = ont_id
 
     def execute(self, connection: ConnectionManager, olt_version: str) -> Dict[str, Any]:
+        """
+        Executa a sequência de comandos para reiniciar uma ONU.
+        Usa timing para lidar com a confirmação interativa (y/n).
+        """
         parts = self.port.split('/')
         if len(parts) == 3:
-            f, s, p = parts
-            interface_cmd = f"interface gpon {f}/{s}"
-            ont_port_idx = p
+            frame, slot, port_idx = parts
+            interface_cmd = f"interface gpon {frame}/{slot}"
+            ont_port_idx = port_idx
         else:
             raise ValueError(f"Formato de porta inválido: {self.port}")
 
         logger.info(f"Reiniciando ONU {self.ont_id} na porta {self.port}...")
 
         try:
+            # Entrar no modo de configuração e na interface
             connection.send_command("config")
             connection.send_command(interface_cmd)
             
-            # Envia comando e aguarda um pouco mais
+            # Envia o comando de reset usando timing (não espera prompt específico)
+            # O parâmetro use_timing=True é suportado pelo nosso ConnectionManager
             cmd = f"ont reset {ont_port_idx} {self.ont_id}"
-            output = connection.send_command(cmd, expect_string=r"y/n|#", read_timeout=10)
-
-            if "y/n" in output:
-                logger.info("Confirmando reset (y)...")
-                # Envia 'y' e volta para o prompt normal
-                output += connection.send_command("y", expect_string=r"#", read_timeout=10)
+            connection.send_command(cmd, use_timing=True)
             
+            # Envia a confirmação 'y' e aguarda a execução
+            output = connection.send_command("y", use_timing=True)
+            
+            # Retorna ao modo raiz
             connection.send_command("return")
-            return {"status": "success", "message": "Reboot command sent"}
+            
+            logger.info(f"Comando de reboot enviado para ONU {self.ont_id}.")
+            return {"status": "success", "message": "Reboot command sent", "details": output}
 
         except Exception as e:
-            logger.error(f"Erro no reboot: {e}")
+            logger.error(f"Erro ao tentar reiniciar ONU {self.ont_id}: {e}")
             try:
                 connection.send_command("return")
             except:

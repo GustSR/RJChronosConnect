@@ -16,53 +16,59 @@ class GetOntInfoBySnCliCommand:
         sn = self.serial_number.strip()
         cmd = f"display ont info by-sn {sn}"
         
-        # Aumentar o timeout e garantir que lemos tudo
         output = connection.send_command(cmd, read_timeout=20)
         
         results = []
+        
+        # 1. Tenta formato Verbose (mais preciso)
         fsp = None
         ont_id = None
-        
-        # Regex flexível para capturar F/S/P e ONT-ID em qualquer lugar da linha
         for line in output.splitlines():
-            # Busca F/S/P (ex: 0/5/2)
             fsp_match = re.search(r'F/S/P\s*:\s*(\d+/\d+/\d+)', line, re.IGNORECASE)
             if fsp_match:
                 fsp = fsp_match.group(1)
             
-            # Busca ONT-ID (ex: 28)
             id_match = re.search(r'ONT-ID\s*:\s*(\d+)', line, re.IGNORECASE)
             if id_match:
                 ont_id = id_match.group(1)
 
-        if fsp and ont_id:
+        if fsp and ont_id and int(ont_id) > 0:
             try:
                 f, s, p = fsp.split('/')
-                results.append({
+                return [{
                     "ont_id": int(ont_id),
                     "frame": int(f),
                     "slot": int(s),
                     "port": int(p),
                     "fsp": fsp,
                     "serial_number": sn
-                })
-                return results
+                }]
             except Exception:
                 pass
         
-        # Fallback para formato tabular
-        match = re.search(r'(\d+/\d+/\d+)\s+(\d+)', output)
-        if match:
-            fsp_val = match.group(1)
-            id_val = match.group(2)
-            f, s, p = fsp_val.split('/')
-            results.append({
-                "ont_id": int(id_val),
-                "frame": int(f),
-                "slot": int(s),
-                "port": int(p),
-                "fsp": fsp_val,
-                "serial_number": sn
-            })
+        # 2. Tenta formato Tabular (pegando todas as ONUs)
+        # Regex busca F/S/P seguido de ID
+        all_onts = re.findall(r'(\d+/\d+/\d+)\s+(\d+)', output)
+        
+        for fsp_val, id_val in all_onts:
+            oid = int(id_val)
+            if oid > 0: # Filtra ONUs reais (ID > 0)
+                try:
+                    f, s, p = fsp_val.split('/')
+                    results.append({
+                        "ont_id": oid,
+                        "frame": int(f),
+                        "slot": int(s),
+                        "port": int(p),
+                        "fsp": fsp_val,
+                        "serial_number": sn
+                    })
+                except Exception:
+                    continue
+        
+        # Se encontrou ONUs reais, retorna a primeira
+        if results:
+            logger.info(f"Parser encontrou {len(results)} ONUs reais para o SN {sn}. Usando a primeira: {results[0]['fsp']}")
+            return [results[0]]
 
-        return results
+        return []

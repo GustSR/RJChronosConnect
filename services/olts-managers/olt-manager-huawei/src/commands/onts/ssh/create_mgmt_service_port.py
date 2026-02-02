@@ -14,14 +14,15 @@ class CreateMgmtServicePortCommand:
     def execute(self, connection: ConnectionManager, olt_version: str) -> Dict[str, Any]:
         """
         Cria a service-port de gerência para a ONU.
-        Comando: service-port vlan <vlan> gpon <port> ont <ont_id> gemport <gem> multi-service user-vlan <vlan> tag-transform translate
+        IMPORTANTE: Este comando deve ser executado no modo CONFIG raiz.
         """
-        logger.info(f"Criando service-port de gerência na ONU {self.ont_id} (Porta {self.port}, VLAN {self.vlan}, Gemport {self.gemport})...")
+        logger.info(f"Criando service-port de gerência na ONU {self.ont_id} (Porta {self.port}, VLAN {self.vlan})...")
 
         try:
+            # Garante que estamos no modo config e NÃO dentro de interface
             connection.send_command("config")
             
-            # Comando completo para gerência
+            # Comando sem ID (atribuição automática pela OLT)
             cmd = (
                 f"service-port vlan {self.vlan} gpon {self.port} ont {self.ont_id} "
                 f"gemport {self.gemport} multi-service user-vlan {self.vlan} tag-transform translate"
@@ -29,23 +30,18 @@ class CreateMgmtServicePortCommand:
             
             output = connection.send_command(cmd)
             
-            connection.send_command("return")
+            # Se a OLT aceitou mas deu algum aviso, limpamos para garantir o prompt
+            if "already exists" in output.lower():
+                logger.info("Service-port de gerência já existe.")
+                return {"status": "success", "message": "Already exists"}
 
             if "Failure" in output or "Error" in output:
-                # Verifica se o erro é apenas que já existe
-                if "already exists" in output.lower() or "The service port already exists" in output:
-                    logger.info("Service-port de gerência já existe na OLT.")
-                    return {"status": "success", "message": "Service-port already exists"}
-                
-                logger.error(f"Falha ao criar service-port de gerência: {output}")
+                logger.error(f"Falha ao criar service-port: {output}")
                 return {"status": "error", "message": output}
 
-            logger.info("Service-port de gerência criada com sucesso.")
-            return {"status": "success", "message": "Service-port created", "details": output}
+            logger.info("Service-port criada com sucesso.")
+            return {"status": "success", "message": "Created", "details": output}
 
         except Exception as e:
-            try:
-                connection.send_command("return")
-            except:
-                pass
+            logger.error(f"Erro na execução da service-port: {e}")
             raise e
