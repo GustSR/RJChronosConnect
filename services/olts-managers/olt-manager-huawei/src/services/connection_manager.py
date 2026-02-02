@@ -14,6 +14,8 @@ def _resolve_device_type(protocol: str) -> str:
 
 def _prompt_regex(base_prompt: str) -> str:
     escaped = re.escape(base_prompt)
+    if base_prompt and base_prompt[0].isdigit():
+        escaped = rf"0*{escaped}"
     return rf"(?:<|\[)?{escaped}[^>\]#]*?(?:>|\]|#)\s*$"
 
 
@@ -150,7 +152,7 @@ class ConnectionManager:
                 use_timing = telnet_kwargs.pop("use_timing", False)
                 if not use_timing:
                     if "expect_string" not in telnet_kwargs:
-                        base_prompt = getattr(self.connection, "base_prompt", None) or self.prompt
+                        base_prompt = self.prompt or getattr(self.connection, "base_prompt", None)
                         if base_prompt:
                             telnet_kwargs["expect_string"] = _prompt_regex(base_prompt)
                     telnet_kwargs.setdefault("read_timeout", 30.0)
