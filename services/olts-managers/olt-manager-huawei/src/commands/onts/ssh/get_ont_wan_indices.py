@@ -11,37 +11,20 @@ class GetOntWanIndicesCommand:
         self.ont_id = ont_id
 
     def execute(self, connection: ConnectionManager, olt_version: str) -> List[int]:
-        """
-        Busca os índices de WAN já utilizados na ONT.
-        """
-        # Parse da porta para entrar na interface
         parts = self.port.split('/')
         if len(parts) == 3:
             f, s, p = parts
-            interface_cmd = f"interface gpon {f}/{s}"
             ont_port_idx = p
         else:
-            raise ValueError(f"Formato de porta inválido: {self.port}")
+            ont_port_idx = "0"
 
-        # O comando display ont wan-info pode ser rodado dentro ou fora da interface
-        # Vamos rodar dentro para garantir contexto em algumas versoes
-        connection.send_command("config")
-        connection.send_command(interface_cmd)
-        
+        # Rodar o comando e capturar tudo
         cmd = f"display ont wan-info {ont_port_idx} {self.ont_id}"
-        output = connection.send_command(cmd)
-        connection.send_command("return")
+        output = connection.send_command(cmd, read_timeout=15)
 
-        # Procura por "Index : X" na saída
-        # Exemplo: Index                      : 1
-        indices = []
-        for line in output.splitlines():
-            if "Index" in line and ":" in line:
-                try:
-                    val = line.split(":")[1].strip()
-                    indices.append(int(val))
-                except (ValueError, IndexError):
-                    continue
+        # Procura por "Index : X" usando Regex
+        indices = re.findall(r'Index\s*:\s*(\d+)', output, re.IGNORECASE)
         
-        logger.info(f"Índices de WAN em uso na ONU {self.ont_id}: {indices}")
-        return sorted(list(set(indices)))
+        result = sorted(list(set([int(i) for i in indices])))
+        logger.info(f"Índices detectados na ONU {self.ont_id}: {result}")
+        return result
