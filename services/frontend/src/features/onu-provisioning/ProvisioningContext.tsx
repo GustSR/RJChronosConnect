@@ -147,6 +147,11 @@ export const ProvisioningProvider: React.FC<ProvisioningProviderProps> = ({
               frame = parseInt(parts[0], 10);
               board = parseInt(parts[1], 10);
               port = parseInt(parts[2], 10);
+            } else if (parts.length === 2) {
+              // Formato 5/2 -> Slot 5, Port 2 (Assume frame 0)
+              frame = 0;
+              board = parseInt(parts[0], 10);
+              port = parseInt(parts[1], 10);
             }
           }
 

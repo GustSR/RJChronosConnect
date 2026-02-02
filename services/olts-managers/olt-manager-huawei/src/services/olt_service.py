@@ -743,46 +743,21 @@ def configure_ont_wan_tr069(olt_id: int, config_data: ont_wan_config_request.Ont
     target_ont_id = config_data.ont_id
     target_port = config_data.port
     
-    # Se o ID for 0 ou não houver porta, precisamos localizar a ONU real pelo SN
-    if not target_ont_id or target_ont_id <= 0 or not target_port:
-        logger.info(f"Localizando ONU real na OLT para SN {config_data.serial_number} (ID recebido: {target_ont_id})...")
+    # Prioridade total ao Serial Number para evitar dados mockados/errados do frontend
+    if config_data.serial_number:
+        logger.info(f"Localizando localização REAL na OLT para SN {config_data.serial_number}...")
         try:
             ont_info_list = get_ont_info_by_sn(olt_id, config_data.serial_number)
-            if not ont_info_list:
-                raise ValueError(f"ONU com serial {config_data.serial_number} não encontrada na OLT.")
-            
-            # Pega o primeiro resultado (assume SN único)
-            ont_info = ont_info_list[0]
-            
-            if target_ont_id is None:
-                # Tenta converter para int, lidando com possíveis erros
-                try:
-                    target_ont_id = int(ont_info.get("ont_id"))
-                except (ValueError, TypeError):
-                    raise ValueError(f"ONT ID inválido retornado: {ont_info.get('ont_id')}")
-            
-            if not target_port:
-                if "port" in ont_info: # Ex: "0/1/2"
-                    target_port = ont_info["port"]
-                elif all(k in ont_info for k in ["frame", "slot", "pon_port"]):
-                    target_port = f"{ont_info['frame']}/{ont_info['slot']}/{ont_info['pon_port']}"
-                else:
-                    # Tenta construir do fsp se existir
-                    fsp = ont_info.get("fsp")
-                    if fsp:
-                        target_port = fsp
-                    else:
-                        raise ValueError("Não foi possível determinar a porta da ONU.")
-                    
-            logger.info(f"ONU localizada: ID {target_ont_id}, Porta {target_port}")
-            
+            if ont_info_list:
+                ont_info = ont_info_list[0]
+                target_ont_id = int(ont_info.get("ont_id"))
+                target_port = ont_info.get("fsp") or ont_info.get("port")
+                logger.info(f"ONU localizada via SN: ID {target_ont_id}, Porta {target_port}")
+            else:
+                logger.warning(f"ONU com SN {config_data.serial_number} não encontrada. Usando dados do request.")
         except Exception as e:
-            logger.error(f"Falha ao localizar ONU por SN: {e}")
-            return {
-                "success": False,
-                "message": f"Falha ao localizar ONU: {str(e)}",
-                "details": {"steps": logs}
-            }
+            logger.error(f"Erro ao buscar por SN: {e}")
+            # Mantem o que veio do request como fallback
 
     # 0. Descobrir índice livre para a WAN
     target_index = 3 # Padrão
