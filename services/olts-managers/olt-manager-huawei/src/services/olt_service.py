@@ -30,6 +30,7 @@ from ..commands.onts.ssh.get_mac_address_cli import GetMacAddressCliCommand
 from ..commands.onts.ssh.configure_ont_wan import ConfigureOntWanCommand
 from ..commands.onts.ssh.configure_ont_tr069 import ConfigureOntTr069Command
 from ..commands.onts.ssh.get_ont_info_by_sn import GetOntInfoBySnCliCommand
+from ..commands.onts.ssh.delete_ont import DeleteOntCommand
 
 # Imports de comandos OLT (equipamento)
 from ..commands.olts.ssh.add_dba_profile import AddDbaProfileCommand
@@ -796,4 +797,9 @@ def configure_ont_wan_tr069(olt_id: int, config_data: ont_wan_config_request.Ont
         "message": "Configuração concluída com erros" if has_error else "Configuração aplicada com sucesso",
         "details": {"steps": logs}
     }
+
+
+def delete_ont(olt_id: int, port: str, ont_id: int) -> Dict[str, Any]:
+    """Remove uma ONU da OLT."""
+    return _execute_cli_command(olt_id, DeleteOntCommand, port=port, ont_id=ont_id)
 

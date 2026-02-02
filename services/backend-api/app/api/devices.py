@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from ..schemas.device import CPE, ONU, OLT
 from ..services.genieacs_client import get_genieacs_client
 from ..services.genieacs_transformers import transform_genieacs_to_cpe, transform_genieacs_to_onu
+from ..services.olt_manager_client import delete_olt_manager
 from ..database.database import get_db
 from ..crud import olt as crud_olt
 from ..crud import device as crud_device
@@ -16,6 +17,33 @@ import logging
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+@router.delete("/onus/{device_id}")
+async def delete_onu(device_id: int, db: Session = Depends(get_db)):
+    """Deleta uma ONU do banco e da OLT."""
+    device = crud_device.get_device(db, device_id)
+    if not device:
+        raise HTTPException(status_code=404, detail="Dispositivo não encontrado")
+    
+    # 1. Deletar da OLT
+    if device.olt_port and device.ont_id is not None:
+        olt = device.olt_port.olt
+        port = device.olt_port
+        
+        # Path: /olts/{olt_id}/ports/{frame}/{slot}/{pon_port}/onts/{ont_id}
+        # frame padrao 0 se nao tiver
+        path = f"/api/v1/olts/{olt.id}/ports/0/{port.slot}/{port.port_number}/onts/{device.ont_id}"
+        
+        # Chama delete
+        response = await delete_olt_manager(path)
+        if not response.get("success") and response.get("status") != "success":
+             logger.warning(f"Falha ao deletar ONU da OLT: {response}")
+             # Nao aborta, continua para deletar do banco
+            
+    # 2. Deletar do banco
+    crud_device.delete_device(db, device_id)
+    
+    return {"success": True, "message": "ONU deletada com sucesso"}
 
 @router.get("/cpes", response_model=List[CPE])
 async def get_cpes():

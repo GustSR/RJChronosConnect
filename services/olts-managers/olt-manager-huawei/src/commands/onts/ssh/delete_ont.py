@@ -1,25 +1,46 @@
 from typing import Dict, Any
+from ....services.connection_manager import ConnectionManager
+from ....core.logging import get_logger
 
-from ...base_command import OLTCommand
+logger = get_logger(__name__)
 
-
-class DeleteOntCommand(OLTCommand):
+class DeleteOntCommand:
     """Command to remove an ONT from a PON via CLI."""
 
     def __init__(self, port: str, ont_id: int):
         self.port = port
         self.ont_id = ont_id
 
-    def execute(self, connection_manager, olt_version: str) -> Dict[str, Any]:
-        command_str = f"ont delete {self.port} {self.ont_id}"
-        raw_output = connection_manager.send_command(command_str)
-        return self._parse_output(raw_output, olt_version)
-
-    def _parse_output(self, raw_output: str, olt_version: str) -> Dict[str, Any]:
-        if "success" in raw_output.lower():
-            status = "success"
-        elif "fail" in raw_output.lower() or "error" in raw_output.lower():
-            status = "failure"
+    def execute(self, connection: ConnectionManager, olt_version: str) -> Dict[str, Any]:
+        # Parse da porta (Ex: "0/5/2" -> frame 0, slot 5, port 2)
+        parts = self.port.split('/')
+        if len(parts) == 3:
+            frame, slot, port_idx = parts
+            interface_cmd = f"interface gpon {frame}/{slot}"
         else:
-            status = "unknown"
-        return {"status": status, "raw_output": raw_output}
+            raise ValueError(f"Formato de porta inválido: {self.port}")
+
+        logger.info(f"Deletando ONU {self.ont_id} na porta {self.port}...")
+
+        try:
+            connection.send_command("config")
+            connection.send_command(interface_cmd)
+            
+            cmd = f"ont delete {port_idx} {self.ont_id}"
+            output = connection.send_command(cmd)
+            
+            connection.send_command("return")
+
+            if "Failure" in output or "Error" in output:
+                logger.error(f"Falha ao deletar ONU: {output}")
+                return {"status": "error", "message": output}
+
+            logger.info("ONU deletada com sucesso.")
+            return {"status": "success", "message": "ONU deleted", "details": output}
+
+        except Exception as e:
+            try:
+                connection.send_command("return")
+            except:
+                pass
+            raise e

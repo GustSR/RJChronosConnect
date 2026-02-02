@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -11,6 +11,10 @@ import {
   Grid,
   Divider,
   IconButton,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText
 } from '@mui/material';
 import {
   SignalCellular4Bar,
@@ -25,6 +29,7 @@ import {
   Circle,
   WifiTethering,
   MoreVert,
+  Delete
 } from '@mui/icons-material';
 
 interface ONUInventoryCardProps {
@@ -43,49 +48,32 @@ interface ONUInventoryCardProps {
     dataAutorizacao: string;
   };
   onConfigure: () => void;
+  onDelete?: () => void; // Callback para deletar
 }
 
 const ONUInventoryCard: React.FC<ONUInventoryCardProps> = ({
   onu,
   onConfigure,
+  onDelete
 }) => {
-  const getStatusChip = (status: string) => {
-    const statusConfig = {
-      online: {
-        label: 'Online',
-        color: 'success' as const,
-        icon: <Circle fontSize="small" />,
-      },
-      offline: {
-        label: 'Offline',
-        color: 'error' as const,
-        icon: <Circle fontSize="small" />,
-      },
-      powered_off: {
-        label: 'Desligado',
-        color: 'warning' as const,
-        icon: <Circle fontSize="small" />,
-      },
-      admin_disabled: {
-        label: 'Desabilitado',
-        color: 'default' as const,
-        icon: <Circle fontSize="small" />,
-      },
-    };
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const openMenu = Boolean(anchorEl);
 
-    const config =
-      statusConfig[status as keyof typeof statusConfig] || statusConfig.offline;
-
-    return (
-      <Chip
-        label={config.label}
-        color={config.color}
-        size="small"
-        icon={config.icon}
-        variant="filled"
-      />
-    );
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
   };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleDelete = () => {
+    handleMenuClose();
+    if (onDelete) onDelete();
+  };
+
+  const getStatusChip = (status: string) => {
+    // ... (restante do código igual)
 
   const getSinalIcon = (sinal: number) => {
     if (sinal >= -15) return <SignalCellular4Bar color="success" />;
@@ -172,9 +160,49 @@ const ONUInventoryCard: React.FC<ONUInventoryCardProps> = ({
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {getStatusChip(onu.status)}
-            <IconButton size="small">
+            <IconButton size="small" onClick={handleMenuClick}>
               <MoreVert fontSize="small" />
             </IconButton>
+            <Menu
+              anchorEl={anchorEl}
+              open={openMenu}
+              onClose={handleMenuClose}
+              PaperProps={{
+                elevation: 0,
+                sx: {
+                  overflow: 'visible',
+                  filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+                  mt: 1.5,
+                  '& .MuiAvatar-root': {
+                    width: 32,
+                    height: 32,
+                    ml: -0.5,
+                    mr: 1,
+                  },
+                  '&:before': {
+                    content: '""',
+                    display: 'block',
+                    position: 'absolute',
+                    top: 0,
+                    right: 14,
+                    width: 10,
+                    height: 10,
+                    bgcolor: 'background.paper',
+                    transform: 'translateY(-50%) rotate(45deg)',
+                    zIndex: 0,
+                  },
+                },
+              }}
+              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            >
+              <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
+                <ListItemIcon>
+                  <Delete fontSize="small" color="error" />
+                </ListItemIcon>
+                <ListItemText>Deletar ONU</ListItemText>
+              </MenuItem>
+            </Menu>
           </Box>
         </Box>
 

@@ -44,6 +44,7 @@ type Props = {
 };
 
 import { genieacsApi } from '@shared/api/genieacsApi';
+import { httpClient } from '@shared/api/api';
 
 // ... (imports permanecem)
 
@@ -169,6 +170,28 @@ export const CustomerDetailsPage: React.FC<Props> = ({
     };
 
     setOnusDoCliente((prev) => [...prev, novaOnuDoCliente]);
+  };
+
+  const handleDeleteOnu = async (onuId: string) => {
+    if (!window.confirm('Tem certeza que deseja deletar esta ONU? Esta ação removerá a ONU da OLT e do sistema.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await httpClient.delete(`/devices/onus/${onuId}`);
+      
+      // Remover da lista local
+      setOnusDoCliente((prev) => prev.filter((onu) => onu.id !== onuId));
+      
+      // Feedback visual simples por enquanto
+      alert('ONU deletada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao deletar ONU:', error);
+      alert('Erro ao deletar ONU. Verifique os logs.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getStatusColor = (status: ClienteStatus) => {
@@ -342,7 +365,11 @@ export const CustomerDetailsPage: React.FC<Props> = ({
         <Grid container spacing={3} sx={{ mb: 4 }}>
           {onusDoCliente.map((onu) => (
             <Grid item xs={12} md={6} lg={4} key={onu.id}>
-              <ONUInventoryCard onu={onu} onConfigure={() => onConfigureOnu(onu.id)} />
+              <ONUInventoryCard 
+                onu={onu} 
+                onConfigure={() => onConfigureOnu(onu.id)} 
+                onDelete={() => handleDeleteOnu(onu.id)}
+              />
             </Grid>
           ))}
         </Grid>

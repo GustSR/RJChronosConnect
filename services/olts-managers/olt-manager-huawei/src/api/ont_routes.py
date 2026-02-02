@@ -135,6 +135,14 @@ def reboot_ont(olt_id: int, frame: int, slot: int, pon_port: int, ont_id_on_port
     validate_ont_id(ont_id_on_port)
     return olt_service.reboot_ont(olt_id, port_str, ont_id_on_port)
 
+@router.delete("/olts/{olt_id}/ports/{frame}/{slot}/{pon_port}/onts/{ont_id_on_port}", response_model=command_response_schema.CommandResponse, summary="Delete ONT")
+def delete_ont(olt_id: int, frame: int, slot: int, pon_port: int, ont_id_on_port: int):
+    """Remove uma ONU da OLT."""
+    validate_olt_id(olt_id)
+    port_str = _build_port(frame, slot, pon_port)
+    validate_ont_id(ont_id_on_port)
+    return olt_service.delete_ont(olt_id, port_str, ont_id_on_port)
+
 @router.post("/olts/{olt_id}/onts/configure-wan", response_model=command_response_schema.CommandResponse, summary="Configure ONT WAN/TR-069")
 def configure_ont_wan(olt_id: int, request: ont_wan_config_request_schema.OntWanConfigRequest):
     """Configura parâmetros de WAN (VLAN, IP) e TR-069 em uma ONU existente (busca por SN)."""
