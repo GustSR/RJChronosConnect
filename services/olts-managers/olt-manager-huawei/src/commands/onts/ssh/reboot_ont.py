@@ -25,20 +25,23 @@ class RebootOntCommand:
             connection.send_command("config")
             connection.send_command(interface_cmd)
             
-            # 1. Envia comando de reset
-            cmd = f"ont reset {ont_port_idx} {self.ont_id}"
-            output = connection.send_command(cmd, expect_string=r"y/n", read_timeout=10)
+            # Usando acesso direto ao canal para máxima precisão no diálogo interativo
+            channel = connection.connection
+            channel.write_channel(f"ont reset {ont_port_idx} {self.ont_id}\n")
             
-            if "y/n" in output:
-                logger.info("Confirmando reboot...")
-                # 2. Envia 'y' (sem esperar prompt, pois ele pode pedir o Enter em seguida)
-                connection.send_command("y", expect_string=r" ", read_timeout=2)
-                # 3. Envia o ENTER final (comando vazio) e espera o prompt de volta (#)
-                output += connection.send_command("", expect_string=r"#", read_timeout=15)
+            # Aguarda a pergunta y/n
+            time.sleep(2)
+            output = channel.read_channel()
+            
+            if "y/n" in output or "Are you sure" in output:
+                logger.info("Confirmando reboot (y + ENTER)...")
+                channel.write_channel("y\n")
+                time.sleep(2)
+                output += channel.read_channel()
             
             connection.send_command("return")
             
-            logger.info(f"ONU {self.ont_id} reiniciada.")
+            logger.info(f"Comando de reboot processado para ONU {self.ont_id}.")
             return {"status": "success", "message": "Rebooted", "details": output}
 
         except Exception as e:

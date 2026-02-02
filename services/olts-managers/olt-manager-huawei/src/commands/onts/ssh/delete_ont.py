@@ -1,6 +1,6 @@
 from typing import Dict, Any
-from ....services.connection_manager import ConnectionManager
 from ....core.logging import get_logger
+from ....services.connection_manager import ConnectionManager
 
 logger = get_logger(__name__)
 
@@ -12,7 +12,6 @@ class DeleteOntCommand:
         self.ont_id = ont_id
 
     def execute(self, connection: ConnectionManager, olt_version: str) -> Dict[str, Any]:
-        # Parse da porta (Ex: "0/5/2" -> frame 0, slot 5, port 2)
         parts = self.port.split('/')
         if len(parts) == 3:
             frame, slot, port_idx = parts
@@ -23,9 +22,14 @@ class DeleteOntCommand:
         logger.info(f"Deletando ONU {self.ont_id} na porta {self.port}...")
 
         try:
+            # Limpa o buffer antes de começar
+            if hasattr(connection.connection, 'clear_buffer'):
+                connection.connection.clear_buffer()
+
             connection.send_command("config")
             connection.send_command(interface_cmd)
             
+            # Espaços explícitos para evitar comandos 'grudados'
             cmd = f"ont delete {port_idx} {self.ont_id}"
             output = connection.send_command(cmd)
             

@@ -831,5 +831,13 @@ def configure_ont_wan_tr069(olt_id: int, config_data: ont_wan_config_request.Ont
 
 def delete_ont(olt_id: int, port: str, ont_id: int) -> Dict[str, Any]:
     """Remove uma ONU da OLT."""
-    return _execute_cli_command(olt_id, DeleteOntCommand, port=port, ont_id=ont_id)
+    result = _execute_cli_command(olt_id, DeleteOntCommand, port=port, ont_id=ont_id)
+    
+    # Garantir que o retorno segue o schema CommandResponse
+    is_success = result.get("status") == "success"
+    return {
+        "success": is_success,
+        "message": "ONU deletada com sucesso" if is_success else f"Falha ao deletar ONU: {result.get('message')}",
+        "details": result.get("details") or result
+    }
 
