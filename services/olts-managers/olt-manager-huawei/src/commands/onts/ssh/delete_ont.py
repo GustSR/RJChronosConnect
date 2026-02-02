@@ -22,27 +22,29 @@ class DeleteOntCommand:
         logger.info(f"Deletando ONU {self.ont_id} na porta {self.port}...")
 
         try:
-            # Limpa o buffer antes de começar
+            # Limpeza agressiva do buffer para evitar comandos 'grudados'
             if hasattr(connection.connection, 'clear_buffer'):
                 connection.connection.clear_buffer()
 
             connection.send_command("config")
             connection.send_command(interface_cmd)
             
-            # Espaços explícitos para evitar comandos 'grudados'
+            # Comando com espaço explícito e verificando a saída
             cmd = f"ont delete {port_idx} {self.ont_id}"
-            output = connection.send_command(cmd)
+            output = connection.send_command(cmd, read_timeout=10)
             
             connection.send_command("return")
 
-            if "Failure" in output or "Error" in output:
+            # Analisar saída
+            if "Failure" in output or "Error" in output or "Unknown command" in output:
                 logger.error(f"Falha ao deletar ONU: {output}")
-                return {"status": "error", "message": output}
+                return {"status": "error", "message": "OLT rejected the delete command", "details": {"output": output}}
 
             logger.info("ONU deletada com sucesso.")
-            return {"status": "success", "message": "ONU deleted", "details": output}
+            return {"status": "success", "message": "ONU deleted", "details": {"output": output}}
 
         except Exception as e:
+            logger.error(f"Erro na execução da deleção: {e}")
             try:
                 connection.send_command("return")
             except:

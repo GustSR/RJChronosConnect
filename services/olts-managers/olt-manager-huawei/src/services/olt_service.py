@@ -835,9 +835,15 @@ def delete_ont(olt_id: int, port: str, ont_id: int) -> Dict[str, Any]:
     
     # Garantir que o retorno segue o schema CommandResponse
     is_success = result.get("status") == "success"
+    
+    # Garantir que details seja um dicionário (evita erro de validação do FastAPI)
+    details = result.get("details") or result
+    if not isinstance(details, dict):
+        details = {"output": str(details)}
+        
     return {
         "success": is_success,
-        "message": "ONU deletada com sucesso" if is_success else f"Falha ao deletar ONU: {result.get('message')}",
-        "details": result.get("details") or result
+        "message": "ONU deletada com sucesso" if is_success else f"Falha ao deletar ONU: {result.get('message', 'Erro desconhecido')}",
+        "details": details
     }
 
