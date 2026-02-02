@@ -14,30 +14,35 @@ class GetOntInfoBySnCliCommand:
         Busca informações da ONT pelo Serial Number via CLI.
         Comando: display ont info by-sn <SN>
         """
-        cmd = f"display ont info by-sn {self.serial_number}"
+        # Limpar o SN para garantir que nao tenha espacos
+        sn = self.serial_number.strip()
+        
+        cmd = f"display ont info by-sn {sn}"
         output = connection.send_command(cmd)
         
         results = []
-        
-        # Formato Verbose (Chave : Valor) - Comum em versoes mais novas/C300
         fsp = None
         ont_id = None
         
+        # Parse rigoroso baseado no output real da OLT Huawei
         for line in output.splitlines():
-            line = line.strip()
-            if line.startswith("F/S/P"):
+            # Procura por "F/S/P" (pode ter espaços ou traços antes)
+            if "F/S/P" in line and ":" in line:
                 # Ex: "F/S/P                   : 0/5/2"
                 parts = line.split(":", 1)
                 if len(parts) > 1:
                     fsp = parts[1].strip()
-            elif line.startswith("ONT-ID") or line.startswith("ONT ID"):
+            
+            # Procura por "ONT-ID" ou "ONT ID"
+            if "ONT-ID" in line and ":" in line:
                 # Ex: "ONT-ID                  : 28"
                 parts = line.split(":", 1)
                 if len(parts) > 1:
-                    val = parts[1].strip()
-                    ont_id = val.split()[0] # Pega so o numero
+                    # Pega apenas o primeiro bloco de texto (o numero)
+                    val = parts[1].strip().split()[0]
+                    ont_id = val
 
-        if fsp and ont_id is not None:
+        if fsp and ont_id:
             try:
                 f, s, p = fsp.split('/')
                 results.append({
@@ -46,31 +51,29 @@ class GetOntInfoBySnCliCommand:
                     "slot": int(s),
                     "port": int(p),
                     "fsp": fsp,
-                    "serial_number": self.serial_number
+                    "serial_number": sn
                 })
+                logger.info(f"Parser CLI encontrou ONU {sn} em {fsp} com ID {ont_id}")
                 return results
-            except ValueError:
-                logger.warning(f"Erro ao parsear F/S/P: {fsp}")
+            except (ValueError, IndexError) as e:
+                logger.error(f"Erro ao decompor FSP '{fsp}': {e}")
 
-        # Formato Tabular (Backup)
-        # Procura por linhas que começam com numeros (F/S/P)
+        # Se falhou o modo verbose, tenta o modo tabular (comum em outras versoes)
         for line in output.splitlines():
-            if re.match(r'\s*\d+/\d+/\d+', line):
-                parts = line.split()
-                if len(parts) >= 2:
-                    fsp = parts[0]
-                    ont_id = parts[1]
-                    try:
-                        f, s, p = fsp.split('/')
-                        results.append({
-                            "ont_id": int(ont_id),
-                            "frame": int(f),
-                            "slot": int(s),
-                            "port": int(p), # Pon port
-                            "fsp": fsp,
-                            "serial_number": self.serial_number
-                        })
-                    except:
-                        continue
+            # Regex para linha que começa com algo tipo " 0/5/2 "
+            match = re.search(r'(\d+/\d+/\d+)\s+(\d+)', line)
+            if match:
+                fsp_val = match.group(1)
+                id_val = match.group(2)
+                f, s, p = fsp_val.split('/')
+                results.append({
+                    "ont_id": int(id_val),
+                    "frame": int(f),
+                    "slot": int(s),
+                    "port": int(p),
+                    "fsp": fsp_val,
+                    "serial_number": sn
+                })
+                break
         
         return results

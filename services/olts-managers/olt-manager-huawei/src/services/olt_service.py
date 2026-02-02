@@ -717,8 +717,9 @@ def configure_ont_wan_tr069(olt_id: int, config_data: ont_wan_config_request.Ont
     target_ont_id = config_data.ont_id
     target_port = config_data.port
     
-    if not target_ont_id or not target_port:
-        logger.info(f"Buscando ONT ID e Porta para SN {config_data.serial_number}...")
+    # Se o ID for 0 ou não houver porta, precisamos localizar a ONU real pelo SN
+    if not target_ont_id or target_ont_id <= 0 or not target_port:
+        logger.info(f"Localizando ONU real na OLT para SN {config_data.serial_number} (ID recebido: {target_ont_id})...")
         try:
             ont_info_list = get_ont_info_by_sn(olt_id, config_data.serial_number)
             if not ont_info_list:
