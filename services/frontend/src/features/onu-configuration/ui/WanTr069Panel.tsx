@@ -47,7 +47,7 @@ export default function WanTr069Panel({ onuDetails }: WanTr069PanelProps) {
     setSuccess(null);
 
     try {
-      // Endpoint no OLT Manager (via proxy /olt-manager configurado no vite/nginx)
+      // Endpoint no OLT Manager (bypass do prefixo /api do httpClient)
       const endpoint = `/olt-manager/api/v1/olts/${onuDetails.oltName}/onts/${onuDetails.id}/configure-wan`;
       
       const payload = {
@@ -60,7 +60,20 @@ export default function WanTr069Panel({ onuDetails }: WanTr069PanelProps) {
         gateway: ipMode === 'static' ? gateway : undefined,
       };
 
-      await httpClient.post(endpoint, payload);
+      // Usar fetch direto para não adicionar /api
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || errorData.message || `Erro HTTP ${response.status}`);
+      }
 
       setSuccess('Configurações aplicadas com sucesso! A ONU deve reiniciar a conexão TR-069 em instantes.');
     } catch (err: any) {
