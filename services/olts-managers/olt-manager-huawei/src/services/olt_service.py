@@ -743,5 +743,12 @@ def configure_ont_wan_tr069(olt_id: int, ont_id: int, config_data: ont_wan_confi
         logger.error(f"Erro ao configurar TR-069 na reconfiguração: {e}")
         logs.append({"step": "tr069_config", "status": "error", "message": str(e)})
         
-    return {"status": "completed", "steps": logs}
+    # Verificar se houve erro em algum passo
+    has_error = any(step.get("status") == "error" or (isinstance(step.get("result"), dict) and step.get("result").get("status") == "error") for step in logs)
+    
+    return {
+        "success": not has_error,
+        "message": "Configuração concluída com erros" if has_error else "Configuração aplicada com sucesso",
+        "details": {"steps": logs}
+    }
 

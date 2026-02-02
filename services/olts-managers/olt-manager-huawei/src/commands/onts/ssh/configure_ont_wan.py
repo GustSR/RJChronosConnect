@@ -32,27 +32,43 @@ class ConfigureOntWanCommand:
 
         logger.info(f"Configurando WAN na ONU {self.ont_id} (Porta {self.port}, VLAN {self.vlan}, Modo {self.ip_mode})...")
 
-        connection.send_command("config")
-        connection.send_command(interface_cmd)
+        # Sequência de comandos
+        try:
+            # Garante modo config
+            connection.send_command("config")
+            
+            # Entra na interface
+            connection.send_command(interface_cmd)
 
-        # Montar comando
-        if self.ip_mode == "dhcp":
-            cmd = f"ont ipconfig {ont_port_idx} {self.ont_id} ip-index {self.ip_index} dhcp vlan {self.vlan} priority 5"
-        elif self.ip_mode == "static":
-            if not all([self.ip_address, self.mask, self.gateway]):
-                raise ValueError("Para modo estático, IP, Máscara e Gateway são obrigatórios.")
-            cmd = f"ont ipconfig {ont_port_idx} {self.ont_id} ip-index {self.ip_index} static ip-address {self.ip_address} mask {self.mask} gateway {self.gateway} vlan {self.vlan} priority 5"
-        else:
-            logger.warning(f"Modo IP desconhecido: {self.ip_mode}. Pulando configuração de WAN.")
-            connection.send_command("quit")
-            return {"status": "skipped", "message": "Unknown IP mode"}
+            # Montar comando
+            if self.ip_mode == "dhcp":
+                cmd = f"ont ipconfig {ont_port_idx} {self.ont_id} ip-index {self.ip_index} dhcp vlan {self.vlan} priority 5"
+            elif self.ip_mode == "static":
+                if not all([self.ip_address, self.mask, self.gateway]):
+                    raise ValueError("Para modo estático, IP, Máscara e Gateway são obrigatórios.")
+                cmd = f"ont ipconfig {ont_port_idx} {self.ont_id} ip-index {self.ip_index} static ip-address {self.ip_address} mask {self.mask} gateway {self.gateway} vlan {self.vlan} priority 5"
+            else:
+                logger.warning(f"Modo IP desconhecido: {self.ip_mode}. Pulando configuração de WAN.")
+                connection.send_command("return") # Volta pra raiz
+                return {"status": "skipped", "message": "Unknown IP mode"}
 
-        output = connection.send_command(cmd)
-        connection.send_command("quit")
+            # Executa configuração da WAN
+            output = connection.send_command(cmd)
+            
+            # Volta para a raiz (mais seguro que quit)
+            connection.send_command("return")
 
-        if "Failure" in output or "Error" in output:
-             logger.error(f"Falha ao configurar WAN: {output}")
-             return {"status": "error", "message": output}
+            if "Failure" in output or "Error" in output:
+                 logger.error(f"Falha ao configurar WAN: {output}")
+                 return {"status": "error", "message": output}
 
-        logger.info("WAN configurada com sucesso.")
-        return {"status": "success", "message": "WAN configured", "details": output}
+            logger.info("WAN configurada com sucesso.")
+            return {"status": "success", "message": "WAN configured", "details": output}
+            
+        except Exception as e:
+            # Tenta recuperar sessão
+            try:
+                connection.send_command("return")
+            except:
+                pass
+            raise e

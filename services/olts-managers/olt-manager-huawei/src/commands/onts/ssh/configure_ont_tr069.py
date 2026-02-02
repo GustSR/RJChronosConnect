@@ -27,17 +27,25 @@ class ConfigureOntTr069Command:
 
         logger.info(f"Vinculando ONU {self.ont_id} ao perfil TR-069 ID {self.profile_id}...")
 
-        connection.send_command("config")
-        connection.send_command(interface_cmd)
+        try:
+            connection.send_command("config")
+            connection.send_command(interface_cmd)
 
-        cmd = f"ont tr069-server-config {ont_port_idx} {self.ont_id} profile-id {self.profile_id}"
-        output = connection.send_command(cmd)
-        
-        connection.send_command("quit")
+            cmd = f"ont tr069-server-config {ont_port_idx} {self.ont_id} profile-id {self.profile_id}"
+            output = connection.send_command(cmd)
+            
+            connection.send_command("return")
 
-        if "Failure" in output or "Error" in output:
-             logger.error(f"Falha ao configurar TR-069 Profile: {output}")
-             return {"status": "error", "message": output}
+            if "Failure" in output or "Error" in output:
+                 logger.error(f"Falha ao configurar TR-069 Profile: {output}")
+                 return {"status": "error", "message": output}
 
-        logger.info("Perfil TR-069 vinculado com sucesso.")
-        return {"status": "success", "message": "TR-069 configured", "details": output}
+            logger.info("Perfil TR-069 vinculado com sucesso.")
+            return {"status": "success", "message": "TR-069 configured", "details": output}
+            
+        except Exception as e:
+            try:
+                connection.send_command("return")
+            except:
+                pass
+            raise e
