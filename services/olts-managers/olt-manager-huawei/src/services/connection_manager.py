@@ -12,9 +12,23 @@ def _resolve_device_type(protocol: str) -> str:
     return "huawei"
 
 
+def _prompt_core(raw_prompt: str) -> str:
+    if not raw_prompt:
+        return ""
+    prompt = raw_prompt.strip()
+    if prompt.startswith("<") or prompt.startswith("["):
+        prompt = prompt[1:]
+    prompt = re.sub(r"[>\]#]+$", "", prompt).strip()
+    if "(" in prompt:
+        prompt = prompt.split("(", 1)[0].rstrip()
+    prompt = re.sub(r"[>\]#]+$", "", prompt).strip()
+    return prompt
+
+
 def _prompt_regex(base_prompt: str) -> str:
-    escaped = re.escape(base_prompt)
-    if base_prompt and base_prompt[0].isdigit():
+    core = _prompt_core(base_prompt)
+    escaped = re.escape(core or base_prompt.strip())
+    if core and core[0].isdigit():
         escaped = rf"0*{escaped}"
     return rf"(?:<|\[)?{escaped}[^>\]#]*?(?:>|\]|#)\s*$"
 
