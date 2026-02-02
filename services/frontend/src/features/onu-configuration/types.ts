@@ -6,6 +6,7 @@ export interface ONUDetails {
   oltName: string;
   board: string;
   port: string;
+  ontId: number; // ID real na OLT
   status: 'online' | 'offline' | 'powered_off';
   authorizedAt: string;
   ip?: string;

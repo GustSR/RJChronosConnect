@@ -108,6 +108,7 @@ export default function ONUConfiguration() {
           oltName: onu.oltName,
           board: onu.board.toString(),
           port: onu.port.toString(),
+          ontId: onu.onuId, // Mapeado do contexto
           status: onu.status,
           authorizedAt: onu.authorizedAt,
           ip: '192.168.2.1',

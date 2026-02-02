@@ -48,7 +48,7 @@ export default function WanTr069Panel({ onuDetails }: WanTr069PanelProps) {
 
     try {
       // Endpoint no OLT Manager (bypass do prefixo /api do httpClient)
-      const endpoint = `/olt-manager/api/v1/olts/${onuDetails.oltName}/onts/${onuDetails.id}/configure-wan`;
+      const endpoint = `/olt-manager/api/v1/olts/${onuDetails.oltName}/onts/${onuDetails.ontId}/configure-wan`;
       
       const payload = {
         port: `0/${onuDetails.board}/${onuDetails.port}`, // Formato Frame/Slot/Porta

@@ -135,23 +135,39 @@ export const ProvisioningProvider: React.FC<ProvisioningProviderProps> = ({
 
       // Converter dados do backend para o formato esperado pelo frontend
       const convertedProvisionedONUs = data.map(
-        (item: Record<string, unknown>) => ({
-          id:
-            item.id != null
-              ? String(item.id)
-              : item.serial_number != null
-              ? String(item.serial_number)
-              : '',
-          serialNumber:
-            item.serial_number != null ? String(item.serial_number) : '',
-          oltName: item.olt_id != null ? String(item.olt_id) : '', // OLT ID do backend
-          board: 1, // Seria extraído dos dados reais
-          port: parseInt(item.pon_port?.split('/')[1]) || 1,
-          onuId: Math.floor(Math.random() * 100) + 1,
-          authorizedAt: item.created_at,
-          onuType: item.model ?? 'ONU',
+        (item: Record<string, unknown>) => {
+          // Parse do pon_port (ex: "0/5/2")
+          let frame = 0;
+          let board = 1;
+          let port = 1;
+          
+          if (typeof item.pon_port === 'string') {
+            const parts = item.pon_port.split('/');
+            if (parts.length === 3) {
+              frame = parseInt(parts[0], 10);
+              board = parseInt(parts[1], 10);
+              port = parseInt(parts[2], 10);
+            }
+          }
 
-          // Dados do cliente (obtidos do backend após salvamento)
+          return {
+            id:
+              item.id != null
+                ? String(item.id)
+                : item.serial_number != null
+                ? String(item.serial_number)
+                : '',
+            serialNumber:
+              item.serial_number != null ? String(item.serial_number) : '',
+            oltName: item.olt_id != null ? String(item.olt_id) : '', // OLT ID do backend
+            board: board,
+            port: port,
+            frame: frame, // Adicionado se a interface suportar, mas usaremos board/port
+            onuId: typeof item.ont_id === 'number' ? item.ont_id : parseInt(String(item.ont_id || 0), 10), // ID Real na OLT (ex: 28)
+            authorizedAt: String(item.created_at || new Date().toISOString()),
+            onuType: String(item.model || 'ONU'),
+
+            // Dados do cliente (obtidos do backend após salvamento)
           clientName:
             item.customer_name || `Cliente ${item.serial_number?.slice(-4)}`,
           clientAddress: item.customer_address || 'Endereço não informado',
