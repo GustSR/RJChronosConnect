@@ -1,3 +1,4 @@
+import re
 import time
 from typing import Dict, Any
 from ....core.logging import get_logger
@@ -21,6 +22,14 @@ class RebootOntCommand:
 
         logger.info(f"Reiniciando ONU {self.ont_id} na porta {self.port}...")
 
+        def _needs_confirmation(text: str) -> bool:
+            if not text:
+                return False
+            lower_text = text.lower()
+            if "are you sure" in lower_text:
+                return True
+            return bool(re.search(r"\(y/n\)|y/n|\[y/n\]|\(y\/n\)", lower_text))
+
         try:
             connection.send_command("config")
             connection.send_command(interface_cmd)
@@ -29,15 +38,17 @@ class RebootOntCommand:
             channel = connection.connection
             channel.write_channel(f"ont reset {ont_port_idx} {self.ont_id}\n")
             
-            # Aguarda a pergunta y/n
-            time.sleep(2)
-            output = channel.read_channel()
-            
-            if "y/n" in output or "Are you sure" in output:
-                logger.info("Confirmando reboot (y + ENTER)...")
-                channel.write_channel("y\n")
-                time.sleep(2)
+            # Aguarda a pergunta y/n (com múltiplas leituras para evitar perda do prompt)
+            output = ""
+            for _ in range(10):
+                time.sleep(0.5)
                 output += channel.read_channel()
+                if _needs_confirmation(output):
+                    logger.info("Confirmando reboot (y + ENTER)...")
+                    channel.write_channel("y\n")
+                    time.sleep(2)
+                    output += channel.read_channel()
+                    break
             
             connection.send_command("return")
             

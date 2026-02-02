@@ -11,4 +11,5 @@ class OntWanConfigRequest(BaseModel):
     ip_address: Optional[str] = None
     mask: Optional[str] = None
     gateway: Optional[str] = None
-    ip_index: int = 1
+    ip_index: int = 0
+    priority: int = 2

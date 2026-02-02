@@ -51,6 +51,47 @@ class ConnectionManager:
         if settings.netmiko_session_log:
             self.device_params['session_log'] = f'netmiko_session_{host}.log'
 
+    def _is_user_view(self, prompt: str | None) -> bool:
+        if not prompt:
+            return False
+        return prompt.rstrip().endswith(">")
+
+    def _ensure_enable_mode(self):
+        if not self.connection or not self.connection.is_alive():
+            return
+        try:
+            prompt = self.connection.find_prompt()
+        except Exception:
+            prompt = None
+
+        if not self._is_user_view(prompt):
+            return
+
+        logger.info("Entrando em modo enable...")
+        output = self.connection.send_command_timing(
+            "enable",
+            strip_prompt=False,
+            strip_command=False,
+            cmd_verify=False,
+        )
+        if re.search(r"password", output, re.IGNORECASE):
+            secret = self.device_params.get("password")
+            if secret:
+                output += self.connection.send_command_timing(
+                    secret,
+                    strip_prompt=False,
+                    strip_command=False,
+                    cmd_verify=False,
+                )
+
+        try:
+            self.prompt = self.connection.find_prompt()
+        except Exception:
+            self.prompt = None
+
+        if self._is_user_view(self.prompt):
+            logger.warning("Nao foi possivel entrar em modo enable; prompt permanece em user-view.")
+
     def connect(self):
         """Establishes an SSH connection to the OLT."""
         if self.connection and self.connection.is_alive():
@@ -92,7 +133,11 @@ class ConnectionManager:
         """Sends a command to the OLT and returns the output."""
         if not self.connection or not self.connection.is_alive():
             raise ConnectionError(f"Não conectado à OLT {self.device_params['host']}.")
-        
+
+        cmd = command_string.strip().lower()
+        if cmd in {"config", "system-view"}:
+            self._ensure_enable_mode()
+
         try:
             if self.protocol == "telnet":
                 self.connection.clear_buffer()

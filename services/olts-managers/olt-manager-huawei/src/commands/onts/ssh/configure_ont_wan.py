@@ -5,9 +5,18 @@ from ....services.connection_manager import ConnectionManager
 logger = get_logger(__name__)
 
 class ConfigureOntWanCommand:
-    def __init__(self, port: str, ont_id: int, vlan: int, ip_mode: str = "dhcp", 
-                 ip_address: Optional[str] = None, mask: Optional[str] = None, 
-                 gateway: Optional[str] = None, ip_index: int = 1):
+    def __init__(
+        self,
+        port: str,
+        ont_id: int,
+        vlan: int,
+        ip_mode: str = "dhcp",
+        ip_address: Optional[str] = None,
+        mask: Optional[str] = None,
+        gateway: Optional[str] = None,
+        ip_index: int = 0,
+        priority: int = 2,
+    ):
         self.port = port
         self.ont_id = ont_id
         self.vlan = vlan
@@ -16,6 +25,7 @@ class ConfigureOntWanCommand:
         self.mask = mask
         self.gateway = gateway
         self.ip_index = ip_index
+        self.priority = priority
 
     def execute(self, connection: ConnectionManager, olt_version: str) -> Dict[str, Any]:
         """
@@ -42,11 +52,18 @@ class ConfigureOntWanCommand:
 
             # Montar comando
             if self.ip_mode == "dhcp":
-                cmd = f"ont ipconfig {ont_port_idx} {self.ont_id} ip-index {self.ip_index} dhcp vlan {self.vlan} priority 5"
+                cmd = (
+                    f"ont ipconfig {ont_port_idx} {self.ont_id} ip-index {self.ip_index} "
+                    f"dhcp vlan {self.vlan} priority {self.priority}"
+                )
             elif self.ip_mode == "static":
                 if not all([self.ip_address, self.mask, self.gateway]):
                     raise ValueError("Para modo estático, IP, Máscara e Gateway são obrigatórios.")
-                cmd = f"ont ipconfig {ont_port_idx} {self.ont_id} ip-index {self.ip_index} static ip-address {self.ip_address} mask {self.mask} gateway {self.gateway} vlan {self.vlan} priority 5"
+                cmd = (
+                    f"ont ipconfig {ont_port_idx} {self.ont_id} ip-index {self.ip_index} "
+                    f"static ip-address {self.ip_address} mask {self.mask} gateway {self.gateway} "
+                    f"vlan {self.vlan} priority {self.priority}"
+                )
             else:
                 logger.warning(f"Modo IP desconhecido: {self.ip_mode}. Pulando configuração de WAN.")
                 connection.send_command("return") # Volta pra raiz

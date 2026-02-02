@@ -760,8 +760,8 @@ def configure_ont_wan_tr069(olt_id: int, config_data: ont_wan_config_request.Ont
             # Mantem o que veio do request como fallback
 
     # 0. Descobrir índice livre para a WAN
-    target_index = 0 # FORÇADO: Padrão para Gerência (IPHost) na Huawei
-    logger.info(f"Usando índice 0 para gerência na ONU {target_ont_id}")
+    target_index = config_data.ip_index
+    logger.info(f"Usando índice {target_index} para gerência na ONU {target_ont_id}")
 
     # 1. Configurar WAN
     try:
@@ -775,7 +775,8 @@ def configure_ont_wan_tr069(olt_id: int, config_data: ont_wan_config_request.Ont
             ip_address=config_data.ip_address,
             mask=config_data.mask,
             gateway=config_data.gateway,
-            ip_index=target_index
+            ip_index=target_index,
+            priority=config_data.priority
         )
         logs.append({"step": "wan_config", "result": wan_result})
     except Exception as e:
@@ -846,4 +847,3 @@ def delete_ont(olt_id: int, port: str, ont_id: int) -> Dict[str, Any]:
         "message": "ONU deletada com sucesso" if is_success else f"Falha ao deletar ONU: {result.get('message', 'Erro desconhecido')}",
         "details": details
     }
-

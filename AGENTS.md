@@ -6,6 +6,12 @@ Sempre que for mexer em alguma parte do codigo, consulte a documentação utiliz
 ## Project Structure & Module Organization
 Este repositorio e um monorepo. Os componentes principais ficam em `services/`, por exemplo: `services/edge` (gateway Bun/Elysia), `services/frontend` (React/Vite), `services/backend-api` (FastAPI), `services/works` (worker), `services/genieacs` (ACS), e `services/olts-managers` (microservicos de OLT). Outros diretorios relevantes: `shared/` (codigo compartilhado), `infrastructure/` (Nginx e afins), `config/` (configuracoes), `docs/` (documentacao) e `scripts/` (automacoes). Os arquivos `docker-compose*.yml` na raiz orquestram o ambiente.
 
+## Contexto Recente (branch atual em 2 fev 2026)
+- Branch atual: `feature/frontend-refactor` (atualize esta secao ao trocar de branch).
+- Foco recente em `services/olts-managers` (escopo `olt-manager`): robustez de reboot e `delete_ont`, parsing de Serial Number, selecao dinamica de indice WAN, criacao de `service-port` de gerencia e vinculo TR-069, alem de ajustes para uso de CLI no lugar de SNMP.
+- Fluxos de ONU evoluiram: remocao de ONU, configuracao por Serial Number e armazenamento/lookup de `ont_id` no backend.
+- Frontend: restauracao de `getStatusChip` em `ONUInventoryCard`.
+
 ## Build, Test, and Development Commands
 - Ambiente dev completo (Docker):
   ```bash
