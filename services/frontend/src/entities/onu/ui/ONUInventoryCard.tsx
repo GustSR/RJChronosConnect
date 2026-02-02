@@ -73,7 +73,42 @@ const ONUInventoryCard: React.FC<ONUInventoryCardProps> = ({
   };
 
   const getStatusChip = (status: string) => {
-    // ... (restante do código igual)
+    const statusConfig = {
+      online: {
+        label: 'Online',
+        color: 'success' as const,
+        icon: <Circle fontSize="small" />,
+      },
+      offline: {
+        label: 'Offline',
+        color: 'error' as const,
+        icon: <Circle fontSize="small" />,
+      },
+      powered_off: {
+        label: 'Desligado',
+        color: 'warning' as const,
+        icon: <Circle fontSize="small" />,
+      },
+      admin_disabled: {
+        label: 'Desabilitado',
+        color: 'default' as const,
+        icon: <Circle fontSize="small" />,
+      },
+    };
+
+    const config =
+      statusConfig[status as keyof typeof statusConfig] || statusConfig.offline;
+
+    return (
+      <Chip
+        label={config.label}
+        color={config.color}
+        size="small"
+        icon={config.icon}
+        variant="filled"
+      />
+    );
+  };
 
   const getSinalIcon = (sinal: number) => {
     if (sinal >= -15) return <SignalCellular4Bar color="success" />;
