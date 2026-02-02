@@ -1,6 +1,6 @@
 from typing import Dict, Any, Optional
 from ....core.logging import get_logger
-from ....services.connection_manager import HuaweiTelnetDriver
+from ....services.connection_manager import ConnectionManager
 
 logger = get_logger(__name__)
 
@@ -17,7 +17,7 @@ class ConfigureOntWanCommand:
         self.gateway = gateway
         self.ip_index = ip_index
 
-    def execute(self, connection: HuaweiTelnetDriver, olt_version: str) -> Dict[str, Any]:
+    def execute(self, connection: ConnectionManager, olt_version: str) -> Dict[str, Any]:
         """
         Configura a interface WAN (IPoE) na ONU.
         """

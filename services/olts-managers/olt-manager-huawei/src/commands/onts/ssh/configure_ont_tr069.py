@@ -1,6 +1,6 @@
 from typing import Dict, Any
 from ....core.logging import get_logger
-from ....services.connection_manager import HuaweiTelnetDriver
+from ....services.connection_manager import ConnectionManager
 
 logger = get_logger(__name__)
 
@@ -10,7 +10,7 @@ class ConfigureOntTr069Command:
         self.ont_id = ont_id
         self.profile_id = profile_id
 
-    def execute(self, connection: HuaweiTelnetDriver, olt_version: str) -> Dict[str, Any]:
+    def execute(self, connection: ConnectionManager, olt_version: str) -> Dict[str, Any]:
         """
         Vincula a ONU a um perfil de servidor TR-069.
         Comando: ont tr069-server-config <port> <ont_id> profile-id <id>
