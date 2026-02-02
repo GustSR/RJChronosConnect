@@ -168,51 +168,52 @@ export const ProvisioningProvider: React.FC<ProvisioningProviderProps> = ({
             onuType: String(item.model || 'ONU'),
 
             // Dados do cliente (obtidos do backend após salvamento)
-          clientName:
-            item.customer_name || `Cliente ${item.serial_number?.slice(-4)}`,
-          clientAddress: item.customer_address || 'Endereço não informado',
-          comment: item.comment || '',
+            clientName:
+              item.customer_name || `Cliente ${item.serial_number?.slice(-4)}`,
+            clientAddress: item.customer_address || 'Endereço não informado',
+            comment: item.comment || '',
 
-          // Status e monitoramento
-          status: item.status === 'online' ? 'online' : 'offline',
-          uptime: '0m', // Seria calculado
-          onuRx: item.rx_power || -20,
-          oltRx: (item.rx_power || -20) + 1,
-          attachedVlans: [100], // Seria obtido dos dados reais
-          onuMode: 'routing' as const,
+            // Status e monitoramento
+            status: item.status === 'online' ? 'online' : 'offline',
+            uptime: '0m', // Seria calculado
+            onuRx: item.rx_power || -20,
+            oltRx: (item.rx_power || -20) + 1,
+            attachedVlans: [100], // Seria obtido dos dados reais
+            onuMode: 'routing' as const,
 
-          // Configuração de rede
-          tr069Profile: 'default-profile',
-          wanSetupMode: 'dhcp' as const,
+            // Configuração de rede
+            tr069Profile: 'default-profile',
+            wanSetupMode: 'dhcp' as const,
 
-          // Configurações padrão
-          lanPorts: [
-            { id: 1, enabled: true, mode: 'auto', description: 'LAN 1' },
-            { id: 2, enabled: true, mode: 'auto', description: 'LAN 2' },
-            { id: 3, enabled: true, mode: 'auto', description: 'LAN 3' },
-            { id: 4, enabled: true, mode: 'auto', description: 'LAN 4' },
-          ],
+            // Configurações padrão
+            lanPorts: [
+              { id: 1, enabled: true, mode: 'auto', description: 'LAN 1' },
+              { id: 2, enabled: true, mode: 'auto', description: 'LAN 2' },
+              { id: 3, enabled: true, mode: 'auto', description: 'LAN 3' },
+              { id: 4, enabled: true, mode: 'auto', description: 'LAN 4' },
+            ],
 
-          wifiSettings: [
-            {
-              enabled: true,
-              ssid: `WiFi_${item.serial_number?.slice(-4)}`,
-              password: 'senha123',
-              channel: 6,
-              bandwidth: '20MHz',
-              security: 'WPA2/WPA3',
-              frequency: '2.4GHz',
+            wifiSettings: [
+              {
+                enabled: true,
+                ssid: `WiFi_${item.serial_number?.slice(-4)}`,
+                password: 'senha123',
+                channel: 6,
+                bandwidth: '20MHz',
+                security: 'WPA2/WPA3',
+                frequency: '2.4GHz',
+              },
+            ],
+
+            voipEnabled: false,
+            voipSettings: {
+              sipServer: '',
+              sipUser: '',
+              sipPassword: '',
+              displayName: '',
             },
-          ],
-
-          voipEnabled: false,
-          voipSettings: {
-            sipServer: '',
-            sipUser: '',
-            sipPassword: '',
-            displayName: '',
-          },
-        })
+          };
+        }
       );
 
       setProvisionedONUs(convertedProvisionedONUs);
