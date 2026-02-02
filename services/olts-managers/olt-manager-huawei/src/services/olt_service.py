@@ -32,6 +32,7 @@ from ..commands.onts.ssh.configure_ont_tr069 import ConfigureOntTr069Command
 from ..commands.onts.ssh.get_ont_info_by_sn import GetOntInfoBySnCliCommand
 from ..commands.onts.ssh.delete_ont import DeleteOntCommand
 from ..commands.onts.ssh.get_ont_wan_indices import GetOntWanIndicesCommand
+from ..commands.onts.ssh.create_mgmt_service_port import CreateMgmtServicePortCommand
 
 # Imports de comandos OLT (equipamento)
 from ..commands.olts.ssh.add_dba_profile import AddDbaProfileCommand
@@ -344,14 +345,39 @@ def provision_ont(olt_id: int, ont_data: ont_add_request.ONTAddRequest) -> Dict[
             tr069_result = _execute_cli_command(
                 olt_id,
                 ConfigureOntTr069Command,
-                port=ont_data.port,
-                ont_id=ont_data.ont_id,
-                profile_id=ont_data.tr069_profile_id
+                port=target_port,
+                ont_id=target_ont_id,
+                profile_id=ont_data.tr069_profile_id,
+                ip_index=target_index
             )
             extra_logs.append({"step": "tr069_config", "result": tr069_result})
         except Exception as e:
              logger.error(f"Erro ao configurar TR-069: {e}")
              extra_logs.append({"step": "tr069_config", "status": "error", "message": str(e)})
+
+    # 3. Criar Service Port de Gerência (VLAN 200, Gemport 2)
+    if ont_data.mgmt_vlan:
+        try:
+            svport_result = _execute_cli_command(
+                olt_id,
+                CreateMgmtServicePortCommand,
+                port=target_port,
+                ont_id=target_ont_id,
+                vlan=ont_data.mgmt_vlan,
+                gemport=2
+            )
+            extra_logs.append({"step": "service_port_config", "result": svport_result})
+        except Exception as e:
+            logger.error(f"Erro ao criar service-port de gerência: {e}")
+            extra_logs.append({"step": "service_port_config", "status": "error", "message": str(e)})
+
+    # 4. Reiniciar ONU (Necessário para aplicar configs de rede)
+    if extra_logs:
+        try:
+            reboot_result = reboot_ont(olt_id, target_port, target_ont_id)
+            extra_logs.append({"step": "reboot", "result": reboot_result})
+        except Exception as e:
+            logger.warning(f"Erro ao reiniciar ONU pós-configuração: {e}")
 
     if isinstance(result, dict):
         result["configuration_steps"] = extra_logs
@@ -805,6 +831,28 @@ def configure_ont_wan_tr069(olt_id: int, config_data: ont_wan_config_request.Ont
         logger.error(f"Erro ao configurar TR-069 na reconfiguração: {e}")
         logs.append({"step": "tr069_config", "status": "error", "message": str(e)})
         
+    # 3. Criar Service Port de Gerência (VLAN 200, Gemport 2)
+    try:
+        svport_result = _execute_cli_command(
+            olt_id,
+            CreateMgmtServicePortCommand,
+            port=target_port,
+            ont_id=target_ont_id,
+            vlan=config_data.mgmt_vlan,
+            gemport=2
+        )
+        logs.append({"step": "service_port_config", "result": svport_result})
+    except Exception as e:
+        logger.error(f"Erro ao criar service-port de gerência: {e}")
+        logs.append({"step": "service_port_config", "status": "error", "message": str(e)})
+
+    # 4. Reiniciar ONU (Opcional, mas recomendado para aplicar configs de rede)
+    try:
+        reboot_result = reboot_ont(olt_id, target_port, target_ont_id)
+        logs.append({"step": "reboot", "result": reboot_result})
+    except Exception as e:
+        logger.warning(f"Erro ao reiniciar ONU pós-configuração: {e}")
+
     # Verificar se houve erro em algum passo
     has_error = any(step.get("status") == "error" or (isinstance(step.get("result"), dict) and step.get("result").get("status") == "error") for step in logs)
     
