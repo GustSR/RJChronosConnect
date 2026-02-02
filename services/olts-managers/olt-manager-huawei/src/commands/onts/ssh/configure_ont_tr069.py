@@ -5,15 +5,15 @@ from ....services.connection_manager import ConnectionManager
 logger = get_logger(__name__)
 
 class ConfigureOntTr069Command:
-    def __init__(self, port: str, ont_id: int, profile_id: int):
+    def __init__(self, port: str, ont_id: int, profile_id: int, ip_index: int = 3):
         self.port = port
         self.ont_id = ont_id
         self.profile_id = profile_id
+        self.ip_index = ip_index
 
     def execute(self, connection: ConnectionManager, olt_version: str) -> Dict[str, Any]:
         """
-        Vincula a ONU a um perfil de servidor TR-069.
-        Comando: ont tr069-server-config <port> <ont_id> profile-id <id>
+        Vincula a ONU ao perfil TR-069 e define o índice IP de gerência.
         """
         parts = self.port.split('/')
         if len(parts) == 3:
@@ -21,26 +21,29 @@ class ConfigureOntTr069Command:
             interface_cmd = f"interface gpon {frame}/{slot}"
             ont_port_idx = port_idx
         else:
-             # Tentar lidar com caso onde port já é só o índice, mas precisamos do contexto da interface
-             # Assumindo que quem chamou já setou o contexto ou que o formato é full path
-             raise ValueError(f"Formato de porta inválido para TR069 config: {self.port}")
+            raise ValueError(f"Formato de porta inválido para TR069 config: {self.port}")
 
-        logger.info(f"Vinculando ONU {self.ont_id} ao perfil TR-069 ID {self.profile_id}...")
+        logger.info(f"Configurando TR-069 na ONU {self.ont_id} (Profile {self.profile_id}, IP Index {self.ip_index})...")
 
         try:
             connection.send_command("config")
             connection.send_command(interface_cmd)
 
-            cmd = f"ont tr069-server-config {ont_port_idx} {self.ont_id} profile-id {self.profile_id}"
-            output = connection.send_command(cmd)
+            # 1. Vincular o servidor
+            cmd_profile = f"ont tr069-server-config {ont_port_idx} {self.ont_id} profile-id {self.profile_id}"
+            connection.send_command(cmd_profile)
+            
+            # 2. Definir por qual interface IP a gerência vai sair (O PULO DO GATO)
+            cmd_mgmt = f"ont tr069-management {ont_port_idx} {self.ont_id} ip-index {self.ip_index}"
+            output = connection.send_command(cmd_mgmt)
             
             connection.send_command("return")
 
             if "Failure" in output or "Error" in output:
-                 logger.error(f"Falha ao configurar TR-069 Profile: {output}")
+                 logger.error(f"Falha ao configurar TR-069 Management: {output}")
                  return {"status": "error", "message": output}
 
-            logger.info("Perfil TR-069 vinculado com sucesso.")
+            logger.info("TR-069 configurado com sucesso.")
             return {"status": "success", "message": "TR-069 configured", "details": output}
             
         except Exception as e:

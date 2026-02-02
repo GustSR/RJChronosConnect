@@ -31,6 +31,7 @@ from ..commands.onts.ssh.configure_ont_wan import ConfigureOntWanCommand
 from ..commands.onts.ssh.configure_ont_tr069 import ConfigureOntTr069Command
 from ..commands.onts.ssh.get_ont_info_by_sn import GetOntInfoBySnCliCommand
 from ..commands.onts.ssh.delete_ont import DeleteOntCommand
+from ..commands.onts.ssh.get_ont_wan_indices import GetOntWanIndicesCommand
 
 # Imports de comandos OLT (equipamento)
 from ..commands.olts.ssh.add_dba_profile import AddDbaProfileCommand
@@ -756,6 +757,19 @@ def configure_ont_wan_tr069(olt_id: int, config_data: ont_wan_config_request.Ont
                 "details": {"steps": logs}
             }
 
+    # 0. Descobrir índice livre para a WAN
+    target_index = 3 # Padrão
+    try:
+        used_indices = _execute_cli_command(olt_id, GetOntWanIndicesCommand, port=target_port, ont_id=target_ont_id)
+        if 3 in used_indices:
+            for i in range(1, 9):
+                if i not in used_indices:
+                    target_index = i
+                    break
+        logger.info(f"Índice IP selecionado para ONU {target_ont_id}: {target_index}")
+    except Exception as e:
+        logger.warning(f"Erro ao buscar índices usados, tentando usar o 3 como fallback: {e}")
+
     # 1. Configurar WAN
     try:
         wan_result = _execute_cli_command(
@@ -768,7 +782,7 @@ def configure_ont_wan_tr069(olt_id: int, config_data: ont_wan_config_request.Ont
             ip_address=config_data.ip_address,
             mask=config_data.mask,
             gateway=config_data.gateway,
-            ip_index=config_data.ip_index
+            ip_index=target_index
         )
         logs.append({"step": "wan_config", "result": wan_result})
     except Exception as e:
@@ -782,7 +796,8 @@ def configure_ont_wan_tr069(olt_id: int, config_data: ont_wan_config_request.Ont
             ConfigureOntTr069Command,
             port=target_port,
             ont_id=target_ont_id,
-            profile_id=config_data.tr069_profile_id
+            profile_id=config_data.tr069_profile_id,
+            ip_index=target_index
         )
         logs.append({"step": "tr069_config", "result": tr069_result})
     except Exception as e:
