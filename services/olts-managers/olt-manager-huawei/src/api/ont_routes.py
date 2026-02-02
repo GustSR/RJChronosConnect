@@ -135,12 +135,11 @@ def reboot_ont(olt_id: int, frame: int, slot: int, pon_port: int, ont_id_on_port
     validate_ont_id(ont_id_on_port)
     return olt_service.reboot_ont(olt_id, port_str, ont_id_on_port)
 
-@router.post("/olts/{olt_id}/onts/{ont_id}/configure-wan", response_model=command_response_schema.CommandResponse, summary="Configure ONT WAN/TR-069")
-def configure_ont_wan(olt_id: int, ont_id: int, request: ont_wan_config_request_schema.OntWanConfigRequest):
-    """Configura parâmetros de WAN (VLAN, IP) e TR-069 em uma ONU existente."""
+@router.post("/olts/{olt_id}/onts/configure-wan", response_model=command_response_schema.CommandResponse, summary="Configure ONT WAN/TR-069")
+def configure_ont_wan(olt_id: int, request: ont_wan_config_request_schema.OntWanConfigRequest):
+    """Configura parâmetros de WAN (VLAN, IP) e TR-069 em uma ONU existente (busca por SN)."""
     validate_olt_id(olt_id)
-    validate_ont_id(ont_id)
-    return olt_service.configure_ont_wan_tr069(olt_id, ont_id, request)
+    return olt_service.configure_ont_wan_tr069(olt_id, request)
 
 # ============================================================================
 # ENDPOINTS DE DESCOBERTA E AUTOFIND

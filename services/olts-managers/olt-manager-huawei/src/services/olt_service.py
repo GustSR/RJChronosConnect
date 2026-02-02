@@ -705,18 +705,62 @@ def list_gpon_ports(
     return service.list_gpon_ports()
 
 
-def configure_ont_wan_tr069(olt_id: int, ont_id: int, config_data: ont_wan_config_request.OntWanConfigRequest) -> Dict[str, Any]:
-    """Configura WAN e TR-069 em uma ONU existente."""
+def configure_ont_wan_tr069(olt_id: int, config_data: ont_wan_config_request.OntWanConfigRequest) -> Dict[str, Any]:
+    """Configura WAN e TR-069 em uma ONU existente (busca por SN se necessário)."""
     
     logs = []
     
+    # Resolver ONT ID e Porta se necessário
+    target_ont_id = config_data.ont_id
+    target_port = config_data.port
+    
+    if not target_ont_id or not target_port:
+        logger.info(f"Buscando ONT ID e Porta para SN {config_data.serial_number}...")
+        try:
+            ont_info_list = get_ont_info_by_sn(olt_id, config_data.serial_number)
+            if not ont_info_list:
+                raise ValueError(f"ONU com serial {config_data.serial_number} não encontrada na OLT.")
+            
+            # Pega o primeiro resultado (assume SN único)
+            ont_info = ont_info_list[0]
+            
+            if target_ont_id is None:
+                # Tenta converter para int, lidando com possíveis erros
+                try:
+                    target_ont_id = int(ont_info.get("ont_id"))
+                except (ValueError, TypeError):
+                    raise ValueError(f"ONT ID inválido retornado: {ont_info.get('ont_id')}")
+            
+            if not target_port:
+                if "port" in ont_info: # Ex: "0/1/2"
+                    target_port = ont_info["port"]
+                elif all(k in ont_info for k in ["frame", "slot", "pon_port"]):
+                    target_port = f"{ont_info['frame']}/{ont_info['slot']}/{ont_info['pon_port']}"
+                else:
+                    # Tenta construir do fsp se existir
+                    fsp = ont_info.get("fsp")
+                    if fsp:
+                        target_port = fsp
+                    else:
+                        raise ValueError("Não foi possível determinar a porta da ONU.")
+                    
+            logger.info(f"ONU localizada: ID {target_ont_id}, Porta {target_port}")
+            
+        except Exception as e:
+            logger.error(f"Falha ao localizar ONU por SN: {e}")
+            return {
+                "success": False,
+                "message": f"Falha ao localizar ONU: {str(e)}",
+                "details": {"steps": logs}
+            }
+
     # 1. Configurar WAN
     try:
         wan_result = _execute_cli_command(
             olt_id, 
             ConfigureOntWanCommand, 
-            port=config_data.port, 
-            ont_id=ont_id,
+            port=target_port, 
+            ont_id=target_ont_id,
             vlan=config_data.mgmt_vlan,
             ip_mode=config_data.ip_mode,
             ip_address=config_data.ip_address,
@@ -734,8 +778,8 @@ def configure_ont_wan_tr069(olt_id: int, ont_id: int, config_data: ont_wan_confi
         tr069_result = _execute_cli_command(
             olt_id,
             ConfigureOntTr069Command,
-            port=config_data.port,
-            ont_id=ont_id,
+            port=target_port,
+            ont_id=target_ont_id,
             profile_id=config_data.tr069_profile_id
         )
         logs.append({"step": "tr069_config", "result": tr069_result})
