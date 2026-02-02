@@ -17,7 +17,7 @@ services:
             - EDGE_HOST=0.0.0.0
             - EDGE_PORT=8081
             - BACKEND_INTERNAL_URL=http://backend:8000
-            - GENIEACS_UI_INTERNAL_URL=http://10.250.10.1:3000
+            - GENIEACS_UI_INTERNAL_URL=http://genieacs:3000
             - FRONTEND_DEV_URL=http://frontend:3001
             - BETTER_AUTH_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
             - BETTER_AUTH_BASE_PATH=/api/auth
@@ -74,7 +74,7 @@ services:
             - rabbitmq
         environment:
             - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
-            - GENIACS_API_URL=http://10.250.10.1:7557/
+            - GENIACS_API_URL=http://genieacs:7557/
             - OLT_MANAGER_URL=http://olt-manager-huawei:8001
             - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
             - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
