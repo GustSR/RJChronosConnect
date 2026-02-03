@@ -7,10 +7,11 @@ logger = get_logger(__name__)
 
 
 def _resolve_device_type(protocol: str) -> str:
-    # Usamos huawei_olt para OLTs MA5800 - suporta scroll para paginação
+    # Usamos huawei/huawei_telnet com disable_paging desativado
+    # O paging é desativado manualmente com 'scroll' após enable
     if protocol == "telnet":
-        return "huawei_olt_telnet"
-    return "huawei_olt"
+        return "huawei_telnet"
+    return "huawei"
 
 
 def _prompt_core(raw_prompt: str) -> str:
@@ -104,6 +105,13 @@ class ConnectionManager:
             'fast_cli': False,              # Desativa modo rápido
             'global_cmd_verify': False,     # Desativa verificação de eco
         }
+        # IMPORTANTE: Desativa o screen-length 0 temporary automático
+        # Fazemos manualmente com 'scroll' após enable
+        # Adicionamos separadamente porque em algumas versões pode não existir
+        try:
+            self.device_params['disable_paging'] = False
+        except:
+            pass  # Ignora se não suportar
         self.prompt = None
         if settings.netmiko_session_log:
             self.device_params['session_log'] = f'netmiko_session_{host}.log'
