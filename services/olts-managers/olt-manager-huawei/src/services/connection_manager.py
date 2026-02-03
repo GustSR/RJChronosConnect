@@ -105,13 +105,6 @@ class ConnectionManager:
             'fast_cli': False,              # Desativa modo rápido
             'global_cmd_verify': False,     # Desativa verificação de eco
         }
-        # IMPORTANTE: Desativa o screen-length 0 temporary automático
-        # Fazemos manualmente com 'scroll' após enable
-        # Adicionamos separadamente porque em algumas versões pode não existir
-        try:
-            self.device_params['disable_paging'] = False
-        except:
-            pass  # Ignora se não suportar
         self.prompt = None
         if settings.netmiko_session_log:
             self.device_params['session_log'] = f'netmiko_session_{host}.log'
@@ -177,14 +170,9 @@ class ConnectionManager:
             self._ensure_enable_mode()
             
             try:
-                # O comando 'scroll' desabilita paginação nesta versão da OLT
-                # NOTA: Precisa estar em modo enable (#) para funcionar
-                self.connection.send_command_timing(
-                    "scroll",
-                    strip_prompt=False,
-                    strip_command=False,
-                    cmd_verify=False,
-                )
+                # Usa o método disable_paging do Netmiko com comando customizado
+                # 'scroll' é o comando correto para OLTs MA5800 (ao invés de screen-length 0 temporary)
+                self.connection.disable_paging(command="scroll")
             except Exception as exc:
                 logger.debug(
                     "Nao foi possivel desativar paginacao para %s: %s",
