@@ -13,24 +13,65 @@ def _resolve_device_type(protocol: str) -> str:
 
 
 def _prompt_core(raw_prompt: str) -> str:
+    """Extrai o núcleo do prompt (nome do dispositivo sem contexto)."""
     if not raw_prompt:
         return ""
     prompt = raw_prompt.strip()
+    # Remove caracteres iniciais < [ 
     if prompt.startswith("<") or prompt.startswith("["):
         prompt = prompt[1:]
+    # Remove caracteres finais > ] #
     prompt = re.sub(r"[>\]#]+$", "", prompt).strip()
+    # Remove contexto entre parênteses ou após hífen de contexto
+    # Ex: "001-OLT-PRINCIPAL-gpon-0/5" -> "001-OLT-PRINCIPAL"
+    # Ex: "001-OLT-PRINCIPAL(config)" -> "001-OLT-PRINCIPAL"
     if "(" in prompt:
         prompt = prompt.split("(", 1)[0].rstrip()
+    # Remove sufixos de contexto como -gpon-0/5
+    if "-gpon-" in prompt:
+        prompt = prompt.split("-gpon-", 1)[0]
+    if "-if-" in prompt:
+        prompt = prompt.split("-if-", 1)[0]
     prompt = re.sub(r"[>\]#]+$", "", prompt).strip()
     return prompt
 
 
 def _prompt_regex(base_prompt: str) -> str:
+    """
+    Gera um regex flexível para detectar o prompt da OLT.
+    Aceita prompts em diversos contextos (config, interface, etc).
+    """
     core = _prompt_core(base_prompt)
     escaped = re.escape(core or base_prompt.strip())
+    # Se começa com número, permite zeros à esquerda opcionais
     if core and core[0].isdigit():
         escaped = rf"0*{escaped}"
-    return rf"(?:<|\[)?{escaped}[^>\]#]*?(?:>|\]|#)\s*$"
+    # Regex flexível: aceita o core seguido de qualquer contexto, terminando em > ] ou #
+    # Exemplos que devem casar:
+    #   <001-OLT-PRINCIPAL>
+    #   [001-OLT-PRINCIPAL]
+    #   [001-OLT-PRINCIPAL-gpon-0/5]#
+    #   001-OLT-PRINCIPAL(config)#
+    return rf"(?:<|\[)?{escaped}[^\n]*?(?:>|\]|#)\s*$"
+
+
+# Comandos que mudam de contexto e não precisam de detecção de prompt precisa
+NAVIGATION_COMMANDS = frozenset({
+    "config", "system-view", "return", "quit", "exit",
+    "enable", "disable", "end"
+})
+
+
+def _is_navigation_command(cmd: str) -> bool:
+    """Verifica se é um comando de navegação de contexto."""
+    cmd_lower = cmd.strip().lower()
+    # Comando exato de navegação
+    if cmd_lower in NAVIGATION_COMMANDS:
+        return True
+    # Comando que começa com 'interface'
+    if cmd_lower.startswith("interface "):
+        return True
+    return False
 
 
 class ConnectionManager:
@@ -146,14 +187,27 @@ class ConnectionManager:
             self.connection = None
 
     def send_command(self, command_string, **kwargs):
-        """Sends a command to the OLT and returns the output."""
+        """
+        Sends a command to the OLT and returns the output.
+        
+        Para comandos de navegação (config, return, interface, etc), usa timing-based
+        para evitar problemas de detecção de prompt.
+        """
         if not self.connection or not self.connection.is_alive():
             raise ConnectionError(f"Não conectado à OLT {self.device_params['host']}.")
 
-        cmd = command_string.strip().lower()
-        if cmd in {"config", "system-view"}:
+        cmd = command_string.strip()
+        cmd_lower = cmd.lower()
+        
+        # Garante enable mode antes de config
+        if cmd_lower in {"config", "system-view"}:
             self._ensure_enable_mode()
 
+        # Para comandos de navegação, usa timing-based (mais confiável)
+        if _is_navigation_command(cmd):
+            return self._send_navigation_command(cmd, **kwargs)
+
+        # Para comandos normais, tenta usar expect_string
         try:
             if self.protocol == "telnet":
                 self.connection.clear_buffer()
@@ -180,6 +234,37 @@ class ConnectionManager:
             logger.error(f"Falha ao enviar comando '{command_string}' para {self.device_params['host']}: {e}")
             raise
 
+    def _send_navigation_command(self, command_string: str, **kwargs) -> str:
+        """
+        Envia comandos de navegação usando timing-based reads.
+        Mais confiável para comandos que mudam o contexto (config, return, interface).
+        """
+        try:
+            # Limpa buffer antes
+            if hasattr(self.connection, 'clear_buffer'):
+                self.connection.clear_buffer()
+            
+            timing_kwargs = {
+                "strip_prompt": False,
+                "strip_command": False,
+                "cmd_verify": False,
+                "delay_factor": 1,
+            }
+            timing_kwargs.update(kwargs)
+            
+            output = self.connection.send_command_timing(command_string, **timing_kwargs)
+            
+            # Tenta atualizar o prompt após navegação
+            try:
+                self.prompt = self.connection.find_prompt()
+            except Exception:
+                pass  # Ignora erro na atualização de prompt
+            
+            return output
+        except Exception as e:
+            logger.error(f"Falha ao enviar comando de navegação '{command_string}': {e}")
+            raise
+
     def send_command_timing(self, command_string, **kwargs):
         """Sends a command using timing-based reads (useful for Telnet)."""
         if not self.connection or not self.connection.is_alive():
@@ -204,3 +289,4 @@ class ConnectionManager:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.disconnect()
+
