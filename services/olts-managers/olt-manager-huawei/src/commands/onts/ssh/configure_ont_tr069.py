@@ -5,15 +5,23 @@ from ....services.connection_manager import ConnectionManager
 logger = get_logger(__name__)
 
 class ConfigureOntTr069Command:
-    def __init__(self, port: str, ont_id: int, profile_id: int, ip_index: int = 0):
+    """
+    Vincula a ONU ao perfil TR-069.
+    
+    NOTA: O IP de gerência (ip-index) é configurado pelo comando `ont ipconfig`
+    via ConfigureOntWanCommand, NÃO por um comando separado.
+    """
+    
+    def __init__(self, port: str, ont_id: int, profile_id: int = 2):
         self.port = port
         self.ont_id = ont_id
         self.profile_id = profile_id
-        self.ip_index = ip_index
 
     def execute(self, connection: ConnectionManager, olt_version: str) -> Dict[str, Any]:
         """
-        Vincula a ONU ao perfil TR-069 e define o índice IP de gerência.
+        Vincula a ONU ao perfil TR-069.
+        
+        Fluxo: enable -> config -> interface gpon F/S -> ont tr069-server-config -> return
         """
         parts = self.port.split('/')
         if len(parts) == 3:
@@ -23,13 +31,15 @@ class ConfigureOntTr069Command:
         else:
             raise ValueError(f"Formato de porta inválido para TR069 config: {self.port}")
 
-        logger.info(f"Configurando TR-069 na ONU {self.ont_id} (Profile {self.profile_id}, IP Index {self.ip_index})...")
+        logger.info(f"Vinculando ONU {self.ont_id} ao perfil TR-069 ID {self.profile_id}...")
 
         try:
+            # Entra em modo config (o connection_manager garante o enable)
             connection.send_command("config")
             connection.send_command(interface_cmd)
 
-            # 1. Vincular o servidor (Validando saída)
+            # Comando para vincular ao perfil TR-069
+            # Sintaxe: ont tr069-server-config <port> <ont-id> profile-id <profile-id>
             cmd_profile = " ".join(
                 [
                     "ont",
@@ -42,36 +52,19 @@ class ConfigureOntTr069Command:
             )
             out_profile = connection.send_command(cmd_profile)
             
+            # Volta para o modo raiz
+            connection.send_command("return")
+            
             error_markers = ("failure", "error", "unknown command", "too many parameters", "incomplete command")
             if any(marker in out_profile.lower() for marker in error_markers):
-                logger.error(f"Falha no binding do profile TR-069: {out_profile}")
-                connection.send_command("return")
+                logger.error(f"Falha no binding do perfil TR-069: {out_profile}")
                 return {"status": "error", "message": f"Binding failed: {out_profile}"}
 
-            # 2. Definir por qual interface IP a gerência vai sair
-            cmd_mgmt = " ".join(
-                [
-                    "ont",
-                    "tr069-management",
-                    str(ont_port_idx),
-                    str(self.ont_id),
-                    "ip-index",
-                    str(self.ip_index),
-                ]
-            )
-            out_mgmt = connection.send_command(cmd_mgmt)
-            
-            connection.send_command("return")
-
-            if any(marker in out_mgmt.lower() for marker in error_markers):
-                 logger.error(f"Falha ao configurar TR-069 Management: {out_mgmt}")
-                 return {"status": "error", "message": f"Management config failed: {out_mgmt}"}
-
-            logger.info("TR-069 (Binding + Management) configurado com sucesso.")
+            logger.info(f"TR-069 vinculado com sucesso (Profile ID: {self.profile_id}).")
             return {
                 "status": "success", 
                 "message": "TR-069 configured", 
-                "details": {"profile": out_profile, "management": out_mgmt}
+                "details": {"output": out_profile}
             }
             
         except Exception as e:

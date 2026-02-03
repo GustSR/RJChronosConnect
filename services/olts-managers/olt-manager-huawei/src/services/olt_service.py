@@ -347,8 +347,7 @@ def provision_ont(olt_id: int, ont_data: ont_add_request.ONTAddRequest) -> Dict[
                 ConfigureOntTr069Command,
                 port=target_port,
                 ont_id=target_ont_id,
-                profile_id=ont_data.tr069_profile_id,
-                ip_index=target_index
+                profile_id=ont_data.tr069_profile_id
             )
             extra_logs.append({"step": "tr069_config", "result": tr069_result})
         except Exception as e:
@@ -790,15 +789,14 @@ def configure_ont_wan_tr069(olt_id: int, config_data: ont_wan_config_request.Ont
         logger.error(f"Erro ao configurar WAN na reconfiguração: {e}")
         logs.append({"step": "wan_config", "status": "error", "message": str(e)})
 
-    # 2. Configurar TR-069
+    # 2. Configurar TR-069 (Vínculo com perfil ACS)
     try:
         tr069_result = _execute_cli_command(
             olt_id,
             ConfigureOntTr069Command,
             port=target_port,
             ont_id=target_ont_id,
-            profile_id=config_data.tr069_profile_id,
-            ip_index=target_index
+            profile_id=config_data.tr069_profile_id
         )
         logs.append({"step": "tr069_config", "result": tr069_result})
     except Exception as e:
