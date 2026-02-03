@@ -2,38 +2,14 @@ import re
 from netmiko import ConnectHandler
 from ..core.config import settings
 from ..core.logging import get_logger
-
-
-from netmiko.cisco_base_connection import CiscoTelnetConnection
-# Tentamos importar HuaweiBase para manter metodos especificos se disponiveis
-try:
-    from netmiko.huawei.huawei import HuaweiBase
-except ImportError:
-    # Fallback: Se HuaweiBase nao estiver exposta, usamos CiscoTelnetConnection puro
-    # e reimplementamos o que faltar se necessario (mas session_preparation ja cobrimos)
-    from netmiko.cisco_base_connection import CiscoTelnetConnection as HuaweiBase
+from netmiko import ConnectHandler
 
 logger = get_logger(__name__)
 
 
-class HuaweiTelnetSafe(CiscoTelnetConnection, HuaweiBase):
-    """
-    Classe customizada para corrigir o comportamento de disable_paging
-    em OLTs Huawei MA5800 via Telnet.
-    Herda de CiscoTelnetConnection para garantir transporte Telnet correto (fix SSH/Channel error).
-    """
-    def session_preparation(self):
-        """Prepara a sessão após conexão."""
-        self._test_channel_read()
-        self.set_base_prompt()
-        # Força o uso de 'scroll' com delay adequado e sem verificação estrita
-        # Isso substitui o comportamento padrão que causava concatenação/erro
-        self.disable_paging(command="scroll", delay_factor=4, cmd_verify=False)
-
 
 def _resolve_device_type(protocol: str) -> str:
-    # Usamos huawei/huawei_telnet com disable_paging desativado
-    # O paging é desativado manualmente com 'scroll' após enable
+    # Usamos huawei_telnet para Telnet
     if protocol == "telnet":
         return "huawei_telnet"
     return "huawei"
@@ -126,7 +102,7 @@ class ConnectionManager:
             'password': password,
             'port': resolved_port,
             # Configurações para evitar concatenação de comandos em OLTs Huawei
-            'global_delay_factor': 4,      # Delay entre caracteres
+            'global_delay_factor': 10,      # Delay entre caracteres (aumentado para evitar concat)
             'fast_cli': False,              # Desativa modo rápido
             'global_cmd_verify': False,     # Desativa verificação de eco
         }
@@ -186,10 +162,11 @@ class ConnectionManager:
             logger.info(f"Conectando a {self.device_params['host']} ({self.device_params['device_type']})...")
             
             if self.device_params.get('device_type') == 'huawei_telnet':
-                # Usa classe segura para evitar screen-length 0 automático
-                params = self.device_params.copy()
-                params.pop('device_type', None)
-                self.connection = HuaweiTelnetSafe(**params)
+               # Para Telnet, removemos o device_type do dicionario se fosse custom class
+               # mas como estamos usando ConnectHandler padrao (que espera device_type), mantemos.
+               # Porem, ConnectHandler nao aceita disable_paging no init em versoes antigas,
+               # entao confiamos no global_delay_factor e fast_cli=False do __init__.
+               self.connection = ConnectHandler(**self.device_params)
             else:
                 self.connection = ConnectHandler(**self.device_params)
                 
