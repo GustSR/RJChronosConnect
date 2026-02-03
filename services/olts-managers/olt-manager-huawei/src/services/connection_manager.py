@@ -216,24 +216,9 @@ class ConnectionManager:
         # Para comandos normais, tenta usar expect_string
         try:
             if self.protocol == "telnet":
-                self.connection.clear_buffer()
-                telnet_kwargs = {
-                    "strip_prompt": False,
-                    "strip_command": False,
-                    "cmd_verify": False,
-                }
-                telnet_kwargs.update(kwargs)
-                use_timing = telnet_kwargs.pop("use_timing", False)
-                if not use_timing:
-                    if "expect_string" not in telnet_kwargs:
-                        base_prompt = self.prompt or getattr(self.connection, "base_prompt", None)
-                        if base_prompt:
-                            telnet_kwargs["expect_string"] = _prompt_regex(base_prompt)
-                    telnet_kwargs.setdefault("read_timeout", 30.0)
-                    output = self.connection.send_command(command_string, **telnet_kwargs)
-                else:
-                    output = self.connection.send_command_timing(command_string, **telnet_kwargs)
-                return output
+                # Telnet usa nossa implementacao segura que lida com paginacao (-- More --)
+                # que o ConnectHandler padrao falha em tratar se screen-length 0 nao for enviado.
+                return self.send_command_safe(command_string)
             output = self.connection.send_command(command_string, **kwargs)
             return output
         except Exception as e:
