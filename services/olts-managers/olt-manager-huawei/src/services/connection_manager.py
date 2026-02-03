@@ -5,9 +5,7 @@ from ..core.logging import get_logger
 
 from ..core.logging import get_logger
 from netmiko.huawei import HuaweiTelnet
-from netmiko import NetmikoTimeoutException
-import telnetlib
-import socket
+from netmiko.cisco_base_connection import CiscoTelnetConnection
 
 logger = get_logger(__name__)
 
@@ -20,19 +18,11 @@ class HuaweiTelnetSafe(HuaweiTelnet):
     """
     def establish_connection(self):
         """
-        Força conexão via Telnet usando telnetlib explicitamente.
-        Isso resolve o problema onde a classe era instanciada com comportamento SSH
-        devido a problemas de herança no ambiente.
+        Força conexão via Telnet usando a implementação base da CiscoTelnetConnection.
+        Isso restaura o comportamento correto de Telnet (transporte + canal)
+        sobrescrevendo qualquer herança incorreta (SSH) da HuaweiTelnet.
         """
-        try:
-            self.remote_conn = telnetlib.Telnet(
-                host=self.host, port=self.port, timeout=self.timeout
-            )
-        except socket.timeout:
-            raise NetmikoTimeoutException(f"Connection to {self.host} timed-out")
-        except socket.error as e:
-            raise NetmikoTimeoutException(f"Connection to {self.host} failed: {e}")
-        return self.remote_conn
+        return CiscoTelnetConnection.establish_connection(self)
 
     def session_preparation(self):
         """Prepara a sessão após conexão."""
