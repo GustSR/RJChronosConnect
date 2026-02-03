@@ -3,7 +3,25 @@ from netmiko import ConnectHandler
 from ..core.config import settings
 from ..core.logging import get_logger
 
+from ..core.logging import get_logger
+from netmiko.huawei import HuaweiTelnet
+
 logger = get_logger(__name__)
+
+
+class HuaweiTelnetSafe(HuaweiTelnet):
+    """
+    Classe customizada para corrigir o comportamento de disable_paging
+    em OLTs Huawei MA5800 via Telnet.
+    Evita o envio de 'screen-length 0 temporary' que causa erro.
+    """
+    def session_preparation(self):
+        """Prepara a sessão após conexão."""
+        self._test_channel_read()
+        self.set_base_prompt()
+        # Força o uso de 'scroll' com delay adequado e sem verificação estrita
+        # Isso substitui o comportamento padrão que causava concatenação/erro
+        self.disable_paging(command="scroll", delay_factor=4, cmd_verify=False)
 
 
 def _resolve_device_type(protocol: str) -> str:
@@ -108,6 +126,7 @@ class ConnectionManager:
         self.prompt = None
         if settings.netmiko_session_log:
             self.device_params['session_log'] = f'netmiko_session_{host}.log'
+            self.device_params['session_log_record_writes'] = True
 
     def _is_user_view(self, prompt: str | None) -> bool:
         if not prompt:
@@ -158,27 +177,25 @@ class ConnectionManager:
         
         try:
             logger.info(f"Conectando a {self.device_params['host']} ({self.device_params['device_type']})...")
-            self.connection = ConnectHandler(**self.device_params)
+            
+            if self.device_params.get('device_type') == 'huawei_telnet':
+                # Usa classe segura para evitar screen-length 0 automático
+                params = self.device_params.copy()
+                params.pop('device_type', None)
+                self.connection = HuaweiTelnetSafe(**params)
+            else:
+                self.connection = ConnectHandler(**self.device_params)
+                
             logger.info(f"Conexão com {self.device_params['host']} bem-sucedida.")
             try:
                 self.prompt = self.connection.find_prompt()
             except Exception:
                 self.prompt = None
             
-            # IMPORTANTE: Precisa entrar em enable ANTES de desabilitar paginação
-            # A OLT inicia em user-view (>) e não aceita 'scroll' nesse modo
+            # IMPORTANTE: Precisa entrar em enable para comandos de configuração
             self._ensure_enable_mode()
             
-            try:
-                # Usa o método disable_paging do Netmiko com comando customizado
-                # 'scroll' é o comando correto para OLTs MA5800 (ao invés de screen-length 0 temporary)
-                self.connection.disable_paging(command="scroll")
-            except Exception as exc:
-                logger.debug(
-                    "Nao foi possivel desativar paginacao para %s: %s",
-                    self.device_params["host"],
-                    exc,
-                )
+            # (Removido scroll manual pois HuaweiTelnetSafe já faz isso no session_preparation)
         except Exception as e:
             logger.error(f"Falha ao conectar a {self.device_params['host']}: {e}")
             self.connection = None
