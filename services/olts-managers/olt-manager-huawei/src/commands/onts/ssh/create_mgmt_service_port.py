@@ -1,4 +1,3 @@
-import re
 from typing import Dict, Any, Optional
 from ....core.logging import get_logger
 from ....services.connection_manager import ConnectionManager
@@ -20,27 +19,6 @@ class CreateMgmtServicePortCommand:
         self.gemport = gemport
         self.service_port_id = service_port_id
 
-    def _resolve_service_port_id(self, connection: ConnectionManager) -> Optional[int]:
-        if self.service_port_id:
-            return self.service_port_id
-        try:
-            output = connection.send_command("display service-port all")
-        except Exception as exc:
-            logger.warning(f"Falha ao listar service-ports existentes: {exc}")
-            return None
-
-        ids = []
-        for match in re.finditer(r'^\s*(\d+)\s', output, flags=re.MULTILINE):
-            try:
-                ids.append(int(match.group(1)))
-            except (TypeError, ValueError):
-                continue
-
-        if not ids:
-            return 1
-
-        return max(ids) + 1
-
     def execute(self, connection: ConnectionManager, olt_version: str) -> Dict[str, Any]:
         """
         Cria a service-port de gerência para a ONU.
@@ -54,24 +32,35 @@ class CreateMgmtServicePortCommand:
         try:
             # Garante que estamos no modo config e NÃO dentro de interface
             connection.send_command("config")
-
-            service_port_id = self._resolve_service_port_id(connection)
-
-            # Comando com ID (quando disponível), mantendo fallback para auto-atribuição
-            id_prefix = f"service-port {service_port_id} " if service_port_id else "service-port "
-            cmd = (
-                f"{id_prefix}vlan {self.vlan} gpon {self.port} ont {self.ont_id} "
-                f"gemport {self.gemport} multi-service user-vlan {self.vlan} tag-transform translate"
-            )
+            tokens = ["service-port"]
+            if self.service_port_id:
+                tokens.append(str(self.service_port_id))
+            tokens += [
+                "vlan",
+                str(self.vlan),
+                "gpon",
+                str(self.port),
+                "ont",
+                str(self.ont_id),
+                "gemport",
+                str(self.gemport),
+                "multi-service",
+                "user-vlan",
+                str(self.vlan),
+                "tag-transform",
+                "translate",
+            ]
+            cmd = " ".join(tokens)
             
             output = connection.send_command(cmd)
             
             # Se a OLT aceitou mas deu algum aviso, limpamos para garantir o prompt
-            if "already exists" in output.lower():
+            output_lower = output.lower()
+            if "already exists" in output_lower:
                 logger.info("Service-port de gerência já existe.")
                 return {"status": "success", "message": "Already exists"}
 
-            if "Failure" in output or "Error" in output:
+            if any(marker in output_lower for marker in ("failure", "error", "unknown command", "too many parameters", "incomplete command")):
                 logger.error(f"Falha ao criar service-port: {output}")
                 return {"status": "error", "message": output}
 

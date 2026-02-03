@@ -152,6 +152,8 @@ class ConnectionPool:
         try:
             if not connection.connection or not connection.connection.is_alive():
                 return False
+            if getattr(connection, "protocol", "") == "telnet":
+                return True
             # Teste simples para verificar se a conexão responde
             connection.send_command("display clock", delay_factor=0.1)
             return True

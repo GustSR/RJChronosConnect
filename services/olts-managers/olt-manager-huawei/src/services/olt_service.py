@@ -759,6 +759,13 @@ def configure_ont_wan_tr069(olt_id: int, config_data: ont_wan_config_request.Ont
             logger.error(f"Erro ao buscar por SN: {e}")
             # Mantem o que veio do request como fallback
 
+    if not target_ont_id or not target_port:
+        return {
+            "success": False,
+            "message": "ONU não localizada para configuração (ont_id/port inválidos).",
+            "details": {"steps": logs},
+        }
+
     # 0. Descobrir índice livre para a WAN
     target_index = config_data.ip_index
     logger.info(f"Usando índice {target_index} para gerência na ONU {target_ont_id}")

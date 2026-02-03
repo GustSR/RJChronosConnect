@@ -52,17 +52,44 @@ class ConfigureOntWanCommand:
 
             # Montar comando
             if self.ip_mode == "dhcp":
-                cmd = (
-                    f"ont ipconfig {ont_port_idx} {self.ont_id} ip-index {self.ip_index} "
-                    f"dhcp vlan {self.vlan} priority {self.priority}"
+                cmd = " ".join(
+                    [
+                        "ont",
+                        "ipconfig",
+                        str(ont_port_idx),
+                        str(self.ont_id),
+                        "ip-index",
+                        str(self.ip_index),
+                        "dhcp",
+                        "vlan",
+                        str(self.vlan),
+                        "priority",
+                        str(self.priority),
+                    ]
                 )
             elif self.ip_mode == "static":
                 if not all([self.ip_address, self.mask, self.gateway]):
                     raise ValueError("Para modo estático, IP, Máscara e Gateway são obrigatórios.")
-                cmd = (
-                    f"ont ipconfig {ont_port_idx} {self.ont_id} ip-index {self.ip_index} "
-                    f"static ip-address {self.ip_address} mask {self.mask} gateway {self.gateway} "
-                    f"vlan {self.vlan} priority {self.priority}"
+                cmd = " ".join(
+                    [
+                        "ont",
+                        "ipconfig",
+                        str(ont_port_idx),
+                        str(self.ont_id),
+                        "ip-index",
+                        str(self.ip_index),
+                        "static",
+                        "ip-address",
+                        str(self.ip_address),
+                        "mask",
+                        str(self.mask),
+                        "gateway",
+                        str(self.gateway),
+                        "vlan",
+                        str(self.vlan),
+                        "priority",
+                        str(self.priority),
+                    ]
                 )
             else:
                 logger.warning(f"Modo IP desconhecido: {self.ip_mode}. Pulando configuração de WAN.")
@@ -75,7 +102,7 @@ class ConfigureOntWanCommand:
             # Volta para a raiz (mais seguro que quit)
             connection.send_command("return")
 
-            if "Failure" in output or "Error" in output:
+            if any(marker in output.lower() for marker in ("failure", "error", "unknown command", "too many parameters", "incomplete command")):
                  logger.error(f"Falha ao configurar WAN: {output}")
                  return {"status": "error", "message": output}
 

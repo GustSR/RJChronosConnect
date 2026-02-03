@@ -30,21 +30,40 @@ class ConfigureOntTr069Command:
             connection.send_command(interface_cmd)
 
             # 1. Vincular o servidor (Validando saída)
-            cmd_profile = f"ont tr069-server-config {ont_port_idx} {self.ont_id} profile-id {self.profile_id}"
+            cmd_profile = " ".join(
+                [
+                    "ont",
+                    "tr069-server-config",
+                    str(ont_port_idx),
+                    str(self.ont_id),
+                    "profile-id",
+                    str(self.profile_id),
+                ]
+            )
             out_profile = connection.send_command(cmd_profile)
             
-            if "Failure" in out_profile or "Error" in out_profile:
+            error_markers = ("failure", "error", "unknown command", "too many parameters", "incomplete command")
+            if any(marker in out_profile.lower() for marker in error_markers):
                 logger.error(f"Falha no binding do profile TR-069: {out_profile}")
                 connection.send_command("return")
                 return {"status": "error", "message": f"Binding failed: {out_profile}"}
 
             # 2. Definir por qual interface IP a gerência vai sair
-            cmd_mgmt = f"ont tr069-management {ont_port_idx} {self.ont_id} ip-index {self.ip_index}"
+            cmd_mgmt = " ".join(
+                [
+                    "ont",
+                    "tr069-management",
+                    str(ont_port_idx),
+                    str(self.ont_id),
+                    "ip-index",
+                    str(self.ip_index),
+                ]
+            )
             out_mgmt = connection.send_command(cmd_mgmt)
             
             connection.send_command("return")
 
-            if "Failure" in out_mgmt or "Error" in out_mgmt:
+            if any(marker in out_mgmt.lower() for marker in error_markers):
                  logger.error(f"Falha ao configurar TR-069 Management: {out_mgmt}")
                  return {"status": "error", "message": f"Management config failed: {out_mgmt}"}
 
