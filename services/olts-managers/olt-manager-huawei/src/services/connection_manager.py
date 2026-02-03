@@ -3,27 +3,25 @@ from netmiko import ConnectHandler
 from ..core.config import settings
 from ..core.logging import get_logger
 
-from ..core.logging import get_logger
-from netmiko.huawei import HuaweiTelnet
+
 from netmiko.cisco_base_connection import CiscoTelnetConnection
+# Tentamos importar HuaweiBase para manter metodos especificos se disponiveis
+try:
+    from netmiko.huawei.huawei import HuaweiBase
+except ImportError:
+    # Fallback: Se HuaweiBase nao estiver exposta, usamos CiscoTelnetConnection puro
+    # e reimplementamos o que faltar se necessario (mas session_preparation ja cobrimos)
+    from netmiko.cisco_base_connection import CiscoTelnetConnection as HuaweiBase
 
 logger = get_logger(__name__)
 
 
-class HuaweiTelnetSafe(HuaweiTelnet):
+class HuaweiTelnetSafe(CiscoTelnetConnection, HuaweiBase):
     """
     Classe customizada para corrigir o comportamento de disable_paging
     em OLTs Huawei MA5800 via Telnet.
-    Agrega correções de inicialização e transporte.
+    Herda de CiscoTelnetConnection para garantir transporte Telnet correto (fix SSH/Channel error).
     """
-    def establish_connection(self):
-        """
-        Força conexão via Telnet usando a implementação base da CiscoTelnetConnection.
-        Isso restaura o comportamento correto de Telnet (transporte + canal)
-        sobrescrevendo qualquer herança incorreta (SSH) da HuaweiTelnet.
-        """
-        return CiscoTelnetConnection.establish_connection(self)
-
     def session_preparation(self):
         """Prepara a sessão após conexão."""
         self._test_channel_read()
