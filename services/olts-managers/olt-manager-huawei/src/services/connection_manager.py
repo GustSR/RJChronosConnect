@@ -248,6 +248,8 @@ class ConnectionManager:
         Envia comandos de navegação usando timing-based reads.
         Mais confiável para comandos que mudam o contexto (config, return, interface).
         """
+        import time
+        
         try:
             # Limpa buffer antes
             if hasattr(self.connection, 'clear_buffer'):
@@ -257,11 +259,18 @@ class ConnectionManager:
                 "strip_prompt": False,
                 "strip_command": False,
                 "cmd_verify": False,
-                "delay_factor": 1,
+                "delay_factor": 2,  # Aumentado para dar tempo da OLT processar
             }
             timing_kwargs.update(kwargs)
             
             output = self.connection.send_command_timing(command_string, **timing_kwargs)
+            
+            # IMPORTANTE: Aguarda um pouco para a OLT processar e atualizar o prompt
+            time.sleep(0.5)
+            
+            # Limpa buffer residual para não afetar o próximo comando
+            if hasattr(self.connection, 'clear_buffer'):
+                self.connection.clear_buffer()
             
             # Tenta atualizar o prompt após navegação
             try:
