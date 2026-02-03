@@ -29,19 +29,18 @@ class AddOntCommand(OLTCommand):
         """
         import time
         
-        # 1. Enable e Config mode usando send_command_safe
-        # Netmiko geralmente lida com enable, mas forçamos para garantir
+        # 1. Enable e Config mode usando send_command_safe com timeout curto
         try:
-            connection_manager.send_command_safe("enable")
+            connection_manager.send_command_safe("enable", timeout=3.0)
         except:
             pass # Pode já estar em enable ou falhar, seguimos
             
-        connection_manager.send_command_safe("config")
+        connection_manager.send_command_safe("config", timeout=3.0)
         
         # 2. Interface mode
         frame, slot, pon_port = self._split_port(self.port)
         interface_command = f"interface gpon {frame}/{slot}"
-        connection_manager.send_command_safe(interface_command)
+        connection_manager.send_command_safe(interface_command, timeout=3.0)
         
         # 3. Montar comando add
         line_profile = str(self.line_profile).strip()
@@ -83,10 +82,9 @@ class AddOntCommand(OLTCommand):
                 
                 # Prompt interativo comum de confirmação/opção
                 if "{ <cr>" in output or "{<cr>" in output:
-                    time.sleep(0.5)
+                    time.sleep(0.1)
                     if self.ont_type:
                         # Se temos tipo, enviamos
-                        logging_cmd = f"ont-type {self.ont_type}"
                         connection_manager.connection.write_channel(f"ont-type {self.ont_type}\n")
                     else:
                         # Padrão: Enter
@@ -98,8 +96,8 @@ class AddOntCommand(OLTCommand):
                 
                 # Prompt de erro ou sucesso final (volta pro prompt de comando)
                 if "Failure" in output or "success" in output.lower():
-                     # Espera um pouco para garantir prompt final
-                     time.sleep(0.5)
+                     # Espera curta para garantir prompt final
+                     time.sleep(0.2)
                      final_output += connection_manager.connection.read_channel()
                      break
                      
@@ -109,8 +107,8 @@ class AddOntCommand(OLTCommand):
             else:
                 time.sleep(0.2)
         
-        # 5. Return (exit interface)
-        connection_manager.send_command_safe("return")
+        # 5. Return (exit interface) - timeout curto
+        connection_manager.send_command_safe("return", timeout=3.0)
 
         return self._parse_output(final_output, olt_version, command=add_command)
 
