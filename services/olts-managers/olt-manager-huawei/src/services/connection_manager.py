@@ -163,9 +163,14 @@ class ConnectionManager:
                 self.prompt = self.connection.find_prompt()
             except Exception:
                 self.prompt = None
+            
+            # IMPORTANTE: Precisa entrar em enable ANTES de desabilitar paginação
+            # A OLT inicia em user-view (>) e não aceita 'scroll' nesse modo
+            self._ensure_enable_mode()
+            
             try:
                 # O comando 'scroll' desabilita paginação nesta versão da OLT
-                # 'screen-length 0 temporary' não funciona em todas as versões
+                # NOTA: Precisa estar em modo enable (#) para funcionar
                 self.connection.send_command_timing(
                     "scroll",
                     strip_prompt=False,
