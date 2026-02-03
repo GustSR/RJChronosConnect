@@ -102,7 +102,7 @@ class ConnectionManager:
             'password': password,
             'port': resolved_port,
             # Configurações para evitar concatenação de comandos em OLTs Huawei
-            'global_delay_factor': 10,      # Delay entre caracteres (aumentado para evitar concat)
+            'global_delay_factor': 2,       # Delay entre caracteres (reduzido para performance)
             'fast_cli': False,              # Desativa modo rápido
             'global_cmd_verify': False,     # Desativa verificação de eco
         }
@@ -298,7 +298,7 @@ class ConnectionManager:
             output = self.connection.send_command_timing(command_string, **timing_kwargs)
             
             # IMPORTANTE: Aguarda um pouco para a OLT processar e atualizar o prompt
-            time.sleep(0.5)
+            time.sleep(0.2)
             
             # Limpa buffer residual para não afetar o próximo comando
             if hasattr(self.connection, 'clear_buffer'):
@@ -370,7 +370,7 @@ class ConnectionManager:
             logger.debug(f"Comando enviado: {command_string}")
             
             # 3. Aguarda resposta
-            time.sleep(1.0)  # Delay de 1s para OLT processar
+            time.sleep(0.3)  # Delay reduzido (mmi-mode previne paginacao)
             
             # 4. Lê a resposta
             output = ""
@@ -386,17 +386,17 @@ class ConnectionManager:
                         # Prompt de confirmação com opções { <cr>|... }:
                         if "{ <cr>" in output or "{<cr>" in output:
                             logger.debug("Detectado prompt interativo, enviando ENTER...")
-                            time.sleep(0.3)
+                            time.sleep(0.1)
                             self.connection.write_channel("\n")
-                            time.sleep(0.5)
+                            time.sleep(0.2)
                             continue
                         
                         # Prompt (y/n)
                         if "(y/n)" in output.lower():
                             logger.debug("Detectado confirmação (y/n), enviando 'y'...")
-                            time.sleep(0.3)
+                            time.sleep(0.1)
                             self.connection.write_channel("y\n")
-                            time.sleep(0.5)
+                            time.sleep(0.2)
                             continue
                         
                         # Prompt ---- More ----
@@ -415,7 +415,7 @@ class ConnectionManager:
                     time.sleep(0.2)
             
             # 5. Limpa buffer residual
-            time.sleep(0.2)
+            time.sleep(0.1)
             if hasattr(self.connection, 'clear_buffer'):
                 self.connection.clear_buffer()
             
