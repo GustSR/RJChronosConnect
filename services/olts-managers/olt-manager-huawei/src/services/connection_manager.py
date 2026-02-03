@@ -7,9 +7,11 @@ logger = get_logger(__name__)
 
 
 def _resolve_device_type(protocol: str) -> str:
+    # Usamos huawei_smartax para evitar o screen-length 0 temporary automático
+    # O SmartAX usa 'scroll' para desabilitar paginação
     if protocol == "telnet":
-        return "huawei_telnet"
-    return "huawei"
+        return "huawei_smartax_telnet"
+    return "huawei_smartax"
 
 
 def _prompt_core(raw_prompt: str) -> str:
