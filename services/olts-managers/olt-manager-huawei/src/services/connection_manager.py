@@ -164,8 +164,12 @@ class ConnectionManager:
             except Exception:
                 self.prompt = None
             try:
-                self.connection.disable_paging(
-                    command="screen-length 0 temporary",
+                # O comando 'scroll' desabilita paginação nesta versão da OLT
+                # 'screen-length 0 temporary' não funciona em todas as versões
+                self.connection.send_command_timing(
+                    "scroll",
+                    strip_prompt=False,
+                    strip_command=False,
                     cmd_verify=False,
                 )
             except Exception as exc:
