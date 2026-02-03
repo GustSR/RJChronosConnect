@@ -20,7 +20,8 @@ class GetOntWanIndicesCommand:
 
         # Rodar o comando e capturar tudo
         cmd = f"display ont wan-info {ont_port_idx} {self.ont_id}"
-        output = connection.send_command(cmd, read_timeout=15)
+        # Usa send_command_safe para evitar problemas de regex no prompt
+        output = connection.send_command_safe(cmd, timeout=15.0)
 
         # Procura por "Index : X" usando Regex
         indices = re.findall(r'Index\s*:\s*(\d+)', output, re.IGNORECASE)

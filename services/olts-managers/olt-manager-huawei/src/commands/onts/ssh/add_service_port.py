@@ -35,7 +35,8 @@ class AddServicePortCommand(OLTCommand):
             command = self._build_command(olt_version, **kwargs)
 
             # Executar comando na OLT
-            raw_output = connection_manager.send_command(command)
+            # Usa timeout maior para service-port que pode demorar
+            raw_output = connection_manager.send_command_safe(command, timeout=10.0)
 
             # Processar resultado
             result = self._parse_output(raw_output, olt_version)

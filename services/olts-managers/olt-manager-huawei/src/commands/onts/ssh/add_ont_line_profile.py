@@ -14,26 +14,26 @@ class AddOntLineProfileCommand(OLTCommand):
         Executes the command sequence to add a new ONT line profile.
         """
         # Enter global config mode
-        connection_manager.send_command("config")
+        connection_manager.send_command_safe("config")
         
         # Enter line profile config mode
         main_command = f"ont-lineprofile gpon profile-name {self.profile_name}"
-        connection_manager.send_command(main_command)
+        connection_manager.send_command_safe(main_command)
 
         # Add T-CONTs
         for tcont in self.tconts:
             tcont_command = f"tcont {tcont['id']} dba-profile-name {tcont['dba_profile_name']}"
-            connection_manager.send_command(tcont_command)
+            connection_manager.send_command_safe(tcont_command)
 
         # Add GEM ports
         for gem in self.gem_ports:
             gem_command = f"gem add {gem['id']} eth tcont {gem['tcont_id']}"
-            connection_manager.send_command(gem_command)
+            connection_manager.send_command_safe(gem_command)
 
         # Commit changes and exit modes
-        connection_manager.send_command("commit")
-        raw_output = connection_manager.send_command("quit") # Quit line-profile mode
-        connection_manager.send_command("quit") # Quit config mode
+        connection_manager.send_command_safe("commit")
+        raw_output = connection_manager.send_command_safe("quit") # Quit line-profile mode
+        connection_manager.send_command_safe("quit") # Quit config mode
 
         return self._parse_output(raw_output, olt_version)
 

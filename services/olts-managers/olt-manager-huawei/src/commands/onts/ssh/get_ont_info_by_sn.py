@@ -22,7 +22,8 @@ class GetOntInfoBySnCliCommand:
 
         for candidate in candidates:
             cmd = f"display ont info by-sn {candidate}"
-            output = connection.send_command(cmd, read_timeout=20)
+            # Usa send_command_safe para evitar problemas de regex no prompt
+            output = connection.send_command_safe(cmd, timeout=20.0)
             results = []
 
             # 1. Tenta formato Verbose (mais preciso)

@@ -14,21 +14,21 @@ class AddOntSrvProfileCommand(OLTCommand):
         Executes the command sequence to add a new ONT service profile.
         """
         # Enter global config mode
-        connection_manager.send_command("config")
+        connection_manager.send_command_safe("config")
         
         # Enter service profile config mode
         main_command = f"ont-srvprofile gpon profile-name {self.profile_name}"
-        connection_manager.send_command(main_command)
+        connection_manager.send_command_safe(main_command)
 
         # Set port quantities
         # The user doc mentioned vdsl and pots, we will use eth and pots as common examples
         port_command = f"ont-port pots {self.pots_ports} eth {self.eth_ports}"
-        connection_manager.send_command(port_command)
+        connection_manager.send_command_safe(port_command)
 
         # Commit changes and exit modes
-        connection_manager.send_command("commit")
-        raw_output = connection_manager.send_command("quit") # Quit srvprofile mode
-        connection_manager.send_command("quit") # Quit config mode
+        connection_manager.send_command_safe("commit")
+        raw_output = connection_manager.send_command_safe("quit") # Quit srvprofile mode
+        connection_manager.send_command_safe("quit") # Quit config mode
 
         return self._parse_output(raw_output, olt_version)
 

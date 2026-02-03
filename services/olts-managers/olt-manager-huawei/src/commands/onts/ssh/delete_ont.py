@@ -26,14 +26,15 @@ class DeleteOntCommand:
             if hasattr(connection.connection, 'clear_buffer'):
                 connection.connection.clear_buffer()
 
-            connection.send_command("config")
-            connection.send_command(interface_cmd)
+            # Usa send_command_safe para todos os comandos
+            connection.send_command_safe("config")
+            connection.send_command_safe(interface_cmd)
             
             # Comando com espaço explícito e verificando a saída
             cmd = f"ont delete {port_idx} {self.ont_id}"
-            output = connection.send_command(cmd, read_timeout=10)
+            output = connection.send_command_safe(cmd, timeout=10.0)
             
-            connection.send_command("return")
+            connection.send_command_safe("return")
 
             # Analisar saída
             if "Failure" in output or "Error" in output or "Unknown command" in output:
@@ -46,7 +47,7 @@ class DeleteOntCommand:
         except Exception as e:
             logger.error(f"Erro na execução da deleção: {e}")
             try:
-                connection.send_command("return")
+                connection.send_command_safe("return")
             except:
                 pass
             raise e

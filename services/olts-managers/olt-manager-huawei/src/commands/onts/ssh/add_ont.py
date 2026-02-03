@@ -27,55 +27,23 @@ class AddOntCommand(OLTCommand):
         Executes the command sequence to add a new ONT.
         Enters config mode, then interface mode, adds the ONT, and exits.
         """
-        send = connection_manager.send_command
-        use_timing = getattr(connection_manager, "protocol", "") == "telnet"
-        if use_timing:
-            send = connection_manager.send_command_timing
-        outputs = []
-        config_candidates = [
-            "config",
-            "system-view",
-            "configure terminal",
-            "conf t",
-        ]
-
-        enable_output = send("enable")
-        outputs.append(("enable", enable_output))
-        if "password" in enable_output.lower():
-            password = None
-            if hasattr(connection_manager, "get_password"):
-                password = connection_manager.get_password()
-            if password:
-                enable_output += send(password)
-                outputs[-1] = ("enable", enable_output)
-
-        entered_config = False
-        for cmd in config_candidates:
-            config_output = send(cmd)
-            outputs.append((cmd, config_output))
-            if not self._is_error_output(config_output):
-                entered_config = True
-                break
-        if not entered_config:
-            return {
-                "success": False,
-                "message": "\n".join(output for _, output in outputs if output),
-                "command": "config-entry/enable",
-            }
-
-        frame, slot, pon_port = self._split_port(self.port)
-        # Enter interface mode (frame/slot)
-        interface_command = f"interface gpon {frame}/{slot}"
-        interface_output = send(interface_command)
-        outputs.append((interface_command, interface_output))
-        entered_interface = not self._is_error_output(interface_output)
-        if not entered_interface:
-            return {
-                "success": False,
-                "message": "\n".join(output for _, output in outputs if output),
-                "command": interface_command,
-            }
+        import time
         
+        # 1. Enable e Config mode usando send_command_safe
+        # Netmiko geralmente lida com enable, mas forçamos para garantir
+        try:
+            connection_manager.send_command_safe("enable")
+        except:
+            pass # Pode já estar em enable ou falhar, seguimos
+            
+        connection_manager.send_command_safe("config")
+        
+        # 2. Interface mode
+        frame, slot, pon_port = self._split_port(self.port)
+        interface_command = f"interface gpon {frame}/{slot}"
+        connection_manager.send_command_safe(interface_command)
+        
+        # 3. Montar comando add
         line_profile = str(self.line_profile).strip()
         srv_profile = str(self.srv_profile).strip()
         line_profile_arg = self._format_profile_arg("ont-lineprofile", line_profile)
@@ -86,18 +54,65 @@ class AddOntCommand(OLTCommand):
             f"{line_profile_arg} {srv_profile_arg}{desc}"
         )
         
-        # Send the command and capture the output
-        raw_output = send(add_command)
-        if self._needs_ont_type(raw_output):
-            raw_output += self._handle_ont_type_prompt(connection_manager)
+        # 4. Enviar comando ADD com tratamento especial para ont-type
+        # Não usamos send_command_safe padrão pois precisamos decidir o que responder
+        # ao prompt { <cr>|ont-type... }
         
-        # Exit back to user view (best-effort)
-        try:
-            connection_manager.send_command_timing("return")
-        except Exception:
-            pass
+        if not connection_manager.connection or not connection_manager.connection.is_alive():
+             raise ConnectionError("Connection lost")
+             
+        # Limpa buffer
+        if hasattr(connection_manager.connection, 'clear_buffer'):
+            connection_manager.connection.clear_buffer()
+            
+        # Envia comando
+        connection_manager.connection.write_channel(add_command + "\n")
+        
+        # Lê resposta e trata prompt interativo
+        output = ""
+        timeout = 10.0
+        start_time = time.time()
+        
+        final_output = ""
+        
+        while (time.time() - start_time) < timeout:
+            chunk = connection_manager.connection.read_channel()
+            if chunk:
+                output += chunk
+                final_output += chunk
+                
+                # Prompt interativo comum de confirmação/opção
+                if "{ <cr>" in output or "{<cr>" in output:
+                    time.sleep(0.5)
+                    if self.ont_type:
+                        # Se temos tipo, enviamos
+                        logging_cmd = f"ont-type {self.ont_type}"
+                        connection_manager.connection.write_channel(f"ont-type {self.ont_type}\n")
+                    else:
+                        # Padrão: Enter
+                        connection_manager.connection.write_channel("\n")
+                    
+                    # Limpa output parcial para continuar lendo
+                    output = "" 
+                    continue
+                
+                # Prompt de erro ou sucesso final (volta pro prompt de comando)
+                if "Failure" in output or "success" in output.lower():
+                     # Espera um pouco para garantir prompt final
+                     time.sleep(0.5)
+                     final_output += connection_manager.connection.read_channel()
+                     break
+                     
+                # Se achou prompt de interface
+                if f"interface gpon {frame}/{slot}" in output or "(config-if-gpon" in output:
+                    break
+            else:
+                time.sleep(0.2)
+        
+        # 5. Return (exit interface)
+        connection_manager.send_command_safe("return")
 
-        return self._parse_output(raw_output, olt_version, command=add_command)
+        return self._parse_output(final_output, olt_version, command=add_command)
 
     @staticmethod
     def _format_profile_arg(prefix: str, value: str) -> str:
@@ -113,11 +128,6 @@ class AddOntCommand(OLTCommand):
         return parts[0], parts[1], parts[2]
 
     @staticmethod
-    def _is_error_output(output: str) -> bool:
-        lower = output.lower()
-        return "%" in output or "error" in lower or "unknown command" in lower or "unrecognized command" in lower
-
-    @staticmethod
     def _format_description(description: str | None) -> str:
         if not description:
             return ""
@@ -125,19 +135,6 @@ class AddOntCommand(OLTCommand):
         if not safe_desc:
             return ""
         return f' desc "{safe_desc}"'
-
-    @staticmethod
-    def _needs_ont_type(output: str) -> bool:
-        if not output:
-            return False
-        lower = output.lower()
-        return "ont-type" in lower and "<cr>" in lower
-
-    def _handle_ont_type_prompt(self, connection_manager) -> str:
-        response = "\n"
-        if self.ont_type:
-            response = f"ont-type {self.ont_type}"
-        return connection_manager.send_command_timing(response)
 
     def _parse_output(self, raw_output: str, olt_version: str, command: str = None) -> Dict[str, Any]:
         """
