@@ -165,19 +165,22 @@ def _execute_cli_command(olt_id: int, command_class, **kwargs):
             return any(param.kind == param.VAR_KEYWORD for param in params.values())
 
         init_accepts_kwargs = _init_accepts_kwargs()
+        logger.info(f"[DEBUG] Instanciando comando {command_class.__name__} com kwargs: {list(kwargs.keys())}")
         command = command_class(**kwargs) if init_accepts_kwargs else command_class()
+        logger.info(f"[DEBUG] Comando {command_class.__name__} instanciado com sucesso")
         execute_accepts_kwargs = _execute_accepts_kwargs(command)
         if kwargs and not init_accepts_kwargs and not execute_accepts_kwargs:
             raise TypeError(
                 f"{command_class.__name__} não aceita parâmetros: {', '.join(sorted(kwargs.keys()))}"
             )
 
+        logger.info(f"[DEBUG] Executando {command_class.__name__}.execute()...")
         if execute_accepts_kwargs:
             result = command.execute(connection, olt_version, **kwargs)
         else:
             result = command.execute(connection, olt_version)
         
-        logger.debug(f"Comando {command_class.__name__} executado com sucesso via pool")
+        logger.info(f"[DEBUG] Comando {command_class.__name__} retornou: {result}")
         return result
         
     except Exception as e:
@@ -314,6 +317,7 @@ def provision_ont(olt_id: int, ont_data: ont_add_request.ONTAddRequest) -> Dict[
     }
     
     result = _execute_cli_command(olt_id, AddOntCommand, **basic_params)
+    logger.info(f"[DEBUG] AddOntCommand retornou: {result}")
     
     # Se falhou o provisionamento básico, aborta
     if isinstance(result, dict) and result.get("status") == "error":
