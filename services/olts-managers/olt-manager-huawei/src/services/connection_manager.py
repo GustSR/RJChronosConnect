@@ -5,6 +5,9 @@ from ..core.logging import get_logger
 
 from ..core.logging import get_logger
 from netmiko.huawei import HuaweiTelnet
+from netmiko import NetmikoTimeoutException
+import telnetlib
+import socket
 
 logger = get_logger(__name__)
 
@@ -13,8 +16,24 @@ class HuaweiTelnetSafe(HuaweiTelnet):
     """
     Classe customizada para corrigir o comportamento de disable_paging
     em OLTs Huawei MA5800 via Telnet.
-    Evita o envio de 'screen-length 0 temporary' que causa erro.
+    Agrega correções de inicialização e transporte.
     """
+    def establish_connection(self):
+        """
+        Força conexão via Telnet usando telnetlib explicitamente.
+        Isso resolve o problema onde a classe era instanciada com comportamento SSH
+        devido a problemas de herança no ambiente.
+        """
+        try:
+            self.remote_conn = telnetlib.Telnet(
+                host=self.host, port=self.port, timeout=self.timeout
+            )
+        except socket.timeout:
+            raise NetmikoTimeoutException(f"Connection to {self.host} timed-out")
+        except socket.error as e:
+            raise NetmikoTimeoutException(f"Connection to {self.host} failed: {e}")
+        return self.remote_conn
+
     def session_preparation(self):
         """Prepara a sessão após conexão."""
         self._test_channel_read()
