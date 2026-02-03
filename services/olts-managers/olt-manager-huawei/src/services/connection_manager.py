@@ -98,13 +98,12 @@ class ConnectionManager:
             'username': username,
             'password': password,
             'port': resolved_port,
+            # Configurações para evitar concatenação de comandos em OLTs Huawei
+            'global_delay_factor': 4,      # Delay entre caracteres
+            'fast_cli': False,              # Desativa modo rápido
+            'global_cmd_verify': False,     # Desativa verificação de eco
         }
         self.prompt = None
-        if resolved_protocol == "telnet":
-            self.device_params.update({
-                "global_cmd_verify": False,
-                "fast_cli": False,
-            })
         if settings.netmiko_session_log:
             self.device_params['session_log'] = f'netmiko_session_{host}.log'
 
