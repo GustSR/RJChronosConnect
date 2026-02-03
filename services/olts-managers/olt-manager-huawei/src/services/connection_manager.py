@@ -152,6 +152,53 @@ class ConnectionManager:
         if self._is_user_view(self.prompt):
             logger.warning("Nao foi possivel entrar em modo enable; prompt permanece em user-view.")
 
+    def _enable_mmi_mode(self):
+        """
+        Habilita o modo MMI (Machine-Machine Interaction) na OLT Huawei.
+        Isso desativa a paginação e prompts interativos para a sessão atual.
+        Equivalente a 'screen-length 0' mas compatível com OLTs Huawei.
+        """
+        if not self.connection or not self.connection.is_alive():
+            return
+        
+        try:
+            logger.info("Habilitando mmi-mode (desativa paginação)...")
+            
+            # Entra em config mode
+            self.connection.send_command_timing(
+                "config",
+                strip_prompt=False,
+                strip_command=False,
+                cmd_verify=False,
+            )
+            
+            # Habilita mmi-mode
+            self.connection.send_command_timing(
+                "mmi-mode enable",
+                strip_prompt=False,
+                strip_command=False,
+                cmd_verify=False,
+            )
+            
+            # Volta para enable mode
+            self.connection.send_command_timing(
+                "return",
+                strip_prompt=False,
+                strip_command=False,
+                cmd_verify=False,
+            )
+            
+            logger.info("mmi-mode habilitado com sucesso.")
+            
+            # Atualiza prompt
+            try:
+                self.prompt = self.connection.find_prompt()
+            except Exception:
+                pass
+                
+        except Exception as e:
+            logger.warning(f"Falha ao habilitar mmi-mode (continuando sem): {e}")
+
     def connect(self):
         """Establishes an SSH connection to the OLT."""
         if self.connection and self.connection.is_alive():
@@ -179,7 +226,10 @@ class ConnectionManager:
             # IMPORTANTE: Precisa entrar em enable para comandos de configuração
             self._ensure_enable_mode()
             
-            # (Removido scroll manual pois HuaweiTelnetSafe já faz isso no session_preparation)
+            # Para Telnet, habilita mmi-mode (desativa paginacao na OLT)
+            if self.protocol == "telnet":
+                self._enable_mmi_mode()
+                
         except Exception as e:
             logger.error(f"Falha ao conectar a {self.device_params['host']}: {e}")
             self.connection = None
