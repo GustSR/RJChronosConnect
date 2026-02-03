@@ -345,8 +345,8 @@ def provision_ont(olt_id: int, ont_data: ont_add_request.ONTAddRequest) -> Dict[
             tr069_result = _execute_cli_command(
                 olt_id,
                 ConfigureOntTr069Command,
-                port=target_port,
-                ont_id=target_ont_id,
+                port=ont_data.port,
+                ont_id=ont_data.ont_id,
                 profile_id=ont_data.tr069_profile_id
             )
             extra_logs.append({"step": "tr069_config", "result": tr069_result})
@@ -360,8 +360,8 @@ def provision_ont(olt_id: int, ont_data: ont_add_request.ONTAddRequest) -> Dict[
             svport_result = _execute_cli_command(
                 olt_id,
                 CreateMgmtServicePortCommand,
-                port=target_port,
-                ont_id=target_ont_id,
+                port=ont_data.port,
+                ont_id=ont_data.ont_id,
                 vlan=ont_data.mgmt_vlan,
                 gemport=2
             )
@@ -373,7 +373,7 @@ def provision_ont(olt_id: int, ont_data: ont_add_request.ONTAddRequest) -> Dict[
     # 4. Reiniciar ONU (Necessário para aplicar configs de rede)
     if extra_logs:
         try:
-            reboot_result = reboot_ont(olt_id, target_port, target_ont_id)
+            reboot_result = reboot_ont(olt_id, ont_data.port, ont_data.ont_id)
             extra_logs.append({"step": "reboot", "result": reboot_result})
         except Exception as e:
             logger.warning(f"Erro ao reiniciar ONU pós-configuração: {e}")
