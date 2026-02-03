@@ -21,7 +21,7 @@ class ConfigureOntTr069Command:
         """
         Vincula a ONU ao perfil TR-069.
         
-        Fluxo: enable -> config -> interface gpon F/S -> ont tr069-server-config -> return
+        Usa send_command_safe para evitar problemas de buffer/concatenação.
         """
         parts = self.port.split('/')
         if len(parts) == 3:
@@ -34,26 +34,16 @@ class ConfigureOntTr069Command:
         logger.info(f"Vinculando ONU {self.ont_id} ao perfil TR-069 ID {self.profile_id}...")
 
         try:
-            # Entra em modo config (o connection_manager garante o enable)
-            connection.send_command("config")
-            connection.send_command(interface_cmd)
+            # Usa send_command_safe para cada comando
+            connection.send_command_safe("config")
+            connection.send_command_safe(interface_cmd)
 
             # Comando para vincular ao perfil TR-069
-            # Sintaxe: ont tr069-server-config <port> <ont-id> profile-id <profile-id>
-            cmd_profile = " ".join(
-                [
-                    "ont",
-                    "tr069-server-config",
-                    str(ont_port_idx),
-                    str(self.ont_id),
-                    "profile-id",
-                    str(self.profile_id),
-                ]
-            )
-            out_profile = connection.send_command(cmd_profile)
+            cmd = f"ont tr069-server-config {ont_port_idx} {self.ont_id} profile-id {self.profile_id}"
+            out_profile = connection.send_command_safe(cmd)
             
             # Volta para o modo raiz
-            connection.send_command("return")
+            connection.send_command_safe("return")
             
             error_markers = ("failure", "error", "unknown command", "too many parameters", "incomplete command")
             if any(marker in out_profile.lower() for marker in error_markers):
@@ -70,7 +60,8 @@ class ConfigureOntTr069Command:
         except Exception as e:
             logger.error(f"Erro inesperado no ConfigureOntTr069Command: {e}")
             try:
-                connection.send_command("return")
+                connection.send_command_safe("return")
             except:
                 pass
             raise e
+

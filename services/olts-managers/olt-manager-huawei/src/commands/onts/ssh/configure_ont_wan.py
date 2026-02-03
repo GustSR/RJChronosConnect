@@ -30,6 +30,8 @@ class ConfigureOntWanCommand:
     def execute(self, connection: ConnectionManager, olt_version: str) -> Dict[str, Any]:
         """
         Configura a interface WAN (IPoE) na ONU.
+        
+        Usa send_command_safe para evitar problemas de buffer/concatenação.
         """
         # Parse da porta (Ex: "0/5/2" -> interface gpon 0/5, ont 2)
         parts = self.port.split('/')
@@ -42,65 +44,32 @@ class ConfigureOntWanCommand:
 
         logger.info(f"Configurando WAN na ONU {self.ont_id} (Porta {self.port}, VLAN {self.vlan}, Modo {self.ip_mode})...")
 
-        # Sequência de comandos
         try:
-            # Garante modo config
-            connection.send_command("config")
+            # Usa send_command_safe para cada comando (resolve concatenação)
             
-            # Entra na interface
-            connection.send_command(interface_cmd)
+            # 1. Entra em modo config
+            connection.send_command_safe("config")
+            
+            # 2. Entra na interface
+            connection.send_command_safe(interface_cmd)
 
-            # Montar comando
+            # 3. Montar comando ont ipconfig
             if self.ip_mode == "dhcp":
-                cmd = " ".join(
-                    [
-                        "ont",
-                        "ipconfig",
-                        str(ont_port_idx),
-                        str(self.ont_id),
-                        "ip-index",
-                        str(self.ip_index),
-                        "dhcp",
-                        "vlan",
-                        str(self.vlan),
-                        "priority",
-                        str(self.priority),
-                    ]
-                )
+                cmd = f"ont ipconfig {ont_port_idx} {self.ont_id} ip-index {self.ip_index} dhcp vlan {self.vlan} priority {self.priority}"
             elif self.ip_mode == "static":
                 if not all([self.ip_address, self.mask, self.gateway]):
                     raise ValueError("Para modo estático, IP, Máscara e Gateway são obrigatórios.")
-                cmd = " ".join(
-                    [
-                        "ont",
-                        "ipconfig",
-                        str(ont_port_idx),
-                        str(self.ont_id),
-                        "ip-index",
-                        str(self.ip_index),
-                        "static",
-                        "ip-address",
-                        str(self.ip_address),
-                        "mask",
-                        str(self.mask),
-                        "gateway",
-                        str(self.gateway),
-                        "vlan",
-                        str(self.vlan),
-                        "priority",
-                        str(self.priority),
-                    ]
-                )
+                cmd = f"ont ipconfig {ont_port_idx} {self.ont_id} ip-index {self.ip_index} static ip-address {self.ip_address} mask {self.mask} gateway {self.gateway} vlan {self.vlan} priority {self.priority}"
             else:
                 logger.warning(f"Modo IP desconhecido: {self.ip_mode}. Pulando configuração de WAN.")
-                connection.send_command("return") # Volta pra raiz
+                connection.send_command_safe("return")
                 return {"status": "skipped", "message": "Unknown IP mode"}
 
-            # Executa configuração da WAN
-            output = connection.send_command(cmd)
+            # 4. Executa configuração da WAN
+            output = connection.send_command_safe(cmd)
             
-            # Volta para a raiz (mais seguro que quit)
-            connection.send_command("return")
+            # 5. Volta para a raiz
+            connection.send_command_safe("return")
 
             if any(marker in output.lower() for marker in ("failure", "error", "unknown command", "too many parameters", "incomplete command")):
                  logger.error(f"Falha ao configurar WAN: {output}")
@@ -112,7 +81,8 @@ class ConfigureOntWanCommand:
         except Exception as e:
             # Tenta recuperar sessão
             try:
-                connection.send_command("return")
+                connection.send_command_safe("return")
             except:
                 pass
             raise e
+

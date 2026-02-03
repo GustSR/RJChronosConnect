@@ -296,6 +296,103 @@ class ConnectionManager:
         timing_kwargs.update(kwargs)
         return self.connection.send_command_timing(command_string, **timing_kwargs)
 
+    def send_command_safe(
+        self,
+        command_string: str,
+        timeout: float = 10.0,
+        auto_confirm: bool = True,
+        expect_prompt: bool = True,
+    ) -> str:
+        """
+        Envia um comando com controle total do buffer usando write_channel.
+        
+        Este método resolve o problema de comandos concatenados:
+        1. Limpa o buffer ANTES de enviar
+        2. Envia o comando via write_channel (controle direto)
+        3. Aguarda e lê a resposta
+        4. Detecta prompts interativos e responde automaticamente
+        5. Limpa o buffer DEPOIS de receber resposta
+        
+        Args:
+            command_string: Comando a enviar
+            timeout: Timeout em segundos para aguardar resposta
+            auto_confirm: Se True, responde automaticamente a prompts interativos
+            expect_prompt: Se True, aguarda o prompt aparecer antes de retornar
+            
+        Returns:
+            Output do comando
+        """
+        import time
+        
+        if not self.connection or not self.connection.is_alive():
+            raise ConnectionError(f"Não conectado à OLT {self.device_params['host']}.")
+        
+        try:
+            # 1. Limpa buffer residual
+            if hasattr(self.connection, 'clear_buffer'):
+                self.connection.clear_buffer()
+            time.sleep(0.1)
+            
+            # 2. Envia comando via write_channel (controle direto)
+            self.connection.write_channel(command_string + "\n")
+            logger.debug(f"Comando enviado: {command_string}")
+            
+            # 3. Aguarda resposta
+            time.sleep(1.0)  # Delay de 1s para OLT processar
+            
+            # 4. Lê a resposta
+            output = ""
+            start_time = time.time()
+            
+            while (time.time() - start_time) < timeout:
+                chunk = self.connection.read_channel()
+                if chunk:
+                    output += chunk
+                    
+                    # Detecta prompts interativos e responde
+                    if auto_confirm:
+                        # Prompt de confirmação com opções { <cr>|... }:
+                        if "{ <cr>" in output or "{<cr>" in output:
+                            logger.debug("Detectado prompt interativo, enviando ENTER...")
+                            time.sleep(0.3)
+                            self.connection.write_channel("\n")
+                            time.sleep(0.5)
+                            continue
+                        
+                        # Prompt (y/n)
+                        if "(y/n)" in output.lower():
+                            logger.debug("Detectado confirmação (y/n), enviando 'y'...")
+                            time.sleep(0.3)
+                            self.connection.write_channel("y\n")
+                            time.sleep(0.5)
+                            continue
+                        
+                        # Prompt ---- More ----
+                        if "---- More" in output:
+                            logger.debug("Detectado paginação, enviando espaço...")
+                            time.sleep(0.1)
+                            self.connection.write_channel(" ")
+                            continue
+                    
+                    # Verifica se chegou no prompt (comando terminou)
+                    if expect_prompt:
+                        # Procura por prompt típico Huawei
+                        if re.search(r'(?:<|[\[\(]).*?(?:>|[\]\)#])\s*$', output):
+                            break
+                else:
+                    time.sleep(0.2)
+            
+            # 5. Limpa buffer residual
+            time.sleep(0.2)
+            if hasattr(self.connection, 'clear_buffer'):
+                self.connection.clear_buffer()
+            
+            return output
+            
+        except Exception as e:
+            logger.error(f"Falha em send_command_safe '{command_string}': {e}")
+            raise
+
     def get_password(self) -> str | None:
         """Returns the login password used for the current connection."""
         return self.device_params.get("password")
@@ -307,4 +404,3 @@ class ConnectionManager:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.disconnect()
-
