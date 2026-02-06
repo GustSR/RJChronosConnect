@@ -402,8 +402,8 @@ async def authorize_onu_async(onu_id: str, provision_data: ONUProvisionRequest, 
             "description": provision_data.client_name,
             
             # Dados de rede para o Passo 2 da Saga
-            "mgmt_vlan": provision_data.vlan_id,
-            "ip_mode": provision_data.wan_mode or "dhcp",
+            "vlan_id": provision_data.vlan_id,
+            "wan_mode": provision_data.wan_mode or "dhcp",
             "tr069_profile_id": 1 # Valor padrão ou vindo do request
         }
 

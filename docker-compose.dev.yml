@@ -101,23 +101,27 @@ services:
             timeout: 10s
             retries: 5
 
-    # works:
-    #     build:
-    #         context: ./services/works
-    #         dockerfile: Dockerfile.dev
-    #     container_name: rjchronos_works_dev
-    #     volumes:
-    #         - ./services/works:/app
-    #     networks:
-    #         - rjchronos-net
-    #     depends_on:
-    #         - rabbitmq
-    #         - redis
-    #     command: python -u main.py
-    #     environment:
-    #         - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-    #         - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
-    #         - REDIS_PASSWORD=${REDIS_PASSWORD}
+    works:
+        build:
+            context: ./services/works
+            dockerfile: Dockerfile.dev
+        container_name: rjchronos_works_dev
+        # volumes:
+        #     - ./services/works:/app
+        networks:
+            - rjchronos-net
+        depends_on:
+            - rabbitmq
+            - redis
+            - backend
+            - olt-manager-huawei
+        command: python -u main.py
+        environment:
+            - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+            - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+            - OLT_MANAGER_HUAWEI_URL=http://olt-manager-huawei:8001
+            - BACKEND_API_URL=http://backend:8000
 
     olt-manager-huawei:
         build:
