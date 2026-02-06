@@ -3,3 +3,4 @@ from .ont_line_profile_add_request import OntLineProfileAddRequest
 from .ont_srv_profile_add_request import OntSrvProfileAddRequest
 from .ont_confirm_request import OntConfirmRequest
 from .ont_wan_config_request import OntWanConfigRequest
+from .ont_tr069_config_request import OntTr069ConfigRequest

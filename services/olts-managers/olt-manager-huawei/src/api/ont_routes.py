@@ -30,7 +30,8 @@ from ..schemas.ont import (
     ont_failed as ont_failed_schema,
     ont_line_profile_add_request as ont_line_profile_add_request_schema,
     ont_srv_profile_add_request as ont_srv_profile_add_request_schema,
-    ont_wan_config_request as ont_wan_config_request_schema
+    ont_wan_config_request as ont_wan_config_request_schema,
+    ont_tr069_config_request as ont_tr069_config_request_schema
 )
 
 # Imports de schemas compartilhados
@@ -148,6 +149,57 @@ def configure_ont_wan(olt_id: int, request: ont_wan_config_request_schema.OntWan
     """Configura parâmetros de WAN (VLAN, IP) e TR-069 em uma ONU existente (busca por SN)."""
     validate_olt_id(olt_id)
     return olt_service.configure_ont_wan_tr069(olt_id, request)
+
+# ============================================================================
+# OPERAÇÕES ATÔMICAS (PARA SAGAS/ORQUESTRAÇÃO)
+# ============================================================================
+
+@router.post("/olts/{olt_id}/onts/simple", response_model=command_response_schema.CommandResponse, summary="[Atomic] Provision ONT Basic")
+def provision_ont_simple(olt_id: int, request: ont_add_request_schema.ONTAddRequest):
+    """
+    Operação atômica: Apenas cria a ONT na OLT.
+    Não configura WAN, TR-069 ou Service Ports.
+    Ideal para ser usada pelo orquestrador de eventos.
+    """
+    validate_olt_id(olt_id)
+    return olt_service.provision_ont_basic(olt_id, request)
+
+@router.post("/olts/{olt_id}/onts/wan-config-only", response_model=command_response_schema.CommandResponse, summary="[Atomic] Configure WAN Only")
+def configure_wan_only(olt_id: int, request: ont_wan_config_request_schema.OntWanConfigRequest):
+    """
+    Operação atômica: Apenas configura a WAN IP.
+    Ignora TR-069 e Service Ports.
+    """
+    validate_olt_id(olt_id)
+    # Busca a porta correta se foi passado SN (lógica auxiliar deve estar no service ou client, 
+    # mas aqui chamamos o método atômico direto, assumindo que quem chama sabe os dados ou o service resolve)
+    
+    # Nota: O método configure_ont_wan_only espera parâmetros explícitos, vamos extrair do request
+    return olt_service.configure_ont_wan_only(
+        olt_id, 
+        request.port, 
+        request.ont_id, 
+        request.mgmt_vlan,
+        request.ip_mode,
+        request.ip_address,
+        request.mask,
+        request.gateway,
+        request.ip_index,
+        request.priority
+    )
+
+@router.post("/olts/{olt_id}/onts/tr069-config-only", response_model=command_response_schema.CommandResponse, summary="[Atomic] Configure TR-069 Only")
+def configure_tr069_only(olt_id: int, request: ont_tr069_config_request_schema.OntTr069ConfigRequest):
+    """
+    Operação atômica: Apenas configura o TR-069.
+    """
+    validate_olt_id(olt_id)
+    return olt_service.configure_ont_tr069_only(
+        olt_id, 
+        request.port, 
+        request.ont_id, 
+        request.profile_id
+    )
 
 # ============================================================================
 # ENDPOINTS DE DESCOBERTA E AUTOFIND

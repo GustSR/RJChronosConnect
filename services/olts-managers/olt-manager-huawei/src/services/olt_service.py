@@ -299,25 +299,11 @@ def get_ont_optical_info(olt_id: int, port: str, ont_id_on_port: int) -> Dict[st
     return _execute_snmp_command(olt_id, GetOntOpticalInfoSnmpCommand, port=port, ont_id=ont_id_on_port)
 
 def provision_ont(olt_id: int, ont_data: ont_add_request.ONTAddRequest) -> Dict[str, Any]:
-    # 1. Provisionamento Básico (Cria a ONT na OLT)
-    # Filtra os campos que o AddOntCommand não aceita (os novos campos de WAN/TR069)
-    # Como passamos **ont_data.dict(), precisamos garantir que AddOntCommand ignore kwargs extras ou filtrar antes.
-    # O helper _execute_cli_command já trata kwargs, mas o AddOntCommand.__init__ pode não aceitar.
-    # Vamos passar apenas os campos que o AddOntCommand espera.
+    # MANTIDO PARA COMPATIBILIDADE (LEGACY ORCHESTRATION)
+    # Recomenda-se usar o fluxo via Eventos/Saga no futuro.
     
-    # Campos padrão do AddOntCommand (baseado no schema original)
-    basic_params = {
-        "port": ont_data.port,
-        "ont_id": ont_data.ont_id,
-        "serial_number": ont_data.serial_number,
-        "line_profile": ont_data.line_profile,
-        "srv_profile": ont_data.srv_profile,
-        "description": ont_data.description,
-        "ont_type": ont_data.ont_type
-    }
-    
-    result = _execute_cli_command(olt_id, AddOntCommand, **basic_params)
-    logger.info(f"[DEBUG] AddOntCommand retornou: {result}")
+    # 1. Provisionamento Básico
+    result = provision_ont_basic(olt_id, ont_data)
     
     # Se falhou o provisionamento básico, aborta
     if isinstance(result, dict) and result.get("status") == "error":
@@ -328,16 +314,15 @@ def provision_ont(olt_id: int, ont_data: ont_add_request.ONTAddRequest) -> Dict[
 
     if ont_data.mgmt_vlan:
         try:
-            wan_result = _execute_cli_command(
+            wan_result = configure_ont_wan_only(
                 olt_id, 
-                ConfigureOntWanCommand, 
-                port=ont_data.port, 
-                ont_id=ont_data.ont_id,
-                vlan=ont_data.mgmt_vlan,
-                ip_mode=ont_data.ip_mode,
-                ip_address=ont_data.ip_address,
-                mask=ont_data.mask,
-                gateway=ont_data.gateway
+                ont_data.port, 
+                ont_data.ont_id, 
+                ont_data.mgmt_vlan,
+                ont_data.ip_mode,
+                ont_data.ip_address,
+                ont_data.mask,
+                ont_data.gateway
             )
             extra_logs.append({"step": "wan_config", "result": wan_result})
         except Exception as e:
@@ -346,35 +331,32 @@ def provision_ont(olt_id: int, ont_data: ont_add_request.ONTAddRequest) -> Dict[
 
     if ont_data.tr069_profile_id:
         try:
-            tr069_result = _execute_cli_command(
+            tr069_result = configure_ont_tr069_only(
                 olt_id,
-                ConfigureOntTr069Command,
-                port=ont_data.port,
-                ont_id=ont_data.ont_id,
-                profile_id=ont_data.tr069_profile_id
+                ont_data.port,
+                ont_data.ont_id,
+                ont_data.tr069_profile_id
             )
             extra_logs.append({"step": "tr069_config", "result": tr069_result})
         except Exception as e:
              logger.error(f"Erro ao configurar TR-069: {e}")
              extra_logs.append({"step": "tr069_config", "status": "error", "message": str(e)})
 
-    # 3. Criar Service Port de Gerência (VLAN 200, Gemport 2)
+    # 3. Criar Service Port de Gerência
     if ont_data.mgmt_vlan:
         try:
-            svport_result = _execute_cli_command(
+            svport_result = create_mgmt_service_port(
                 olt_id,
-                CreateMgmtServicePortCommand,
-                port=ont_data.port,
-                ont_id=ont_data.ont_id,
-                vlan=ont_data.mgmt_vlan,
-                gemport=2
+                ont_data.port,
+                ont_data.ont_id,
+                ont_data.mgmt_vlan
             )
             extra_logs.append({"step": "service_port_config", "result": svport_result})
         except Exception as e:
             logger.error(f"Erro ao criar service-port de gerência: {e}")
             extra_logs.append({"step": "service_port_config", "status": "error", "message": str(e)})
 
-    # 4. Reiniciar ONU (Necessário para aplicar configs de rede)
+    # 4. Reiniciar ONU
     if extra_logs:
         try:
             reboot_result = reboot_ont(olt_id, ont_data.port, ont_data.ont_id)
@@ -386,6 +368,56 @@ def provision_ont(olt_id: int, ont_data: ont_add_request.ONTAddRequest) -> Dict[
         result["configuration_steps"] = extra_logs
         
     return result
+
+def provision_ont_basic(olt_id: int, ont_data: ont_add_request.ONTAddRequest) -> Dict[str, Any]:
+    """Passo 1 Atômico: Apenas cria a ONT na OLT, sem configurar WAN/IP."""
+    basic_params = {
+        "port": ont_data.port,
+        "ont_id": ont_data.ont_id,
+        "serial_number": ont_data.serial_number,
+        "line_profile": ont_data.line_profile,
+        "srv_profile": ont_data.srv_profile,
+        "description": ont_data.description,
+        "ont_type": ont_data.ont_type
+    }
+    return _execute_cli_command(olt_id, AddOntCommand, **basic_params)
+
+def configure_ont_wan_only(olt_id: int, port: str, ont_id: int, vlan: int, ip_mode: str, ip_address: str = None, mask: str = None, gateway: str = None, ip_index: int = 0, priority: int = 0) -> Dict[str, Any]:
+    """Passo 2a Atômico: Apenas configura a WAN."""
+    return _execute_cli_command(
+        olt_id, 
+        ConfigureOntWanCommand, 
+        port=port, 
+        ont_id=ont_id,
+        vlan=vlan,
+        ip_mode=ip_mode,
+        ip_address=ip_address,
+        mask=mask,
+        gateway=gateway,
+        ip_index=ip_index,
+        priority=priority
+    )
+
+def configure_ont_tr069_only(olt_id: int, port: str, ont_id: int, profile_id: int) -> Dict[str, Any]:
+    """Passo 2b Atômico: Apenas configura o TR-069."""
+    return _execute_cli_command(
+        olt_id,
+        ConfigureOntTr069Command,
+        port=port,
+        ont_id=ont_id,
+        profile_id=profile_id
+    )
+
+def create_mgmt_service_port(olt_id: int, port: str, ont_id: int, vlan: int, gemport: int = 2) -> Dict[str, Any]:
+    """Passo 3 Atômico: Cria a service-port de gerência."""
+    return _execute_cli_command(
+        olt_id,
+        CreateMgmtServicePortCommand,
+        port=port,
+        ont_id=ont_id,
+        vlan=vlan,
+        gemport=gemport
+    )
 
 def reboot_ont(olt_id: int, port: str, ont_id_on_port: int) -> Dict[str, Any]:
     return _execute_cli_command(olt_id, RebootOntCommand, port=port, ont_id=ont_id_on_port)
@@ -775,18 +807,17 @@ def configure_ont_wan_tr069(olt_id: int, config_data: ont_wan_config_request.Ont
 
     # 1. Configurar WAN
     try:
-        wan_result = _execute_cli_command(
+        wan_result = configure_ont_wan_only(
             olt_id, 
-            ConfigureOntWanCommand, 
-            port=target_port, 
-            ont_id=target_ont_id,
-            vlan=config_data.mgmt_vlan,
-            ip_mode=config_data.ip_mode,
-            ip_address=config_data.ip_address,
-            mask=config_data.mask,
-            gateway=config_data.gateway,
-            ip_index=target_index,
-            priority=config_data.priority
+            target_port, 
+            target_ont_id,
+            config_data.mgmt_vlan,
+            config_data.ip_mode,
+            config_data.ip_address,
+            config_data.mask,
+            config_data.gateway,
+            target_index,
+            config_data.priority
         )
         logs.append({"step": "wan_config", "result": wan_result})
     except Exception as e:
@@ -795,12 +826,11 @@ def configure_ont_wan_tr069(olt_id: int, config_data: ont_wan_config_request.Ont
 
     # 2. Configurar TR-069 (Vínculo com perfil ACS)
     try:
-        tr069_result = _execute_cli_command(
+        tr069_result = configure_ont_tr069_only(
             olt_id,
-            ConfigureOntTr069Command,
-            port=target_port,
-            ont_id=target_ont_id,
-            profile_id=config_data.tr069_profile_id
+            target_port,
+            target_ont_id,
+            config_data.tr069_profile_id
         )
         logs.append({"step": "tr069_config", "result": tr069_result})
     except Exception as e:
@@ -809,13 +839,12 @@ def configure_ont_wan_tr069(olt_id: int, config_data: ont_wan_config_request.Ont
         
     # 3. Criar Service Port de Gerência (VLAN 200, Gemport 2)
     try:
-        svport_result = _execute_cli_command(
+        svport_result = create_mgmt_service_port(
             olt_id,
-            CreateMgmtServicePortCommand,
-            port=target_port,
-            ont_id=target_ont_id,
-            vlan=config_data.mgmt_vlan,
-            gemport=2
+            target_port,
+            target_ont_id,
+            config_data.mgmt_vlan,
+            2
         )
         logs.append({"step": "service_port_config", "result": svport_result})
     except Exception as e:

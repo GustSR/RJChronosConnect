@@ -371,6 +371,56 @@ async def get_pending_onus(db: Session = Depends(get_db)):
         logger.error(f"Erro ao buscar ONUs pendentes: {e}")
         return []
 
+from ..services.rabbitmq_publisher import publisher
+import uuid
+
+@router.post("/{onu_id}/authorize-async")
+async def authorize_onu_async(onu_id: str, provision_data: ONUProvisionRequest, db: Session = Depends(get_db)):
+    """
+    Versão Assíncrona: Autoriza uma ONU e delega o provisionamento para o Orquestrador (works) via eventos.
+    """
+    try:
+        task_id = str(uuid.uuid4())
+        logger.info(f"Iniciando autorização ASSÍNCRONA para ONU {onu_id}, Task ID: {task_id}")
+
+        # 1. Resolver OLT para obter o ID (necessário para a fila)
+        olt = _resolve_olt(db, provision_data)
+        if not olt:
+             raise HTTPException(status_code=404, detail="OLT não encontrada para provisionamento")
+
+        # 2. Preparar os dados para o Orquestrador (Event Data)
+        # Nota: Aqui pegamos o que veio no request e transformamos no schema que o 'works' espera
+        event_payload = {
+            "event_type": "provisioning",
+            "task_id": task_id,
+            "olt_id": olt.id,
+            "port": _build_olt_port(provision_data) or "0/1/0", # Fallback se não vier
+            "ont_id": provision_data.ont_id or 0, # O works ou olt-manager podem recalcular se for 0
+            "serial_number": provision_data.serial_number or onu_id,
+            "line_profile": provision_data.line_profile or _DEFAULT_LINE_PROFILE,
+            "srv_profile": provision_data.srv_profile or _resolve_srv_profile(provision_data.onu_type),
+            "description": provision_data.client_name,
+            
+            # Dados de rede para o Passo 2 da Saga
+            "mgmt_vlan": provision_data.vlan_id,
+            "ip_mode": provision_data.wan_mode or "dhcp",
+            "tr069_profile_id": 1 # Valor padrão ou vindo do request
+        }
+
+        # 3. Publicar o evento
+        await publisher.publish_event("task_queue", event_payload)
+
+        return {
+            "success": True,
+            "message": "Solicitação de provisionamento enviada com sucesso",
+            "task_id": task_id,
+            "status": "queued"
+        }
+
+    except Exception as e:
+        logger.error(f"Erro ao iniciar autorização assíncrona: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao enfileirar tarefa: {str(e)}")
+
 @router.post("/{onu_id}/authorize")
 async def authorize_onu(onu_id: str, provision_data: ONUProvisionRequest, db: Session = Depends(get_db)):
     """
