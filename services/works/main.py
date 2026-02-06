@@ -2,6 +2,7 @@ import pika
 import json
 import asyncio
 import logging
+import time
 from app.core.config import settings
 from app.handlers.provisioning import ProvisioningHandler
 import redis
@@ -11,11 +12,19 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger("WorkerOrquestrador")
 
 def get_redis():
-    return redis.Redis(
-        host=settings.REDIS_HOST,
-        password=settings.REDIS_PASS,
-        decode_responses=True
-    )
+    while True:
+        try:
+            r = redis.Redis(
+                host=settings.REDIS_HOST,
+                password=settings.REDIS_PASS,
+                decode_responses=True
+            )
+            r.ping()
+            logger.info("Conectado ao Redis com sucesso!")
+            return r
+        except Exception as e:
+            logger.warning(f"Aguardando Redis ficar pronto... ({e})")
+            time.sleep(5)
 
 async def process_message(ch, method, properties, body, redis_client):
     try:
@@ -35,11 +44,19 @@ async def process_message(ch, method, properties, body, redis_client):
 def main():
     logger.info("Iniciando Worker Orquestrador...")
     
-    # Conexão RabbitMQ
+    # Conexão RabbitMQ com retentativa
     credentials = pika.PlainCredentials(settings.RABBITMQ_USER, settings.RABBITMQ_PASS)
     parameters = pika.ConnectionParameters(host=settings.RABBITMQ_HOST, credentials=credentials)
     
-    connection = pika.BlockingConnection(parameters)
+    connection = None
+    while True:
+        try:
+            connection = pika.BlockingConnection(parameters)
+            break
+        except Exception as e:
+            logger.warning(f"Aguardando RabbitMQ ficar pronto... ({e})")
+            time.sleep(5)
+            
     channel = connection.channel()
     
     channel.queue_declare(queue='task_queue', durable=True)

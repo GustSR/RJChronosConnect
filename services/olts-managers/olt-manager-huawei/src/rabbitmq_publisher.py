@@ -16,7 +16,7 @@ logger = get_logger(__name__)
 class RabbitMQPublisher:
     """Encapsula a lógica de publicação de mensagens no RabbitMQ."""
 
-    def __init__(self, max_retries=5, retry_delay=5):
+    def __init__(self, max_retries=100, retry_delay=5):
         """
         Inicializa o publicador.
         """
