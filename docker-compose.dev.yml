@@ -69,9 +69,12 @@ services:
             - "8090:8000"
         command: ./start.sh
         depends_on:
-            - db-app
-            - redis
-            - rabbitmq
+            db-app:
+                condition: service_started
+            redis:
+                condition: service_healthy
+            rabbitmq:
+                condition: service_healthy
         environment:
             - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
             - GENIACS_API_URL=http://genieacs:7557/
@@ -96,10 +99,10 @@ services:
         volumes:
             - rabbitmq_data_dev:/var/lib/rabbitmq # Persistência de dados em dev
         healthcheck:
-            test: ["CMD", "rabbitmq-diagnostics", "check_running", "-q"]
-            interval: 30s
-            timeout: 10s
-            retries: 5
+            test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+            interval: 5s
+            timeout: 5s
+            retries: 10
 
     works:
         build:
@@ -111,10 +114,14 @@ services:
         networks:
             - rjchronos-net
         depends_on:
-            - rabbitmq
-            - redis
-            - backend
-            - olt-manager-huawei
+            rabbitmq:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+            backend:
+                condition: service_started
+            olt-manager-huawei:
+                condition: service_started
         command: python -u main.py
         environment:
             - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
@@ -135,7 +142,8 @@ services:
         networks:
             - rjchronos-net
         depends_on:
-            - rabbitmq
+            rabbitmq:
+                condition: service_healthy
         command: uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload
         environment:
             # Configurações de conexão com outros serviços
@@ -256,7 +264,7 @@ services:
             - redis_data_dev:/data # Persistência de dados em dev
         healthcheck:
             test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
-            interval: 10s
+            interval: 5s
             timeout: 5s
             retries: 5
 
