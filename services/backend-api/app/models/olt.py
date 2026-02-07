@@ -19,6 +19,10 @@ class Olt(Base):
     vendor = Column(String, nullable=True)
     model = Column(String, nullable=True)
 
+    # Configurações de Rede Padrão
+    mgmt_vlan = Column(Integer, default=200, nullable=False, doc="VLAN de gerência padrão para esta OLT")
+    service_vlan = Column(Integer, nullable=True, doc="VLAN de serviço (Internet/PPPoE) padrão para esta OLT")
+
     # Campos de descoberta e configuração automática
     access_protocol = Column(String, nullable=False, default="ssh", doc="Protocolo de acesso (ssh ou telnet)")
     ssh_username = Column(String, nullable=True, doc="Usuário SSH para configuração automática")

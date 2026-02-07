@@ -32,6 +32,14 @@ class OLTClient:
             response.raise_for_status()
             return response.json()
 
+    async def add_service_port(self, olt_id: int, data: dict):
+        """Passo 3 Atômico: Cria o túnel de internet (Service Port)"""
+        url = f"{self.base_url}/api/v1/olts/{olt_id}/service-ports"
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=data, timeout=30.0)
+            response.raise_for_status()
+            return response.json()
+
     async def reboot_ont(self, olt_id: int, port: str, ont_id: int):
         """Passo Final: Reinicia para aplicar as configurações"""
         p = port.split('/')

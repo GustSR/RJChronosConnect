@@ -11,8 +11,9 @@ class ProvisioningEvent(BaseModel):
     srv_profile: str
     description: Optional[str] = None
     
-    # Dados de rede (Alinhados com ONUProvisionRequest do Backend)
-    vlan_id: Optional[int] = None
+    # Dados de rede (Alinhados com o Banco de Dados e Request)
+    vlan_id: Optional[int] = None    # VLAN de Serviço (Internet)
+    mgmt_vlan: Optional[int] = 200   # VLAN de Gerência (TR-069)
     wan_mode: Optional[str] = "dhcp" # dhcp, pppoe, static
     ip_address: Optional[str] = None
     mask: Optional[str] = None

@@ -30,14 +30,14 @@ class ProvisioningHandler:
             await self.olt_client.add_ont_basic(event.olt_id, basic_data)
             ont_created = True
 
-            # PASSO 2: Configuração de WAN
-            if event.vlan_id:
-                logger.info("Passo 2a: Configurando WAN...")
+            # PASSO 2a: Configuração de WAN (Gerência)
+            if event.mgmt_vlan:
+                logger.info(f"Passo 2a: Configurando WAN de Gerência (VLAN {event.mgmt_vlan})...")
                 wan_data = {
                     "port": event.port,
                     "ont_id": event.ont_id,
                     "serial_number": event.serial_number,
-                    "mgmt_vlan": event.vlan_id,
+                    "mgmt_vlan": event.mgmt_vlan,
                     "ip_mode": event.wan_mode,
                     "ip_address": event.ip_address,
                     "mask": event.mask,
@@ -55,8 +55,21 @@ class ProvisioningHandler:
                 }
                 await self.olt_client.configure_tr069(event.olt_id, tr069_data)
 
-            # PASSO 3: Reboot final
-            logger.info("Passo 3: Reiniciando ONU para aplicar alterações...")
+            # PASSO 3: Criar Service Port (Internet)
+            if event.vlan_id:
+                logger.info(f"Passo 3: Criando Service Port de Internet (VLAN {event.vlan_id})...")
+                service_port_data = {
+                    "port": event.port,
+                    "ont_id": event.ont_id,
+                    "vlan": event.vlan_id,
+                    "user_vlan": event.vlan_id,
+                    "gemport": 1, # Padrão para internet
+                    "description": f"INTERNET_{event.serial_number[-4:]}"
+                }
+                await self.olt_client.add_service_port(event.olt_id, service_port_data)
+
+            # PASSO FINAL: Reboot
+            logger.info("Passo Final: Reiniciando ONU para aplicar alterações...")
             await self.olt_client.reboot_ont(event.olt_id, event.port, event.ont_id)
 
             # SUCESSO FINAL

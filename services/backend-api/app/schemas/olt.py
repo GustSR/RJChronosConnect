@@ -7,6 +7,8 @@ class OLTBase(BaseModel):
     ip_address: str
     vendor: Optional[str] = None
     model: Optional[str] = None
+    mgmt_vlan: Optional[int] = Field(default=200, description="VLAN de gerência padrão")
+    service_vlan: Optional[int] = Field(default=None, description="VLAN de serviço padrão")
 
 class OLTCreate(OLTBase):
     # Campos opcionais para configuração automática
@@ -21,6 +23,8 @@ class OLTUpdate(OLTBase):
     access_protocol: Optional[str] = Field(default=None, pattern=r'^(ssh|telnet)$')
     name: Optional[str] = None
     ip_address: Optional[str] = None
+    mgmt_vlan: Optional[int] = None
+    service_vlan: Optional[int] = None
     ssh_username: Optional[str] = None
     ssh_password: Optional[str] = None
     ssh_port: Optional[int] = Field(default=None, ge=1, le=65535)

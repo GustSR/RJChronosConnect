@@ -389,22 +389,27 @@ async def authorize_onu_async(onu_id: str, provision_data: ONUProvisionRequest, 
              raise HTTPException(status_code=404, detail="OLT não encontrada para provisionamento")
 
         # 2. Preparar os dados para o Orquestrador (Event Data)
-        # Nota: Aqui pegamos o que veio no request e transformamos no schema que o 'works' espera
+        # Prioridade para a VLAN de serviço: Request -> Banco da OLT -> 100 (fallback)
+        final_service_vlan = provision_data.vlan_id or olt.service_vlan or 100
+        # VLAN de gerência: Banco da OLT -> 200 (padrão)
+        final_mgmt_vlan = olt.mgmt_vlan or 200
+
         event_payload = {
             "event_type": "provisioning",
             "task_id": task_id,
             "olt_id": olt.id,
-            "port": _build_olt_port(provision_data) or "0/1/0", # Fallback se não vier
-            "ont_id": provision_data.ont_id or 0, # O works ou olt-manager podem recalcular se for 0
+            "port": _build_olt_port(provision_data) or "0/1/0",
+            "ont_id": provision_data.ont_id or 0,
             "serial_number": provision_data.serial_number or onu_id,
             "line_profile": provision_data.line_profile or _DEFAULT_LINE_PROFILE,
             "srv_profile": provision_data.srv_profile or _resolve_srv_profile(provision_data.onu_type),
             "description": provision_data.client_name,
             
-            # Dados de rede para o Passo 2 da Saga
-            "vlan_id": provision_data.vlan_id,
+            # Dados de rede (Separados por função)
+            "vlan_id": final_service_vlan, # VLAN de Serviço (PPPoE)
+            "mgmt_vlan": final_mgmt_vlan,   # VLAN de Gerência (TR-069)
             "wan_mode": provision_data.wan_mode or "dhcp",
-            "tr069_profile_id": 1 # Valor padrão ou vindo do request
+            "tr069_profile_id": 1
         }
 
         # 3. Publicar o evento
