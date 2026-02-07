@@ -254,9 +254,9 @@ export const ProvisioningProvider: React.FC<ProvisioningProviderProps> = ({
       setLoading(true);
       setError(null);
 
-      // Chamar API para autorizar a ONU
+      // Chamar API para autorizar a ONU via Eventos (Async)
       const pendingONU = pendingONUs.find((onu) => onu.id === onuId);
-      const result = await genieacsApi.authorizeONU(onuId, {
+      const result = await genieacsApi.authorizeONUAsync(onuId, {
         ...clientData,
         serial_number: pendingONU?.serialNumber,
         onu_type: pendingONU?.onuType,
@@ -270,22 +270,20 @@ export const ProvisioningProvider: React.FC<ProvisioningProviderProps> = ({
       });
 
       const isSuccess = result.success === true;
-      const details = result.details as { genieacs?: { status?: string } } | undefined;
-      const genieacsAvailable = details?.genieacs?.status === 'success';
       const successMessage =
         typeof result.message === 'string' && result.message.trim()
           ? result.message.trim()
-          : 'ONU autorizada com sucesso';
-      const failureMessage = getProvisionFailureMessage(result);
+          : 'Solicitação de provisionamento enviada';
 
       if (isSuccess) {
-        // Remover da lista de pendentes
+        // Remover da lista de pendentes (ela sumirá do dashboard de pendentes)
         setPendingONUs((prev) => prev.filter((onu) => onu.id !== onuId));
 
-        // Recarregar lista de provisionadas para incluir a nova
-        await refreshProvisionedONUs();
-
-        return { success: true, message: successMessage, genieacsAvailable };
+        // Como é assíncrono, não recarregamos a lista de provisionadas imediatamente,
+        // pois o worker ainda está processando. Em uma versão futura, o WebSocket
+        // avisaria o frontend para atualizar.
+        
+        return { success: true, message: successMessage, genieacsAvailable: true };
       }
 
       return { success: false, message: failureMessage, genieacsAvailable };

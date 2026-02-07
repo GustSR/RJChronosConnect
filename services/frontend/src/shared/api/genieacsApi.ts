@@ -34,7 +34,39 @@ export class GenieACSApiService {
   }
 
   /**
-   * Autorizar uma ONU pendente
+   * Autorizar uma ONU pendente (Versão Assíncrona - EDA)
+   */
+  async authorizeONUAsync(
+    onuId: string,
+    provisionData: {
+      client_name: string;
+      client_cpf_cnpj?: string;
+      client_address: string;
+      serial_number?: string;
+      onu_type?: string;
+      service_profile?: string;
+      vlan_id?: number;
+      wan_mode?: string;
+      comment?: string;
+      olt_id?: number;
+      olt_port?: string;
+      frame?: number;
+      slot?: number;
+      board?: number;
+      port?: number;
+      ont_id?: number;
+      line_profile?: string;
+      srv_profile?: string;
+    }
+  ): Promise<Record<string, unknown>> {
+    return httpClient.post(
+      `/provisioning/${onuId}/authorize-async`,
+      provisionData
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /**
+   * Autorizar uma ONU pendente (Síncrono - Legacy)
    */
   async authorizeONU(
     onuId: string,
