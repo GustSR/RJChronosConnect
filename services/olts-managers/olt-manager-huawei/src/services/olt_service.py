@@ -380,11 +380,19 @@ def provision_ont_basic(olt_id: int, ont_data: ont_add_request.ONTAddRequest) ->
         "description": ont_data.description,
         "ont_type": ont_data.ont_type
     }
-    return _execute_cli_command(olt_id, AddOntCommand, **basic_params)
+    result = _execute_cli_command(olt_id, AddOntCommand, **basic_params)
+    
+    # Padroniza retorno para CommandResponse
+    is_success = result.get("success") is True or result.get("status") == "success"
+    return {
+        "success": is_success,
+        "message": result.get("message", "Comando executado"),
+        "details": result if isinstance(result, dict) else {"output": str(result)}
+    }
 
 def configure_ont_wan_only(olt_id: int, port: str, ont_id: int, vlan: int, ip_mode: str, ip_address: str = None, mask: str = None, gateway: str = None, ip_index: int = 0, priority: int = 0) -> Dict[str, Any]:
     """Passo 2a Atômico: Apenas configura a WAN."""
-    return _execute_cli_command(
+    result = _execute_cli_command(
         olt_id, 
         ConfigureOntWanCommand, 
         port=port, 
@@ -397,20 +405,36 @@ def configure_ont_wan_only(olt_id: int, port: str, ont_id: int, vlan: int, ip_mo
         ip_index=ip_index,
         priority=priority
     )
+    
+    # Padroniza retorno para CommandResponse
+    is_success = result.get("success") is True or result.get("status") == "success"
+    return {
+        "success": is_success,
+        "message": result.get("message", "WAN configurada"),
+        "details": result if isinstance(result, dict) else {"output": str(result)}
+    }
 
 def configure_ont_tr069_only(olt_id: int, port: str, ont_id: int, profile_id: int) -> Dict[str, Any]:
     """Passo 2b Atômico: Apenas configura o TR-069."""
-    return _execute_cli_command(
+    result = _execute_cli_command(
         olt_id,
         ConfigureOntTr069Command,
         port=port,
         ont_id=ont_id,
         profile_id=profile_id
     )
+    
+    # Padroniza retorno para CommandResponse
+    is_success = result.get("success") is True or result.get("status") == "success"
+    return {
+        "success": is_success,
+        "message": result.get("message", "TR-069 configurado"),
+        "details": result if isinstance(result, dict) else {"output": str(result)}
+    }
 
 def create_mgmt_service_port(olt_id: int, port: str, ont_id: int, vlan: int, gemport: int = 2) -> Dict[str, Any]:
     """Passo 3 Atômico: Cria a service-port de gerência."""
-    return _execute_cli_command(
+    result = _execute_cli_command(
         olt_id,
         CreateMgmtServicePortCommand,
         port=port,
@@ -418,6 +442,14 @@ def create_mgmt_service_port(olt_id: int, port: str, ont_id: int, vlan: int, gem
         vlan=vlan,
         gemport=gemport
     )
+    
+    # Padroniza retorno para CommandResponse
+    is_success = result.get("success") is True or result.get("status") == "success"
+    return {
+        "success": is_success,
+        "message": result.get("message", "Service-port criada"),
+        "details": result if isinstance(result, dict) else {"output": str(result)}
+    }
 
 def reboot_ont(olt_id: int, port: str, ont_id_on_port: int) -> Dict[str, Any]:
     return _execute_cli_command(olt_id, RebootOntCommand, port=port, ont_id=ont_id_on_port)

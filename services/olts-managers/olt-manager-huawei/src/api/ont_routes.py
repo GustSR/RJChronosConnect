@@ -201,6 +201,14 @@ def configure_tr069_only(olt_id: int, request: ont_tr069_config_request_schema.O
         request.profile_id
     )
 
+@router.post("/olts/{olt_id}/service-ports/atomic", response_model=command_response_schema.CommandResponse, summary="[Atomic] Create Service Port")
+def create_service_port_atomic(olt_id: int, port: str, ont_id: int, vlan: int, gemport: int = 2):
+    """
+    Operação atômica: Cria uma service-port.
+    """
+    validate_olt_id(olt_id)
+    return olt_service.create_mgmt_service_port(olt_id, port, ont_id, vlan, gemport)
+
 # ============================================================================
 # ENDPOINTS DE DESCOBERTA E AUTOFIND
 # ============================================================================

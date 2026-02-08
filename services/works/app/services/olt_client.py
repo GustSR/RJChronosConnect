@@ -43,9 +43,11 @@ class OLTClient:
 
     async def add_service_port(self, olt_id: int, data: dict):
         """Passo 3 Atômico: Cria o túnel de internet (Service Port)"""
-        url = f"{self.base_url}/api/v1/olts/{olt_id}/service-ports"
+        url = f"{self.base_url}/api/v1/olts/{olt_id}/service-ports/atomic"
         async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=data, timeout=30.0)
+            # Passa os dados como query params já que o endpoint atual não usa schema body
+            # (Melhoria futura: usar schema body também aqui)
+            response = await client.post(url, params=data, timeout=30.0)
             response.raise_for_status()
             return response.json()
 
