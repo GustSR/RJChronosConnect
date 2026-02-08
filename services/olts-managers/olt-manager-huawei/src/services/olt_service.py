@@ -453,7 +453,15 @@ def create_internet_service_port(olt_id: int, port: str, ont_id: int, vlan: int,
     }
 
 def reboot_ont(olt_id: int, port: str, ont_id_on_port: int) -> Dict[str, Any]:
-    return _execute_cli_command(olt_id, RebootOntCommand, port=port, ont_id=ont_id_on_port)
+    result = _execute_cli_command(olt_id, RebootOntCommand, port=port, ont_id=ont_id_on_port)
+    
+    # Padroniza retorno para CommandResponse
+    is_success = result.get("success") is True or result.get("status") == "success"
+    return {
+        "success": is_success,
+        "message": result.get("message", "Reboot processado"),
+        "details": result if isinstance(result, dict) else {"output": str(result)}
+    }
 
 def get_service_ports_for_ont(olt_id: int, port: str, ont_id_on_port: int) -> List[Dict[str, Any]]:
     return _execute_cli_command(olt_id, GetServicePortCliCommand, port=port, ont_id=ont_id_on_port)
@@ -905,16 +913,10 @@ def delete_ont(olt_id: int, port: str, ont_id: int) -> Dict[str, Any]:
     """Remove uma ONU da OLT."""
     result = _execute_cli_command(olt_id, DeleteOntCommand, port=port, ont_id=ont_id)
     
-    # Garantir que o retorno segue o schema CommandResponse
-    is_success = result.get("status") == "success"
-    
-    # Garantir que details seja um dicionário (evita erro de validação do FastAPI)
-    details = result.get("details") or result
-    if not isinstance(details, dict):
-        details = {"output": str(details)}
-        
+    # Padroniza retorno para CommandResponse
+    is_success = result.get("success") is True or result.get("status") == "success"
     return {
         "success": is_success,
-        "message": "ONU deletada com sucesso" if is_success else f"Falha ao deletar ONU: {result.get('message', 'Erro desconhecido')}",
-        "details": details
+        "message": "ONU deletada" if is_success else f"Falha ao deletar ONU: {result.get('message', 'Erro desconhecido')}",
+        "details": result if isinstance(result, dict) else {"output": str(result)}
     }

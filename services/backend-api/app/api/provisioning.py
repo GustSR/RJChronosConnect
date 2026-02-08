@@ -389,8 +389,8 @@ async def authorize_onu_async(onu_id: str, provision_data: ONUProvisionRequest, 
              raise HTTPException(status_code=404, detail="OLT não encontrada para provisionamento")
 
         # 2. Preparar os dados para o Orquestrador (Event Data)
-        # Prioridade para a VLAN de serviço: Request -> Banco da OLT -> 100 (fallback)
-        final_service_vlan = provision_data.vlan_id or olt.service_vlan or 100
+        # Prioridade para a VLAN de serviço: Request -> Banco da OLT -> None
+        final_service_vlan = provision_data.vlan_id or olt.service_vlan
         # VLAN de gerência: Banco da OLT -> 200 (padrão)
         final_mgmt_vlan = olt.mgmt_vlan or 200
 
