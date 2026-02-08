@@ -911,19 +911,17 @@ async def update_client_configuration_by_serial(serial_number: str, updates: Cli
     Atualiza configuração de um cliente provisionado buscando pelo Serial Number.
     Utilizado pelo Worker para atualizar o ID físico da ONT.
     """
+    logger.info(f"Recebida solicitação de update para Serial: {serial_number}")
     device = crud_device.get_device_by_serial_number(db, serial_number)
+    
     if not device:
-        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+        logger.warning(f"Device com Serial {serial_number} não encontrado no Banco de Dados.")
+        # Debug extra: listar alguns seriais que existem no banco
+        existing = db.query(Device.serial_number).limit(5).all()
+        logger.debug(f"Amostra de seriais no banco: {[r.serial_number for r in existing]}")
+        raise HTTPException(status_code=404, detail=f"Cliente com serial {serial_number} não encontrado")
     
-    update_data = updates.dict(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(device, key, value)
-    
-    db.add(device)
-    db.commit()
-    db.refresh(device)
-    
-    return {"success": True, "message": "Configuração atualizada com sucesso"}
+    logger.info(f"Dispositivo localizado (ID: {device.id}). Atualizando ont_id para {updates.ont_id}...")
 
 @router.delete("/{onu_id}/reject")
 async def reject_onu(onu_id: str, reason: str = "Rejected by administrator"):

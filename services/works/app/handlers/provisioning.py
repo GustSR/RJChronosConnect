@@ -92,12 +92,16 @@ class ProvisioningHandler:
             logger.info("Passo Final: Reiniciando ONU para aplicar alterações...")
             await self.olt_client.reboot_ont(event.olt_id, event.port, target_ont_id)
 
+            # SUCESSO FÍSICO ALCANÇADO
+            # A partir daqui, falhas de sincronização não devem disparar rollback
+            try:
+                logger.info(f"Sincronizando ID {target_ont_id} com o banco de dados...")
+                await self.backend_client.update_ont_id_by_serial(event.serial_number, target_ont_id)
+                logger.info("Banco de dados atualizado com sucesso.")
+            except Exception as db_err:
+                logger.error(f"AVISO: Provisionamento físico OK, mas falha ao atualizar banco: {db_err}")
+
             # SUCESSO FINAL
-            
-            # Sincronizar ID real com o Backend
-            logger.info(f"Sincronizando ID {target_ont_id} com o banco de dados...")
-            await self.backend_client.update_ont_id_by_serial(event.serial_number, target_ont_id)
-            
             self._update_status(event.task_id, "completed", f"Provisionamento concluído com sucesso (ID: {target_ont_id})")
             logger.info(f"Saga concluída com SUCESSO para {event.serial_number} no ID {target_ont_id}")
 

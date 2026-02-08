@@ -17,19 +17,22 @@ class ReconfigurationHandler:
 
         try:
             # PASSO 1: Configuração de WAN (Gerência)
-            if event.mgmt_vlan:
-                logger.info(f"Passo 1: Reconfigurando WAN de Gerência (VLAN {event.mgmt_vlan})...")
+            # Só executa se houver vlan_id ou mgmt_vlan no evento
+            if event.vlan_id or event.mgmt_vlan:
+                logger.info(f"Passo 1: Reconfigurando WAN de Gerência (VLAN {event.mgmt_vlan or 200})...")
                 wan_data = {
                     "port": event.port,
                     "ont_id": event.ont_id,
                     "serial_number": event.serial_number,
-                    "mgmt_vlan": event.mgmt_vlan,
+                    "mgmt_vlan": event.mgmt_vlan or 200,
                     "ip_mode": event.wan_mode,
                     "ip_address": event.ip_address,
                     "mask": event.mask,
                     "gateway": event.gateway
                 }
                 await self.olt_client.configure_wan(event.olt_id, wan_data)
+            else:
+                logger.info("Pulando configuração de WAN (nenhum dado de rede enviado).")
 
             # PASSO 2: Configuração de TR-069
             if event.tr069_profile_id:
