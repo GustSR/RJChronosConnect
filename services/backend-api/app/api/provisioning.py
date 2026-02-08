@@ -923,6 +923,22 @@ async def update_client_configuration_by_serial(serial_number: str, updates: Cli
     
     logger.info(f"Dispositivo localizado (ID: {device.id}). Atualizando ont_id para {updates.ont_id}...")
 
+    update_data = updates.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        if hasattr(device, key):
+            setattr(device, key, value)
+
+    db.add(device)
+    db.commit()
+    db.refresh(device)
+
+    return {
+        "success": True,
+        "message": "Configuração atualizada com sucesso",
+        "serial_number": device.serial_number,
+        "ont_id": device.ont_id,
+    }
+
 @router.delete("/{onu_id}/reject")
 async def reject_onu(onu_id: str, reason: str = "Rejected by administrator"):
     """
