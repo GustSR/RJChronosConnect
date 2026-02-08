@@ -15,13 +15,31 @@ class ProvisioningHandler:
         logger.info(f"Iniciando Saga de Provisionamento para SN {event.serial_number}")
         
         ont_created = False
+        target_ont_id = event.ont_id
 
         try:
+            # DESCOBERTA DE ID: Se não temos ID, vamos descobrir um livre
+            if not target_ont_id or target_ont_id <= 0:
+                logger.info(f"Descobrindo ID livre na porta {event.port}...")
+                provisioned = await self.olt_client.get_provisioned_onts(event.olt_id, event.port)
+                used_ids = {int(ont['ont_id']) for ont in provisioned if 'ont_id' in ont}
+                
+                # Procura o primeiro ID livre entre 1 e 127
+                for candidate in range(1, 128):
+                    if candidate not in used_ids:
+                        target_ont_id = candidate
+                        break
+                
+                if not target_ont_id:
+                    raise Exception(f"Não há IDs disponíveis na porta {event.port}")
+                
+                logger.info(f"ID {target_ont_id} selecionado para o SN {event.serial_number}")
+
             # PASSO 1: Configuração Básica
-            logger.info("Passo 1: Criando ONT na OLT...")
+            logger.info(f"Passo 1: Criando ONT {target_ont_id} na OLT...")
             basic_data = {
                 "port": event.port,
-                "ont_id": event.ont_id,
+                "ont_id": target_ont_id,
                 "serial_number": event.serial_number,
                 "line_profile": event.line_profile,
                 "srv_profile": event.srv_profile,
@@ -35,7 +53,7 @@ class ProvisioningHandler:
                 logger.info(f"Passo 2a: Configurando WAN de Gerência (VLAN {event.mgmt_vlan})...")
                 wan_data = {
                     "port": event.port,
-                    "ont_id": event.ont_id,
+                    "ont_id": target_ont_id,
                     "serial_number": event.serial_number,
                     "mgmt_vlan": event.mgmt_vlan,
                     "ip_mode": event.wan_mode,
@@ -50,7 +68,7 @@ class ProvisioningHandler:
                 logger.info("Passo 2b: Configurando TR-069...")
                 tr069_data = {
                     "port": event.port,
-                    "ont_id": event.ont_id,
+                    "ont_id": target_ont_id,
                     "profile_id": event.tr069_profile_id
                 }
                 await self.olt_client.configure_tr069(event.olt_id, tr069_data)
@@ -60,7 +78,7 @@ class ProvisioningHandler:
                 logger.info(f"Passo 3: Criando Service Port de Internet (VLAN {event.vlan_id})...")
                 service_port_data = {
                     "port": event.port,
-                    "ont_id": event.ont_id,
+                    "ont_id": target_ont_id,
                     "vlan": event.vlan_id,
                     "user_vlan": event.vlan_id,
                     "gemport": 1, # Padrão para internet
@@ -70,20 +88,20 @@ class ProvisioningHandler:
 
             # PASSO FINAL: Reboot
             logger.info("Passo Final: Reiniciando ONU para aplicar alterações...")
-            await self.olt_client.reboot_ont(event.olt_id, event.port, event.ont_id)
+            await self.olt_client.reboot_ont(event.olt_id, event.port, target_ont_id)
 
             # SUCESSO FINAL
-            self._update_status(event.task_id, "completed", "Provisionamento concluído com sucesso")
-            logger.info(f"Saga concluída com SUCESSO para {event.serial_number}")
+            self._update_status(event.task_id, "completed", f"Provisionamento concluído com sucesso (ID: {target_ont_id})")
+            logger.info(f"Saga concluída com SUCESSO para {event.serial_number} no ID {target_ont_id}")
 
         except Exception as e:
             logger.error(f"FALHA NA SAGA para {event.serial_number}: {str(e)}")
             
             # COMPENSAÇÃO: Se a ONT foi criada mas o resto falhou, vamos removê-la
             if ont_created:
-                logger.warning(f"Executando COMPENSAÇÃO (Rollback): Removendo ONT {event.ont_id} na porta {event.port}")
+                logger.warning(f"Executando COMPENSAÇÃO (Rollback): Removendo ONT {target_ont_id} na porta {event.port}")
                 try:
-                    await self.olt_client.delete_ont(event.olt_id, event.port, event.ont_id)
+                    await self.olt_client.delete_ont(event.olt_id, event.port, target_ont_id)
                     logger.info("Compensação realizada: ONT removida.")
                 except Exception as rollback_err:
                     logger.critical(f"ERRO CRÍTICO NA COMPENSAÇÃO: {rollback_err}")

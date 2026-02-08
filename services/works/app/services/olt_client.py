@@ -16,6 +16,15 @@ class OLTClient:
             response.raise_for_status()
             return response.json()
 
+    async def get_provisioned_onts(self, olt_id: int, port: str):
+        """Consulta as ONTs já existentes em uma porta PON"""
+        p = port.split('/')
+        url = f"{self.base_url}/api/v1/olts/{olt_id}/ports/{p[0]}/{p[1]}/{p[2]}/onts/all"
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, timeout=20.0)
+            response.raise_for_status()
+            return response.json()
+
     async def configure_wan(self, olt_id: int, data: dict):
         """Passo 2a Atômico: Configura IP/VLAN de gerência"""
         url = f"{self.base_url}/api/v1/olts/{olt_id}/onts/wan-config-only"
