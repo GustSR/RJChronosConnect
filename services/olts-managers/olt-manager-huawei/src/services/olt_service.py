@@ -432,22 +432,23 @@ def configure_ont_tr069_only(olt_id: int, port: str, ont_id: int, profile_id: in
         "details": result if isinstance(result, dict) else {"output": str(result)}
     }
 
-def create_mgmt_service_port(olt_id: int, port: str, ont_id: int, vlan: int, gemport: int = 2) -> Dict[str, Any]:
-    """Passo 3 Atômico: Cria a service-port de gerência."""
+def create_internet_service_port(olt_id: int, port: str, ont_id: int, vlan: int, user_vlan: int, gemport: int = 1) -> Dict[str, Any]:
+    """Passo 3 Atômico: Cria a service-port de internet (PPPoE/Serviço)."""
     result = _execute_cli_command(
         olt_id,
-        CreateMgmtServicePortCommand,
+        AddServicePortCommand,
         port=port,
         ont_id=ont_id,
-        vlan=vlan,
-        gemport=gemport
+        vlan_id=vlan,
+        user_vlan=user_vlan,
+        gem_port=gemport
     )
     
     # Padroniza retorno para CommandResponse
     is_success = result.get("success") is True or result.get("status") == "success"
     return {
         "success": is_success,
-        "message": result.get("message", "Service-port criada"),
+        "message": result.get("message", "Service-port de internet criada"),
         "details": result if isinstance(result, dict) else {"output": str(result)}
     }
 

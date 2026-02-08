@@ -42,7 +42,7 @@ class ONUProvisionRequest(BaseModel):
     client_cpf_cnpj: Optional[str] = None
     client_address: str
     service_profile: str = "default"
-    vlan_id: Optional[int] = 100
+    vlan_id: Optional[int] = None
     wan_mode: str = "dhcp"  # dhcp, pppoe, static
     pppoe_username: Optional[str] = None
     pppoe_password: Optional[str] = None

@@ -75,12 +75,12 @@ class ProvisioningHandler:
 
             # PASSO 3: Criar Service Port (Internet)
             if event.vlan_id:
-                logger.info(f"Passo 3: Criando Service Port de Internet (VLAN {event.vlan_id})...")
+                logger.info(f"Passo 3: Criando Service Port de Internet (OLT VLAN: {event.mgmt_vlan}, User VLAN: {event.vlan_id})...")
                 service_port_data = {
                     "port": event.port,
                     "ont_id": target_ont_id,
-                    "vlan": event.vlan_id,
-                    "user_vlan": event.vlan_id,
+                    "vlan": event.mgmt_vlan, # VLAN de Transporte (ex: 200)
+                    "user_vlan": event.vlan_id, # VLAN do Cliente (ex: 106)
                     "gemport": 1, # Padrão para internet
                     "description": f"INTERNET_{event.serial_number[-4:]}"
                 }
