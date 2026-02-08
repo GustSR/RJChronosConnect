@@ -5,10 +5,10 @@ class ProvisioningEvent(BaseModel):
     task_id: str
     olt_id: int
     port: str
-    ont_id: int
+    ont_id: Optional[int] = None
     serial_number: str
-    line_profile: str
-    srv_profile: str
+    line_profile: Optional[str] = None
+    srv_profile: Optional[str] = None
     description: Optional[str] = None
     
     # Dados de rede (Alinhados com o Banco de Dados e Request)
