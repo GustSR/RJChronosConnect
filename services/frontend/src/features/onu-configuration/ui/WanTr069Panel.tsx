@@ -47,14 +47,10 @@ export default function WanTr069Panel({ onuDetails }: WanTr069PanelProps) {
     setSuccess(null);
 
     try {
-      // Endpoint no OLT Manager (bypass do prefixo /api do httpClient)
-      // Rota atualizada: POST /olts/{olt_id}/onts/configure-wan
-      const endpoint = `/olt-manager/api/v1/olts/${onuDetails.oltName}/onts/configure-wan`;
+      // Endpoint Assíncrono no Backend (EDA)
+      const endpoint = `/provisioning/${onuDetails.serialNumber}/reconfigure-wan-async`;
       
       const payload = {
-        serial_number: onuDetails.serialNumber,
-        port: `0/${onuDetails.board}/${onuDetails.port}`, // Formato Frame/Slot/Porta
-        ont_id: onuDetails.ontId,
         mgmt_vlan: parseInt(mgmtVlan),
         tr069_profile_id: parseInt(tr069ProfileId),
         ip_mode: ipMode,
@@ -63,22 +59,10 @@ export default function WanTr069Panel({ onuDetails }: WanTr069PanelProps) {
         gateway: ipMode === 'static' ? gateway : undefined,
       };
 
-      // Usar fetch direto para não adicionar /api
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
+      // Usar httpClient padrão
+      await httpClient.post(endpoint, payload);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || errorData.message || `Erro HTTP ${response.status}`);
-      }
-
-      setSuccess('Configurações aplicadas com sucesso! A ONU deve reiniciar a conexão TR-069 em instantes.');
+      setSuccess('Solicitação de reconfiguração enviada com sucesso! A ONU será atualizada em instantes.');
     } catch (err: any) {
       const message = err.message || 'Erro ao aplicar configurações. Verifique os logs do servidor.';
       setError(message);

@@ -849,6 +849,61 @@ async def authorize_onu(onu_id: str, provision_data: ONUProvisionRequest, db: Se
         logger.error(f"Erro ao autorizar ONU {onu_id}: {e}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
+class WanReconfigRequest(BaseModel):
+    mgmt_vlan: int
+    tr069_profile_id: int
+    ip_mode: str
+    ip_address: Optional[str] = None
+    mask: Optional[str] = None
+    gateway: Optional[str] = None
+
+@router.post("/{onu_id}/reconfigure-wan-async")
+async def reconfigure_wan_async(onu_id: str, config_data: WanReconfigRequest, db: Session = Depends(get_db)):
+    """
+    Reconfigura WAN e TR-069 de uma ONU existente via arquitetura de eventos.
+    """
+    try:
+        task_id = str(uuid.uuid4())
+        logger.info(f"Iniciando reconfiguração ASSÍNCRONA para ONU {onu_id}, Task ID: {task_id}")
+
+        # 1. Buscar device para obter OLT ID e Porta
+        device = crud_device.get_device_by_serial_number(db, onu_id)
+        if not device or not device.olt_port:
+             raise HTTPException(status_code=404, detail="Dispositivo não encontrado ou sem porta vinculada")
+
+        olt = device.olt_port.olt
+        
+        # 2. Preparar evento (Tipo: reconfigure_wan)
+        event_payload = {
+            "event_type": "reconfigure_wan",
+            "task_id": task_id,
+            "olt_id": olt.id,
+            "port": f"0/{device.olt_port.slot}/{device.olt_port.port_number}",
+            "ont_id": device.ont_id,
+            "serial_number": onu_id,
+            # Dados de rede que vieram do request
+            "mgmt_vlan": config_data.mgmt_vlan,
+            "wan_mode": config_data.ip_mode, # Mapear ip_mode para wan_mode
+            "tr069_profile_id": config_data.tr069_profile_id,
+            "ip_address": config_data.ip_address,
+            "mask": config_data.mask,
+            "gateway": config_data.gateway
+        }
+
+        # 3. Publicar evento
+        await publisher.publish_event("task_queue", event_payload)
+
+        return {
+            "success": True,
+            "message": "Solicitação de reconfiguração enviada.",
+            "task_id": task_id,
+            "status": "queued"
+        }
+
+    except Exception as e:
+        logger.error(f"Erro ao iniciar reconfiguração assíncrona: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao enfileirar tarefa: {str(e)}")
+
 @router.delete("/{onu_id}/reject")
 async def reject_onu(onu_id: str, reason: str = "Rejected by administrator"):
     """

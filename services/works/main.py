@@ -5,6 +5,7 @@ import logging
 import time
 from app.core.config import settings
 from app.handlers.provisioning import ProvisioningHandler
+from app.handlers.reconfiguration import ReconfigurationHandler
 import redis
 
 # Configuração de Logs
@@ -33,6 +34,9 @@ async def process_message(ch, method, properties, body, redis_client):
         
         if event_type == "provisioning":
             handler = ProvisioningHandler(redis_client)
+            await handler.handle(data)
+        elif event_type == "reconfigure_wan":
+            handler = ReconfigurationHandler(redis_client)
             await handler.handle(data)
         
         ch.basic_ack(delivery_tag=method.delivery_tag)
