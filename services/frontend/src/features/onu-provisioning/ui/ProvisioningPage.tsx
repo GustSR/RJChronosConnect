@@ -138,7 +138,6 @@ export const ProvisioningPage: React.FC<Props> = ({
           client_cpf_cnpj: provisionForm.client_cpf_cnpj.trim() || undefined,
           client_address: clientAddress,
           service_profile: 'default',
-          vlan_id: 100,
           wan_mode: 'dhcp',
         });
 

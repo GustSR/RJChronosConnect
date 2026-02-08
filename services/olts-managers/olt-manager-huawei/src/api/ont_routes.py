@@ -5,7 +5,7 @@ Este módulo contém todos os endpoints específicos para gerenciamento de ONTs,
 incluindo provisionamento, monitoramento, configuração e diagnósticos.
 """
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, HTTPException
 from typing import List, Optional
 
 from ..services import olt_service
@@ -162,7 +162,10 @@ def provision_ont_simple(olt_id: int, request: ont_add_request_schema.ONTAddRequ
     Ideal para ser usada pelo orquestrador de eventos.
     """
     validate_olt_id(olt_id)
-    return olt_service.provision_ont_basic(olt_id, request)
+    result = olt_service.provision_ont_basic(olt_id, request)
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result)
+    return result
 
 @router.post("/olts/{olt_id}/onts/wan-config-only", response_model=command_response_schema.CommandResponse, summary="[Atomic] Configure WAN Only")
 def configure_wan_only(olt_id: int, request: ont_wan_config_request_schema.OntWanConfigRequest):
@@ -175,7 +178,7 @@ def configure_wan_only(olt_id: int, request: ont_wan_config_request_schema.OntWa
     # mas aqui chamamos o método atômico direto, assumindo que quem chama sabe os dados ou o service resolve)
     
     # Nota: O método configure_ont_wan_only espera parâmetros explícitos, vamos extrair do request
-    return olt_service.configure_ont_wan_only(
+    result = olt_service.configure_ont_wan_only(
         olt_id, 
         request.port, 
         request.ont_id, 
@@ -187,6 +190,9 @@ def configure_wan_only(olt_id: int, request: ont_wan_config_request_schema.OntWa
         request.ip_index,
         request.priority
     )
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result)
+    return result
 
 @router.post("/olts/{olt_id}/onts/tr069-config-only", response_model=command_response_schema.CommandResponse, summary="[Atomic] Configure TR-069 Only")
 def configure_tr069_only(olt_id: int, request: ont_tr069_config_request_schema.OntTr069ConfigRequest):
@@ -194,12 +200,15 @@ def configure_tr069_only(olt_id: int, request: ont_tr069_config_request_schema.O
     Operação atômica: Apenas configura o TR-069.
     """
     validate_olt_id(olt_id)
-    return olt_service.configure_ont_tr069_only(
+    result = olt_service.configure_ont_tr069_only(
         olt_id, 
         request.port, 
         request.ont_id, 
         request.profile_id
     )
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result)
+    return result
 
 @router.post("/olts/{olt_id}/service-ports/atomic", response_model=command_response_schema.CommandResponse, summary="[Atomic] Create Service Port")
 def create_service_port_atomic(olt_id: int, port: str, ont_id: int, vlan: int, user_vlan: Optional[int] = None, gemport: int = 1):
@@ -210,7 +219,10 @@ def create_service_port_atomic(olt_id: int, port: str, ont_id: int, vlan: int, u
     validate_olt_id(olt_id)
     # Se não vier user_vlan, assume que é igual à vlan (comportamento padrão)
     uvlan = user_vlan if user_vlan is not None else vlan
-    return olt_service.create_internet_service_port(olt_id, port, ont_id, vlan, uvlan, gemport)
+    result = olt_service.create_internet_service_port(olt_id, port, ont_id, vlan, uvlan, gemport)
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result)
+    return result
 
 # ============================================================================
 # ENDPOINTS DE DESCOBERTA E AUTOFIND

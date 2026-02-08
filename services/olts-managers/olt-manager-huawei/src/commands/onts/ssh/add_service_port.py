@@ -79,7 +79,9 @@ class AddServicePortCommand(OLTCommand):
         if traffic_profile and traffic_profile != 'default':
             command += f" rx-cttr {traffic_profile} tx-cttr {traffic_profile}"
 
-        return command
+        # Importante: service-port é comando global.
+        # Adiciona quits para garantir saída de modo interface.
+        return f"quit\nquit\n{command}"
 
     def _parse_output(self, raw_output: str, olt_version: str) -> Dict[str, Any]:
         """
