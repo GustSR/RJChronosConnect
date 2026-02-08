@@ -10,7 +10,7 @@ class BackendClient:
 
     async def update_ont_id_by_serial(self, serial_number: str, ont_id: int):
         """Atualiza o ont_id físico de um cliente provisionado usando o Serial Number."""
-        url = f"{self.base_url}/api/v1/provisioning/clients/serial/{serial_number}"
+        url = f"{self.base_url}/api/provisioning/clients/serial/{serial_number}"
         payload = {"ont_id": ont_id}
         
         async with httpx.AsyncClient() as client:
