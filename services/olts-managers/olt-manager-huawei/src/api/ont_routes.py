@@ -212,10 +212,6 @@ def configure_tr069_only(olt_id: int, request: ont_tr069_config_request_schema.O
 
 @router.post("/olts/{olt_id}/service-ports/atomic", response_model=command_response_schema.CommandResponse, summary="[Atomic] Create Service Port")
 def create_service_port_atomic(olt_id: int, port: str, ont_id: int, vlan: int, user_vlan: Optional[int] = None, gemport: int = 1):
-    """
-    Operação atômica: Cria uma service-port de internet.
-    Se user_vlan não for informado, usa o mesmo valor de vlan.
-    """
     validate_olt_id(olt_id)
     # Se não vier user_vlan, assume que é igual à vlan (comportamento padrão)
     uvlan = user_vlan if user_vlan is not None else vlan
@@ -223,6 +219,14 @@ def create_service_port_atomic(olt_id: int, port: str, ont_id: int, vlan: int, u
     if not result.get("success"):
         raise HTTPException(status_code=500, detail=result)
     return result
+
+@router.delete("/olts/{olt_id}/service-ports/atomic", response_model=command_response_schema.CommandResponse, summary="[Atomic] Delete Service Port")
+def delete_service_ports_atomic(olt_id: int, port: str, ont_id: int):
+    """
+    Operação atômica de compensação: Remove todas as service-ports da ONT.
+    """
+    validate_olt_id(olt_id)
+    return olt_service.delete_all_service_ports_for_ont(olt_id, port, ont_id)
 
 # ============================================================================
 # ENDPOINTS DE DESCOBERTA E AUTOFIND

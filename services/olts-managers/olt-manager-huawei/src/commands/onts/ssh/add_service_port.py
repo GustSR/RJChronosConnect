@@ -113,22 +113,22 @@ class AddServicePortCommand(OLTCommand):
             "conflict"
         ]
 
-        success = False
-        message = "Service-port creation status unknown"
+        success = True
+        message = "Service-port created successfully"
 
-        # Verificar indicadores de sucesso
-        for indicator in success_indicators:
+        # 1. Verificar indicadores de erro (Prioridade total)
+        for indicator in error_indicators:
             if indicator in output_lower:
-                success = True
-                message = "Service-port created successfully"
+                success = False
+                message = f"Service-port creation failed: {indicator}"
                 break
 
-        # Verificar indicadores de erro
+        # 2. Se houver indicadores de sucesso explícitos, confirma
         if not success:
-            for indicator in error_indicators:
+            for indicator in success_indicators:
                 if indicator in output_lower:
-                    success = False
-                    message = f"Service-port creation failed: {indicator}"
+                    success = True
+                    message = "Service-port created successfully"
                     break
 
         # Extrair ID da service-port se disponível

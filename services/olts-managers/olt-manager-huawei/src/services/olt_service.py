@@ -31,6 +31,7 @@ from ..commands.onts.ssh.configure_ont_wan import ConfigureOntWanCommand
 from ..commands.onts.ssh.configure_ont_tr069 import ConfigureOntTr069Command
 from ..commands.onts.ssh.get_ont_info_by_sn import GetOntInfoBySnCliCommand
 from ..commands.onts.ssh.delete_ont import DeleteOntCommand
+from ..commands.onts.ssh.undo_service_port import UndoServicePortCommand
 from ..commands.onts.ssh.get_ont_wan_indices import GetOntWanIndicesCommand
 from ..commands.onts.ssh.create_mgmt_service_port import CreateMgmtServicePortCommand
 
@@ -919,4 +920,16 @@ def delete_ont(olt_id: int, port: str, ont_id: int) -> Dict[str, Any]:
         "success": is_success,
         "message": "ONU deletada" if is_success else f"Falha ao deletar ONU: {result.get('message', 'Erro desconhecido')}",
         "details": result if isinstance(result, dict) else {"output": str(result)}
+    }
+
+def delete_all_service_ports_for_ont(olt_id: int, port: str, ont_id: int) -> Dict[str, Any]:
+    """Passo de Compensação: Remove todas as service-ports de uma ONU."""
+    result = _execute_cli_command(olt_id, UndoServicePortCommand, port=port, ont_id=ont_id)
+    
+    # Padroniza retorno para CommandResponse
+    is_success = result.get("status") == "success"
+    return {
+        "success": is_success,
+        "message": result.get("message", "Service-ports removidas"),
+        "details": result
     }

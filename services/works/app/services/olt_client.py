@@ -51,6 +51,14 @@ class OLTClient:
             response.raise_for_status()
             return response.json()
 
+    async def delete_service_ports(self, olt_id: int, port: str, ont_id: int):
+        """Compensação: Remove as service-ports antes de apagar a ONT"""
+        url = f"{self.base_url}/api/v1/olts/{olt_id}/service-ports/atomic"
+        params = {"port": port, "ont_id": ont_id}
+        async with httpx.AsyncClient() as client:
+            response = await client.delete(url, params=params, timeout=30.0)
+            return response.json()
+
     async def reboot_ont(self, olt_id: int, port: str, ont_id: int):
         """Passo Final: Reinicia para aplicar as configurações"""
         p = port.split('/')

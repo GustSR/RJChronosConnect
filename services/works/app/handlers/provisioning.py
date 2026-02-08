@@ -99,10 +99,17 @@ class ProvisioningHandler:
             
             # COMPENSAÇÃO: Se a ONT foi criada mas o resto falhou, vamos removê-la
             if ont_created:
-                logger.warning(f"Executando COMPENSAÇÃO (Rollback): Removendo ONT {target_ont_id} na porta {event.port}")
+                logger.warning(f"Executando COMPENSAÇÃO (Rollback): Limpando registros da ONT {target_ont_id}")
                 try:
+                    # 1. Tenta apagar service-ports primeiro (senão o delete ont falha)
+                    logger.info("Rollback Passo 1: Removendo Service Ports...")
+                    await self.olt_client.delete_service_ports(event.olt_id, event.port, target_ont_id)
+                    
+                    # 2. Apaga a ONT física
+                    logger.info("Rollback Passo 2: Removendo registro físico da ONT...")
                     await self.olt_client.delete_ont(event.olt_id, event.port, target_ont_id)
-                    logger.info("Compensação realizada: ONT removida.")
+                    
+                    logger.info("Compensação realizada com SUCESSO: OLT está limpa.")
                 except Exception as rollback_err:
                     logger.critical(f"ERRO CRÍTICO NA COMPENSAÇÃO: {rollback_err}")
 
