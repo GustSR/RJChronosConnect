@@ -377,37 +377,81 @@ import uuid
 @router.post("/{onu_id}/authorize-async")
 async def authorize_onu_async(onu_id: str, provision_data: ONUProvisionRequest, db: Session = Depends(get_db)):
     """
-    Versão Assíncrona: Autoriza uma ONU e delega o provisionamento para o Orquestrador (works) via eventos.
+    Versão Assíncrona: Autoriza uma ONU, persiste no banco e delega o provisionamento físico para o Orquestrador (works).
     """
     try:
         task_id = str(uuid.uuid4())
         logger.info(f"Iniciando autorização ASSÍNCRONA para ONU {onu_id}, Task ID: {task_id}")
 
-        # 1. Resolver OLT para obter o ID (necessário para a fila)
+        # 1. RESOLVER ENTIDADES NO BANCO (Lógica de Negócio)
+        
+        # 1.1 Localizar ou Criar Subscriber
+        cpf_cnpj = provision_data.client_cpf_cnpj or f"auto-{onu_id}"
+        subscriber = crud_subscriber.get_subscriber_by_cpf_cnpj(db, cpf_cnpj)
+        if not subscriber:
+            subscriber = Subscriber(
+                full_name=provision_data.client_name,
+                cpf_cnpj=cpf_cnpj,
+                address_street=provision_data.client_address,
+            )
+            db.add(subscriber)
+            db.commit()
+            db.refresh(subscriber)
+
+        # 1.2 Resolver OLT
         olt = _resolve_olt(db, provision_data)
         if not olt:
              raise HTTPException(status_code=404, detail="OLT não encontrada para provisionamento")
 
-        # 2. Preparar os dados para o Orquestrador (Event Data)
-        # Prioridade para a VLAN de serviço: Request -> Banco da OLT -> None
+        # 1.3 Resolver/Criar OltPort
+        slot_value = provision_data.slot if provision_data.slot is not None else provision_data.board or 1
+        port_value = provision_data.port or 1
+        olt_port = crud_olt.get_olt_port(db, olt.id, slot_value, port_value)
+        if not olt_port:
+            olt_port = OltPort(olt_id=olt.id, slot=slot_value, port_number=port_value)
+            db.add(olt_port)
+            db.commit()
+            db.refresh(olt_port)
+
+        # 1.4 Criar Registro do Dispositivo (Device)
+        serial_number = provision_data.serial_number or onu_id
+        device = crud_device.get_device_by_serial_number(db, serial_number)
+        
+        # Se já existe, atualizamos o vínculo
+        if device:
+            device.subscriber_id = subscriber.id
+            device.olt_port_id = olt_port.id
+            device.status_id = 1 # 'ativo'
+        else:
+            device = Device(
+                serial_number=serial_number,
+                subscriber_id=subscriber.id,
+                olt_port_id=olt_port.id,
+                status_id=1,
+                ont_id=provision_data.ont_id # Pode ser None, o worker resolverá
+            )
+            db.add(device)
+        
+        db.commit()
+        db.refresh(device)
+
+        # 2. Preparar os dados para o Orquestrador (Hardware Action)
         final_service_vlan = provision_data.vlan_id or olt.service_vlan
-        # VLAN de gerência: Banco da OLT -> 200 (padrão)
         final_mgmt_vlan = olt.mgmt_vlan or 200
 
         event_payload = {
             "event_type": "provisioning",
             "task_id": task_id,
             "olt_id": olt.id,
-            "port": _build_olt_port(provision_data) or "0/1/0",
-            "ont_id": provision_data.ont_id,
-            "serial_number": provision_data.serial_number or onu_id,
+            "port": _build_olt_port(provision_data) or f"0/{slot_value}/{port_value}",
+            "ont_id": device.ont_id,
+            "serial_number": serial_number,
             "line_profile": provision_data.line_profile or _DEFAULT_LINE_PROFILE,
             "srv_profile": provision_data.srv_profile or _resolve_srv_profile(provision_data.onu_type),
             "description": provision_data.client_name,
             
-            # Dados de rede (Separados por função)
-            "vlan_id": final_service_vlan, # VLAN de Serviço (PPPoE)
-            "mgmt_vlan": final_mgmt_vlan,   # VLAN de Gerência (TR-069)
+            "vlan_id": final_service_vlan,
+            "mgmt_vlan": final_mgmt_vlan,
             "wan_mode": provision_data.wan_mode or "dhcp",
             "tr069_profile_id": 2
         }
@@ -417,14 +461,16 @@ async def authorize_onu_async(onu_id: str, provision_data: ONUProvisionRequest, 
 
         return {
             "success": True,
-            "message": "Solicitação de provisionamento enviada com sucesso",
+            "message": "Provisionamento iniciado. Acompanhe o status no painel de dispositivos.",
             "task_id": task_id,
+            "device_id": device.id,
             "status": "queued"
         }
 
     except Exception as e:
+        db.rollback()
         logger.error(f"Erro ao iniciar autorização assíncrona: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro ao enfileirar tarefa: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao processar dados no banco: {str(e)}")
 
 @router.post("/{onu_id}/authorize")
 async def authorize_onu(onu_id: str, provision_data: ONUProvisionRequest, db: Session = Depends(get_db)):
