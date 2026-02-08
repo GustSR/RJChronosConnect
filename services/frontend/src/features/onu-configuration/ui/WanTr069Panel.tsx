@@ -77,27 +77,18 @@ export default function WanTr069Panel({ onuDetails }: WanTr069PanelProps) {
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Typography variant="body2" color="text.secondary" paragraph>
-            Configure a interface WAN de gerência para permitir que a ONU se comunique com o servidor GenieACS (TR-069).
-            Essas configurações são aplicadas diretamente na OLT.
+            Configure o vínculo da ONU com o servidor GenieACS (TR-069).
           </Typography>
         </Grid>
 
-        {/* Configuração de VLAN e Profile */}
+        {/* Configuração de Profile */}
         <Grid item xs={12} md={6}>
           <Card variant="outlined">
             <CardContent>
               <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                Parâmetros de Rede de Gerência
+                Parâmetros TR-069
               </Typography>
               <Stack spacing={3} sx={{ mt: 2 }}>
-                <TextField
-                  label="VLAN de Gerência (MGMT)"
-                  type="number"
-                  value={mgmtVlan}
-                  onChange={(e) => setMgmtVlan(e.target.value)}
-                  helperText="Padrão: 200"
-                  fullWidth
-                />
                 
                 <TextField
                   label="ID do Perfil TR-069 (OLT)"
@@ -105,6 +96,15 @@ export default function WanTr069Panel({ onuDetails }: WanTr069PanelProps) {
                   value={tr069ProfileId}
                   onChange={(e) => setTr069ProfileId(e.target.value)}
                   helperText="ID do profile criado na OLT (Ex: 2 para GenieACS)"
+                  fullWidth
+                />
+
+                <TextField
+                  label="VLAN de Gerência (Opcional)"
+                  type="number"
+                  value={mgmtVlan}
+                  onChange={(e) => setMgmtVlan(e.target.value)}
+                  helperText="Deixe em branco para manter a atual (Padrão: 200)"
                   fullWidth
                 />
               </Stack>

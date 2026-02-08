@@ -70,3 +70,4 @@ class ClientConfigurationUpdate(BaseModel):
     pppoe_username: Optional[str] = None
     pppoe_password: Optional[str] = None
     comment: Optional[str] = None
+    ont_id: Optional[int] = None

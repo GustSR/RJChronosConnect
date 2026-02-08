@@ -905,6 +905,26 @@ async def reconfigure_wan_async(onu_id: str, config_data: WanReconfigRequest, db
         logger.error(f"Erro ao iniciar reconfiguração assíncrona: {e}")
         raise HTTPException(status_code=500, detail=f"Erro ao enfileirar tarefa: {str(e)}")
 
+@router.put("/clients/serial/{serial_number}")
+async def update_client_configuration_by_serial(serial_number: str, updates: ClientConfigurationUpdate, db: Session = Depends(get_db)):
+    """
+    Atualiza configuração de um cliente provisionado buscando pelo Serial Number.
+    Utilizado pelo Worker para atualizar o ID físico da ONT.
+    """
+    device = crud_device.get_device_by_serial_number(db, serial_number)
+    if not device:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    update_data = updates.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(device, key, value)
+    
+    db.add(device)
+    db.commit()
+    db.refresh(device)
+    
+    return {"success": True, "message": "Configuração atualizada com sucesso"}
+
 @router.delete("/{onu_id}/reject")
 async def reject_onu(onu_id: str, reason: str = "Rejected by administrator"):
     """

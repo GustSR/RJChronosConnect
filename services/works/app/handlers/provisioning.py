@@ -1,6 +1,7 @@
 import logging
 from ..schemas.events import ProvisioningEvent
 from ..services.olt_client import OLTClient
+from ..services.backend_client import BackendClient
 import json
 
 logger = logging.getLogger(__name__)
@@ -8,6 +9,7 @@ logger = logging.getLogger(__name__)
 class ProvisioningHandler:
     def __init__(self, redis_client):
         self.olt_client = OLTClient()
+        self.backend_client = BackendClient()
         self.redis = redis_client
 
     async def handle(self, event_data: dict):
@@ -91,6 +93,11 @@ class ProvisioningHandler:
             await self.olt_client.reboot_ont(event.olt_id, event.port, target_ont_id)
 
             # SUCESSO FINAL
+            
+            # Sincronizar ID real com o Backend
+            logger.info(f"Sincronizando ID {target_ont_id} com o banco de dados...")
+            await self.backend_client.update_ont_id_by_serial(event.serial_number, target_ont_id)
+            
             self._update_status(event.task_id, "completed", f"Provisionamento concluído com sucesso (ID: {target_ont_id})")
             logger.info(f"Saga concluída com SUCESSO para {event.serial_number} no ID {target_ont_id}")
 
