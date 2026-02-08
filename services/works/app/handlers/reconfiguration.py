@@ -44,6 +44,20 @@ class ReconfigurationHandler:
                 }
                 await self.olt_client.configure_tr069(event.olt_id, tr069_data)
 
+            # PASSO 2b: Criar Service Port de Gerência (Obrigatório para IP)
+            if event.mgmt_vlan:
+                logger.info(f"Passo 2b: Criando Service Port de Gerência (VLAN {event.mgmt_vlan})...")
+                mgmt_sp_data = {
+                    "port": event.port,
+                    "ont_id": event.ont_id,
+                    "vlan": event.mgmt_vlan,
+                    "user_vlan": event.mgmt_vlan,
+                    "gemport": 2, # Padrão para gerência
+                    "description": f"MGMT_{event.serial_number[-4:]}"
+                }
+                # A criação de service-port pode falhar se já existir, mas o driver trata isso
+                await self.olt_client.add_service_port(event.olt_id, mgmt_sp_data)
+
             # PASSO FINAL: Reboot
             logger.info("Passo Final: Reiniciando ONU para aplicar alterações...")
             await self.olt_client.reboot_ont(event.olt_id, event.port, event.ont_id)
