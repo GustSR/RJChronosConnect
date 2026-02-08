@@ -26,7 +26,8 @@ class DeleteOntCommand:
             if hasattr(connection.connection, 'clear_buffer'):
                 connection.connection.clear_buffer()
 
-            # Usa send_command_safe para todos os comandos
+            # Garante modo global limpo
+            connection.send_command_safe("return")
             connection.send_command_safe("config")
             connection.send_command_safe(interface_cmd)
             

@@ -26,7 +26,8 @@ class RebootOntCommand:
         logger.info(f"Reiniciando ONU {self.ont_id} na porta {self.port}...")
 
         try:
-            # Usa send_command_safe para cada comando
+            # Garante modo global limpo
+            connection.send_command_safe("return")
             connection.send_command_safe("config")
             connection.send_command_safe(interface_cmd)
             
