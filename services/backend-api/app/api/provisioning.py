@@ -409,7 +409,7 @@ async def authorize_onu_async(onu_id: str, provision_data: ONUProvisionRequest, 
             "vlan_id": final_service_vlan, # VLAN de Serviço (PPPoE)
             "mgmt_vlan": final_mgmt_vlan,   # VLAN de Gerência (TR-069)
             "wan_mode": provision_data.wan_mode or "dhcp",
-            "tr069_profile_id": 1
+            "tr069_profile_id": 2
         }
 
         # 3. Publicar o evento
