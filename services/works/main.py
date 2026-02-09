@@ -35,7 +35,8 @@ async def process_message(ch, method, properties, body, redis_client):
         if event_type == "provisioning":
             handler = ProvisioningHandler(redis_client)
             await handler.handle(data)
-        elif event_type == "reconfigure_wan":
+        elif event_type in ("reconfigure_tr069", "reconfigure_wan"):
+            # Mantém compatibilidade com eventos legados reconfigure_wan
             handler = ReconfigurationHandler(redis_client)
             await handler.handle(data)
         

@@ -9,6 +9,7 @@ class OLTBase(BaseModel):
     model: Optional[str] = None
     mgmt_vlan: Optional[int] = Field(default=200, description="VLAN de gerência padrão")
     service_vlan: Optional[int] = Field(default=None, description="VLAN de serviço padrão")
+    create_mgmt_service_port: bool = Field(default=False, description="Criar service-port de gerência")
 
 class OLTCreate(OLTBase):
     # Campos opcionais para configuração automática

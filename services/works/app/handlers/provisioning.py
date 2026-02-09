@@ -75,8 +75,8 @@ class ProvisioningHandler:
                 }
                 await self.olt_client.configure_tr069(event.olt_id, tr069_data)
 
-            # PASSO 2c: Criar Service Port de Gerência (Obrigatório para IP/TR-069)
-            if event.mgmt_vlan:
+            # PASSO 2c: Criar Service Port de Gerência (Opcional, depende da flag por OLT)
+            if event.mgmt_vlan and event.create_mgmt_service_port:
                 logger.info(f"Passo 2c: Criando Service Port de Gerência (VLAN {event.mgmt_vlan})...")
                 mgmt_sp_data = {
                     "port": event.port,
@@ -87,6 +87,8 @@ class ProvisioningHandler:
                     "description": f"MGMT_{event.serial_number[-4:]}"
                 }
                 await self.olt_client.add_service_port(event.olt_id, mgmt_sp_data)
+            else:
+                logger.info("Pulando criação de Service Port de Gerência (flag desativada para esta OLT).")
 
             # PASSO 3: Criar Service Port (Internet)
             if event.vlan_id:

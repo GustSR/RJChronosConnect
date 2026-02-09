@@ -11,32 +11,13 @@ class ReconfigurationHandler:
         self.redis = redis_client
 
     async def handle(self, event_data: dict):
-        # Reutiliza o schema de evento pois tem os mesmos campos de rede
         event = ProvisioningEvent(**event_data)
-        logger.info(f"Iniciando Saga de Reconfiguração WAN para SN {event.serial_number}")
+        logger.info(f"Iniciando Saga de Ativação TR-069 para SN {event.serial_number}")
 
         try:
-            # PASSO 1: Configuração de WAN (Gerência)
-            # Só executa se houver vlan_id ou mgmt_vlan no evento
-            if event.vlan_id or event.mgmt_vlan:
-                logger.info(f"Passo 1: Reconfigurando WAN de Gerência (VLAN {event.mgmt_vlan or 200})...")
-                wan_data = {
-                    "port": event.port,
-                    "ont_id": event.ont_id,
-                    "serial_number": event.serial_number,
-                    "mgmt_vlan": event.mgmt_vlan or 200,
-                    "ip_mode": event.wan_mode,
-                    "ip_address": event.ip_address,
-                    "mask": event.mask,
-                    "gateway": event.gateway
-                }
-                await self.olt_client.configure_wan(event.olt_id, wan_data)
-            else:
-                logger.info("Pulando configuração de WAN (nenhum dado de rede enviado).")
-
-            # PASSO 2: Configuração de TR-069
+            # PASSO 1: Configuração de TR-069
             if event.tr069_profile_id:
-                logger.info("Passo 2: Reconfigurando TR-069...")
+                logger.info(f"Passo 1: Vinculando ONU {event.ont_id} ao perfil TR-069 ID {event.tr069_profile_id}...")
                 tr069_data = {
                     "port": event.port,
                     "ont_id": event.ont_id,
@@ -44,31 +25,28 @@ class ReconfigurationHandler:
                 }
                 await self.olt_client.configure_tr069(event.olt_id, tr069_data)
 
-            # PASSO 2b: Criar Service Port de Gerência (Obrigatório para IP)
-            if event.mgmt_vlan:
-                logger.info(f"Passo 2b: Criando Service Port de Gerência (VLAN {event.mgmt_vlan})...")
+            # PASSO 2: Criar Service Port de Gerência (Apenas se a flag estiver ON)
+            if event.mgmt_vlan and event.create_mgmt_service_port:
+                logger.info(f"Passo 2: Criando Service Port de Gerência (VLAN {event.mgmt_vlan})...")
                 mgmt_sp_data = {
                     "port": event.port,
                     "ont_id": event.ont_id,
                     "vlan": event.mgmt_vlan,
                     "user_vlan": event.mgmt_vlan,
-                    "gemport": 2, # Padrão para gerência
+                    "gemport": 2, 
                     "description": f"MGMT_{event.serial_number[-4:]}"
                 }
-                # A criação de service-port pode falhar se já existir, mas o driver trata isso
                 await self.olt_client.add_service_port(event.olt_id, mgmt_sp_data)
+            else:
+                logger.info("Passo 2: Pulando criação de Service Port de Gerência.")
 
-            # PASSO FINAL: Reboot
-            logger.info("Passo Final: Reiniciando ONU para aplicar alterações...")
-            await self.olt_client.reboot_ont(event.olt_id, event.port, event.ont_id)
-
-            # SUCESSO FINAL
-            self._update_status(event.task_id, "completed", "Reconfiguração concluída com sucesso")
-            logger.info(f"Reconfiguração concluída para {event.serial_number}")
+            # PASSO FINAL: SUCESSO (Sem reboot forçado para ser transparente)
+            self._update_status(event.task_id, "completed", "Configuração TR-069 aplicada com sucesso.")
+            logger.info(f"Ativação TR-069 concluída para {event.serial_number}")
 
         except Exception as e:
-            logger.error(f"FALHA NA RECONFIGURAÇÃO para {event.serial_number}: {str(e)}")
-            self._update_status(event.task_id, "failed", f"Falha na reconfiguração: {str(e)}")
+            logger.error(f"FALHA NA ATIVAÇÃO TR-069 para {event.serial_number}: {str(e)}")
+            self._update_status(event.task_id, "failed", f"Falha na configuração: {str(e)}")
 
     def _update_status(self, task_id: str, status: str, message: str):
         result = {

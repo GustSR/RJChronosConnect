@@ -22,6 +22,7 @@ class Olt(Base):
     # Configurações de Rede Padrão
     mgmt_vlan = Column(Integer, default=200, nullable=False, doc="VLAN de gerência padrão para esta OLT")
     service_vlan = Column(Integer, nullable=True, doc="VLAN de serviço (Internet/PPPoE) padrão para esta OLT")
+    create_mgmt_service_port = Column(Boolean, default=False, nullable=False, doc="Se deve criar service-port explícita para gerência")
 
     # Campos de descoberta e configuração automática
     access_protocol = Column(String, nullable=False, default="ssh", doc="Protocolo de acesso (ssh ou telnet)")

@@ -19,6 +19,7 @@ class ProvisioningEvent(BaseModel):
     mask: Optional[str] = None
     gateway: Optional[str] = None
     tr069_profile_id: Optional[int] = None
+    create_mgmt_service_port: bool = False
     
     # Metadados da Saga
     step: str = "start" # start, basic_config, wan_config, service_port, finish

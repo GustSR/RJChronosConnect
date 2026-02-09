@@ -48,7 +48,7 @@ export default function WanTr069Panel({ onuDetails }: WanTr069PanelProps) {
 
     try {
       // Endpoint Assíncrono no Backend (EDA)
-      const endpoint = `/provisioning/${onuDetails.serialNumber}/reconfigure-wan-async`;
+      const endpoint = `/provisioning/${onuDetails.serialNumber}/reconfigure-tr069-async`;
       
       const payload = {
         mgmt_vlan: parseInt(mgmtVlan),

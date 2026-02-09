@@ -454,7 +454,8 @@ async def authorize_onu_async(onu_id: str, provision_data: ONUProvisionRequest, 
             "vlan_id": final_service_vlan,
             "mgmt_vlan": final_mgmt_vlan,
             "wan_mode": provision_data.wan_mode or "dhcp",
-            "tr069_profile_id": 2
+            "tr069_profile_id": 2,
+            "create_mgmt_service_port": olt.create_mgmt_service_port
         }
 
         # 3. Publicar o evento
@@ -858,14 +859,15 @@ class WanReconfigRequest(BaseModel):
     mask: Optional[str] = None
     gateway: Optional[str] = None
 
+@router.post("/{onu_id}/reconfigure-tr069-async")
 @router.post("/{onu_id}/reconfigure-wan-async")
-async def reconfigure_wan_async(onu_id: str, config_data: WanReconfigRequest, db: Session = Depends(get_db)):
+async def reconfigure_tr069_async(onu_id: str, config_data: WanReconfigRequest, db: Session = Depends(get_db)):
     """
-    Reconfigura WAN e TR-069 de uma ONU existente via arquitetura de eventos.
+    Reconfigura apenas o TR-069 de uma ONU existente via arquitetura de eventos.
     """
     try:
         task_id = str(uuid.uuid4())
-        logger.info(f"Iniciando reconfiguração ASSÍNCRONA para ONU {onu_id}, Task ID: {task_id}")
+        logger.info(f"Iniciando reconfiguração TR-069 ASSÍNCRONA para ONU {onu_id}, Task ID: {task_id}")
 
         # 1. Buscar device para obter OLT ID e Porta
         device = crud_device.get_device_by_serial_number(db, onu_id)
@@ -874,21 +876,22 @@ async def reconfigure_wan_async(onu_id: str, config_data: WanReconfigRequest, db
 
         olt = device.olt_port.olt
         
-        # 2. Preparar evento (Tipo: reconfigure_wan)
+        # 2. Preparar evento (Tipo: reconfigure_tr069)
         event_payload = {
-            "event_type": "reconfigure_wan",
+            "event_type": "reconfigure_tr069",
             "task_id": task_id,
             "olt_id": olt.id,
             "port": f"0/{device.olt_port.slot}/{device.olt_port.port_number}",
             "ont_id": device.ont_id,
             "serial_number": onu_id,
-            # Dados de rede que vieram do request
+            # Dados que vieram do request
             "mgmt_vlan": config_data.mgmt_vlan,
-            "wan_mode": config_data.ip_mode, # Mapear ip_mode para wan_mode
+            "wan_mode": config_data.ip_mode,
             "tr069_profile_id": config_data.tr069_profile_id,
             "ip_address": config_data.ip_address,
             "mask": config_data.mask,
-            "gateway": config_data.gateway
+            "gateway": config_data.gateway,
+            "create_mgmt_service_port": olt.create_mgmt_service_port
         }
 
         # 3. Publicar evento
