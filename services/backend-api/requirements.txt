@@ -1,20 +1,74 @@
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-pydantic==2.5.0
-sqlalchemy==2.0.23
-alembic==1.12.1
-psycopg2-binary==2.9.9
-redis==5.0.1
-celery==5.3.4
+# ===========================================================
+# RJChronosConnect — Backend Dependencies
+# Otimizado para produção enterprise
+# ===========================================================
+
+# --- Core Framework ---
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+gunicorn==23.0.0
+pydantic==2.10.4
+pydantic-settings==2.7.1
+
+# --- Database ---
+sqlalchemy[asyncio]==2.0.36
+alembic==1.14.1
+asyncpg==0.30.0
+psycopg2-binary==2.9.10
+
+# --- Cache & Sessions ---
+redis==5.2.1
+
+# --- Message Queue ---
+celery[redis]==5.4.0
+kombu==5.4.2
+
+# --- Auth & Security ---
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
-python-multipart==0.0.6
-python-dotenv==1.0.0
-httpx==0.25.2
-pandas==2.1.3
-numpy==1.25.2
-scikit-learn==1.3.2
-asyncpg==0.29.0
-aioredis==2.0.1
-prometheus-client==0.19.0
-structlog==23.2.0
+python-multipart==0.0.19
+slowapi==0.1.9
+
+# --- HTTP Client ---
+httpx==0.28.1
+aiohttp==3.11.11
+
+# --- Data & ML ---
+pandas==2.2.3
+numpy==2.2.2
+scikit-learn==1.6.1
+
+# --- SNMP (OLT Management) ---
+pysnmp==7.1.16
+pyasn1==0.6.1
+
+# --- SSH (OLT Commands) ---
+paramiko==3.5.0
+
+# --- Monitoring ---
+prometheus-client==0.21.1
+prometheus-fastapi-instrumentator==7.0.2
+
+# --- Logging ---
+structlog==24.4.0
+python-json-logger==3.2.1
+
+# --- Config ---
+python-dotenv==1.0.1
+
+# --- Reports ---
+openpyxl==3.1.5
+reportlab==4.2.5
+
+# --- WebSocket ---
+websockets==14.2
+
+# --- Email ---
+aiosmtplib==3.0.2
+
+# --- Validation ---
+email-validator==2.1.1
+
+# --- Testing ---
+pytest==8.3.4
+pytest-asyncio==0.25.2

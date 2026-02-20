@@ -7,6 +7,10 @@ from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel
 import logging
+import os
+
+# Prometheus instrumentation
+from prometheus_fastapi_instrumentator import Instrumentator
 
 # GenieACS integration imports
 from app.services.genieacs_client import get_genieacs_client
@@ -21,7 +25,11 @@ from app.services.genieacs_transformers import (
 )
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+log_level = os.environ.get("LOG_LEVEL", "info").upper()
+logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 # Pydantic models
@@ -161,21 +169,35 @@ mock_user = User(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("🚀 RJChronos Backend starting up...")
+    logger.info(f"   Environment: {os.environ.get('ENVIRONMENT', 'development')}")
+    logger.info(f"   Log Level: {log_level}")
     yield
     logger.info("🛑 RJChronos Backend shutting down...")
 
 # FastAPI app
 app = FastAPI(
     title="RJChronos API",
-    description="Sistema de Gestão e Monitoramento de Rede",
+    description="Sistema de Gestão e Monitoramento de Rede para ISPs",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url="/api/docs" if os.environ.get("ENVIRONMENT") != "production" else None,
+    redoc_url="/api/redoc" if os.environ.get("ENVIRONMENT") != "production" else None,
 )
 
-# CORS middleware
+# Prometheus metrics instrumentation
+Instrumentator().instrument(app).expose(app, endpoint="/api/metrics")
+
+# CORS middleware — lê origens de variável de ambiente
+cors_origins_raw = os.environ.get(
+    "CORS_ORIGINS",
+    "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"
+)
+cors_origins = [origin.strip() for origin in cors_origins_raw.split(",") if origin.strip()]
+logger.info(f"CORS origins configurados: {cors_origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -191,7 +213,37 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 # Routes
 @app.get("/")
 async def root():
-    return {"message": "RJChronos API v1.0.0", "status": "online"}
+    return {
+        "message": "RJChronos API v1.0.0",
+        "status": "online",
+        "environment": os.environ.get("ENVIRONMENT", "development")
+    }
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint — verifica conectividade com serviços"""
+    checks = {
+        "api": "ok",
+        "genieacs": "unknown",
+    }
+    overall_status = "ok"
+
+    # Verificar GenieACS
+    try:
+        client = await get_genieacs_client()
+        devices = await client.get_devices(query={})
+        checks["genieacs"] = "ok"
+    except Exception as e:
+        checks["genieacs"] = f"error: {str(e)[:100]}"
+        overall_status = "degraded"
+
+    status_code = 200 if overall_status == "ok" else 503
+    return {
+        "status": overall_status,
+        "version": "1.0.0",
+        "checks": checks
+    }
+
 
 @app.get("/api/auth/user", response_model=User)
 async def get_user(current_user: User = Depends(get_current_user)):

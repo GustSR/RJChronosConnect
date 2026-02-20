@@ -3,7 +3,7 @@
 # =================================================================
 
 # Usar uma imagem base do Python moderna e leve
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 # Configurar variáveis de ambiente para desenvolvimento em contêiner
 # 1. Impede o Python de criar arquivos .pyc

@@ -1,81 +1,286 @@
 version: '3.8'
 
-# Arquivo base do Docker Compose.
-# Contém a definição de todos os serviços, redes e volumes que são comuns
-# a todos os ambientes (desenvolvimento, produção, etc.).
+# ============================================================
+# RJChronosConnect — Docker Compose Base (Otimizado)
+# Última atualização: 20/02/2026
+# ============================================================
+# Contém a definição de todos os serviços, redes e volumes
+# comuns a todos os ambientes (dev, staging, prod).
+# ============================================================
 
 services:
+
+  # =============================================
+  # REVERSE PROXY — Nginx
+  # =============================================
   reverse-proxy:
     image: nginx:stable-alpine
     ports:
       - "8081:80"
     volumes:
-      - ./infrastructure/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
       - rjchronos-net
     depends_on:
-      - frontend
-      - backend
-      - genieacs
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_started
+      genieacs:
+        condition: service_healthy
+    restart: unless-stopped
 
+  # =============================================
+  # FRONTEND — React 19 + Vite
+  # =============================================
   frontend:
     build:
       context: ./services/frontend
     networks:
       - rjchronos-net
+    restart: unless-stopped
 
+  # =============================================
+  # BACKEND API — FastAPI + SQLAlchemy
+  # =============================================
   backend:
     build:
       context: ./services/backend-api
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
-      - GENIACS_API_URL=http://genieacs:7557/
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-app:5432/${POSTGRES_DB}
+      - GENIEACS_NBI_URL=http://genieacs:7557
+      - GENIEACS_FS_URL=http://genieacs:7567
+      - REDIS_URL=redis://redis:6379/0
+      - RABBITMQ_URL=amqp://rjchronos:${RABBITMQ_PASSWORD:-rjchronos2026}@rabbitmq:5672/
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-secret-key-change-in-production}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
     networks:
       - rjchronos-net
     depends_on:
-      - db-app
+      db-app:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      genieacs:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
 
+  # =============================================
+  # GENIEACS — Motor TR-069 (CWMP + NBI + FS + UI)
+  # =============================================
+  # Portas expostas:
+  #   7547 = CWMP (conexões dos CPEs via TR-069)
+  #   7557 = NBI  (API REST para nosso backend)
+  #   7567 = FS   (File Server para firmware)
+  #   3001 = UI   (Interface web do GenieACS)
+  # =============================================
   genieacs:
     build:
       context: ./services/genieacs
     ports:
-      - "7547:7547"
-      - "7557:7557"
-      - "7567:7567"
-      - "3001:3000"
+      - "7547:7547"   # CWMP — aberto para CPEs da rede do ISP
+      - "7557:7557"   # NBI  — acessado apenas pelo backend
+      - "7567:7567"   # FS   — File Server para firmware updates
+      - "3001:3000"   # UI   — Interface administrativa do GenieACS
     environment:
+      # --- Conexões ---
       - GENIEACS_MONGODB_CONNECTION_URL=mongodb://db-acs:27017/genieacs
       - GENIEACS_REDIS_HOST=redis
+      - GENIEACS_REDIS_PORT=6379
       - GENIEACS_UI_JWT_SECRET=${UI_JWT_SECRET}
+
+      # --- CWMP Performance Tuning ---
+      # Workers CWMP: 1 worker por ~2000 CPEs. Para 10k CPEs use 4-8.
+      - GENIEACS_CWMP_WORKER_PROCESSES=4
+      - GENIEACS_CWMP_PORT=7547
+      - GENIEACS_CWMP_SSL=false
+      # Timeout de conexão CWMP (ms) — CPEs lentos precisam de mais tempo
+      - GENIEACS_CWMP_CONNECTION_REQUEST_TIMEOUT=30000
+      # Intervalo mínimo entre informs (segundos) — evita sobrecarga
+      - GENIEACS_CWMP_MIN_INFORM_INTERVAL=60
+
+      # --- NBI Performance Tuning ---
+      # Workers NBI: API REST. 2-4 workers é suficiente.
+      - GENIEACS_NBI_WORKER_PROCESSES=2
+      - GENIEACS_NBI_PORT=7557
+
+      # --- FS (File Server) Tuning ---
+      # Workers FS: Para downloads de firmware. 2 workers.
+      - GENIEACS_FS_WORKER_PROCESSES=2
+      - GENIEACS_FS_PORT=7567
+      - GENIEACS_FS_HOSTNAME=genieacs
+
+      # --- UI Tuning ---
+      - GENIEACS_UI_PORT=3000
+
+      # --- Extension Scripts ---
+      - GENIEACS_EXT_DIR=/opt/genieacs/ext
+
+      # --- Debug & Logging ---
+      - GENIEACS_DEBUG_FILE=/var/log/genieacs/debug.yaml
+      - GENIEACS_ACCESS_LOG_FILE=/var/log/genieacs/access.log
+
+      # --- Limites de operação ---
+      # Máximo de dispositivos por página na UI
+      - GENIEACS_MAX_COMMIT_ITERATIONS=64
+      # Timeout de tarefas (ms) — firmware update pode demorar
+      - GENIEACS_TASKS_TIMEOUT=600000
+    volumes:
+      # Scripts de extensão (provisions, presets customizados)
+      - ./services/genieacs/ext:/opt/genieacs/ext:ro
+      # Logs persistentes
+      - genieacs_logs:/var/log/genieacs
+      # Arquivos de firmware para upload OTA
+      - genieacs_firmware:/opt/genieacs/firmware
     networks:
       - rjchronos-net
     depends_on:
-      - db-acs
-      - redis
+      db-acs:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:7557/devices/?query=%7B%7D&limit=1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
 
+  # =============================================
+  # PostgreSQL — Banco principal da aplicação
+  # =============================================
   db-app:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
+      # Tuning para ~5000 dispositivos
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --locale=pt_BR.UTF-8
+    command:
+      - "postgres"
+      - "-c" 
+      - "shared_buffers=256MB"
+      - "-c"
+      - "effective_cache_size=768MB"
+      - "-c"
+      - "work_mem=16MB"
+      - "-c"
+      - "max_connections=200"
+      - "-c"
+      - "log_min_duration_statement=1000"
+    volumes:
+      - postgres_app_data:/var/lib/postgresql/data
     networks:
       - rjchronos-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
 
+  # =============================================
+  # MongoDB — Banco do GenieACS (device data, tasks, faults)
+  # =============================================
   db-acs:
     image: mongo:8.0
+    command: >
+      mongod
+      --wiredTigerCacheSizeGB 1
+      --storageEngine wiredTiger
+      --directoryperdb
+      --bind_ip_all
+    volumes:
+      - mongo_acs_data:/data/db
     networks:
       - rjchronos-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
 
+  # =============================================
+  # Redis — Cache, sessões, filas do Celery
+  # =============================================
   redis:
-    image: redis:alpine
+    image: redis:7-alpine
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save 60 1000
+      --appendonly yes
+      --tcp-keepalive 60
+    volumes:
+      - redis_data:/data
     networks:
       - rjchronos-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
 
+  # =============================================
+  # RabbitMQ — Filas de tarefas assíncronas
+  # =============================================
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "15672:15672"  # Management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=rjchronos
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-rjchronos2026}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - rjchronos-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+# =============================================
+# VOLUMES PERSISTENTES
+# =============================================
 volumes:
   postgres_app_data:
+    name: rjchronos_postgres_data
   mongo_acs_data:
+    name: rjchronos_mongo_data
+  redis_data:
+    name: rjchronos_redis_data
+  rabbitmq_data:
+    name: rjchronos_rabbitmq_data
+  genieacs_logs:
+    name: rjchronos_genieacs_logs
+  genieacs_firmware:
+    name: rjchronos_genieacs_firmware
 
+# =============================================
+# REDE
+# =============================================
 networks:
   rjchronos-net:
     driver: bridge
+    name: rjchronos_network
