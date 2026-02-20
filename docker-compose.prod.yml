@@ -59,6 +59,7 @@ services:
       redis:
         condition: service_healthy
     environment:
+      - PYTHONPATH=/app
       - CELERY_BROKER_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672//
       - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/0
       - RABBITMQ_HOST=rabbitmq
@@ -82,6 +83,7 @@ services:
       - rabbitmq
       - redis
     environment:
+      - PYTHONPATH=/app
       - CELERY_BROKER_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672//
       - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/0
       - RABBITMQ_HOST=rabbitmq
