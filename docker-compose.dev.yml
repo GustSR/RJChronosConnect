@@ -81,7 +81,10 @@ services:
             - OLT_MANAGER_URL=http://olt-manager-huawei:8001
             - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
             - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+            - RABBITMQ_HOST=rabbitmq
             - REDIS_PASSWORD=${REDIS_PASSWORD}
+            - REDIS_HOST=redis
+            - CELERY_BROKER_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672//
             - CREDENTIAL_ENCRYPTION_KEY=${CREDENTIAL_ENCRYPTION_KEY}
 
     # --- Novos Serviços ---
@@ -109,8 +112,6 @@ services:
             context: ./services/works
             dockerfile: Dockerfile.dev
         container_name: rjchronos_works_dev
-        # volumes:
-        #     - ./services/works:/app
         networks:
             - rjchronos-net
         depends_on:
@@ -122,13 +123,35 @@ services:
                 condition: service_started
             olt-manager-huawei:
                 condition: service_started
-        command: python -u main.py
+        command: celery -A celery_app worker --loglevel=info --concurrency=4
         environment:
+            - CELERY_BROKER_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672//
+            - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/0
+            - RABBITMQ_HOST=rabbitmq
             - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
             - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+            - REDIS_HOST=redis
             - REDIS_PASSWORD=${REDIS_PASSWORD}
             - OLT_MANAGER_HUAWEI_URL=http://olt-manager-huawei:8001
             - BACKEND_API_URL=http://backend:8000
+
+    celery-beat:
+        build:
+            context: ./services/works
+            dockerfile: Dockerfile.dev
+        container_name: rjchronos_celery_beat_dev
+        networks:
+            - rjchronos-net
+        depends_on:
+            - rabbitmq
+            - redis
+        command: celery -A celery_app beat --loglevel=info
+        environment:
+            - CELERY_BROKER_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672//
+            - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/0
+            - RABBITMQ_HOST=rabbitmq
+            - REDIS_HOST=redis
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
 
     olt-manager-huawei:
         build:

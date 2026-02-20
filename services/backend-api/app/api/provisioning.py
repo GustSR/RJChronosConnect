@@ -372,7 +372,7 @@ async def get_pending_onus(db: Session = Depends(get_db)):
         logger.error(f"Erro ao buscar ONUs pendentes: {e}")
         return []
 
-from ..services.rabbitmq_publisher import publisher
+from ..tasks import send_provisioning_task, send_reconfiguration_task
 import uuid
 
 @router.post("/{onu_id}/authorize-async")
@@ -458,13 +458,13 @@ async def authorize_onu_async(onu_id: str, provision_data: ONUProvisionRequest, 
             "create_mgmt_service_port": olt.create_mgmt_service_port
         }
 
-        # 3. Publicar o evento
-        await publisher.publish_event("task_queue", event_payload)
+        # 3. Enviar para Celery
+        task_id_result = send_provisioning_task(event_payload)
 
         return {
             "success": True,
             "message": "Provisionamento iniciado. Acompanhe o status no painel de dispositivos.",
-            "task_id": task_id,
+            "task_id": task_id_result,
             "device_id": device.id,
             "status": "queued"
         }
@@ -894,13 +894,13 @@ async def reconfigure_tr069_async(onu_id: str, config_data: WanReconfigRequest, 
             "create_mgmt_service_port": olt.create_mgmt_service_port
         }
 
-        # 3. Publicar evento
-        await publisher.publish_event("task_queue", event_payload)
+        # 3. Enviar para Celery
+        task_id_result = send_reconfiguration_task(event_payload)
 
         return {
             "success": True,
             "message": "Solicitação de reconfiguração enviada.",
-            "task_id": task_id,
+            "task_id": task_id_result,
             "status": "queued"
         }
 
