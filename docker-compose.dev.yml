@@ -293,6 +293,23 @@ services:
             timeout: 5s
             retries: 5
 
+    db-test:
+        container_name: rjchronos_db_test
+        image: postgres:15-alpine
+        environment:
+            - POSTGRES_USER=rjchronos
+            - POSTGRES_PASSWORD=rjchronos_test
+            - POSTGRES_DB=rjchronos_test
+        ports:
+            - "5433:5432"
+        networks:
+            - rjchronos-net
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U rjchronos -d rjchronos_test"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
 volumes:
     postgres_app_data_dev:
     mongo_acs_data_dev:
