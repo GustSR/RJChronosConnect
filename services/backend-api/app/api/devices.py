@@ -3,7 +3,8 @@ from typing import List, Optional
 from datetime import datetime
 from sqlalchemy.orm import Session
 
-from ..schemas.device import CPE, ONU, OLT
+from ..schemas.device import CPE, ONU, DeviceResponse
+from ..schemas.olt import OLT as OLTSchema
 from ..services.genieacs_client import get_genieacs_client
 from ..services.genieacs_transformers import transform_genieacs_to_cpe, transform_genieacs_to_onu
 from ..services.olt_manager_client import delete_olt_manager
@@ -68,7 +69,7 @@ async def get_cpes():
         logger.error(f"Erro ao buscar CPEs do GenieACS: {e}")
         return []
 
-@router.get("/onus", response_model=List[ONU])
+@router.get("/onus", response_model=List[DeviceResponse])
 async def get_onus(db: Session = Depends(get_db)):
     """
     Retorna lista de ONUs APENAS provisionadas/autorizadas pelo sistema
@@ -76,7 +77,7 @@ async def get_onus(db: Session = Depends(get_db)):
     onus = crud_device.get_devices(db)
     return onus
 
-@router.get("/olts", response_model=List[OLT])
+@router.get("/olts", response_model=List[OLTSchema])
 async def get_olts(db: Session = Depends(get_db)):
     olts = crud_olt.get_olts(db)
     return olts

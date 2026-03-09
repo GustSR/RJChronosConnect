@@ -98,28 +98,14 @@ class TestListONUs:
         assert response.status_code == 200
         assert response.json() == []
 
-    @pytest.mark.xfail(
-        reason=(
-            "Schema mismatch: o response_model ONU herda de Device(BaseModel) "
-            "que espera campos como 'model: str', 'status: str', 'id: str', "
-            "'olt_id: str', 'pon_port: str' — campos inexistentes no modelo "
-            "SQLAlchemy Device. A serializacao falha com ValidationError."
-        ),
-        strict=False,
-    )
     def test_list_onus_returns_created(self, client, sample_device):
-        """Com device criado, GET /onus deve retornar a lista com o device.
-
-        NOTA: Este teste provavelmente falha por incompatibilidade entre o
-        modelo SQLAlchemy (Device) e o schema Pydantic de resposta (ONU).
-        O schema ONU espera campos como 'model', 'status', 'olt_id', 'pon_port'
-        que nao existem no modelo do banco.
-        """
+        """Com device criado, GET /onus deve retornar a lista com o device."""
         response = client.get(f"{BASE_URL}/onus")
 
         assert response.status_code == 200
         data = response.json()
         assert len(data) >= 1
+        assert data[0]["serial_number"] == "HWTC-AABBCCDD"
 
 
 # ── TestListOLTs (via devices router) ───────────────────────────────────
@@ -135,26 +121,14 @@ class TestListOLTs:
         assert response.status_code == 200
         assert response.json() == []
 
-    @pytest.mark.xfail(
-        reason=(
-            "Schema mismatch: o response_model OLT herda de Device(BaseModel) "
-            "que espera campos como 'model: str', 'status: str', 'id: str', "
-            "'location: str' — incompativel com o modelo SQLAlchemy Olt."
-        ),
-        strict=False,
-    )
     def test_list_olts_via_devices_returns_created(self, client, sample_olt_with_port):
-        """Com OLT criada, GET /olts deve retornar a lista com a OLT.
-
-        NOTA: Este teste provavelmente falha por incompatibilidade entre o
-        modelo SQLAlchemy (Olt) e o schema Pydantic de resposta (OLT).
-        O schema OLT herda de Device que espera 'id: str', 'status: str', etc.
-        """
+        """Com OLT criada, GET /olts deve retornar a lista com a OLT."""
         response = client.get(f"{BASE_URL}/olts")
 
         assert response.status_code == 200
         data = response.json()
         assert len(data) >= 1
+        assert data[0]["name"] == "OLT-DEVICE-TEST"
 
 
 # ── TestOLTStats ────────────────────────────────────────────────────────
