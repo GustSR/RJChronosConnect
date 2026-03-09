@@ -49,8 +49,35 @@ def db_session():
 
 @pytest.fixture()
 def client(db_session):
-    """TestClient do FastAPI com override da dependencia get_db."""
+    """TestClient do FastAPI com override da dependencia get_db.
+    Injeta headers de auth por padrao para simular requests vindos do Edge.
+    """
+    def override_get_db():
+        try:
+            yield db_session
+        finally:
+            pass
 
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as c:
+        original_request = c.request
+
+        def authenticated_request(method, url, **kwargs):
+            headers = kwargs.get("headers", {}) or {}
+            if "X-User-Id" not in headers:
+                headers["X-User-Id"] = "test-user-id"
+                headers["X-User-Email"] = "test@rjchronos.com"
+            kwargs["headers"] = headers
+            return original_request(method, url, **kwargs)
+
+        c.request = authenticated_request
+        yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture()
+def unauthenticated_client(db_session):
+    """TestClient SEM headers de auth (para testar rejeicao)."""
     def override_get_db():
         try:
             yield db_session

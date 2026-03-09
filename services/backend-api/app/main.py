@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 
 from .api import auth, devices, monitoring, provisioning, subscribers, tasks, wifi, olt_management, internal_olts
 from .core.logging import init_logging, cleanup_logging, log_api_request, log_error
+from .middleware.auth import EdgeAuthMiddleware
 
 
 @asynccontextmanager
@@ -43,6 +44,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Middleware de autenticacao por header do Edge Gateway
+app.add_middleware(EdgeAuthMiddleware)
 
 
 # Middleware para logging automático de requests
@@ -92,6 +96,10 @@ async def logging_middleware(request: Request, call_next):
 
         # Re-raise para que o FastAPI trate o erro normalmente
         raise
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
 
 @app.get("/")
 async def root():
