@@ -109,3 +109,27 @@ export const historicoAlteracoes = [
     descricao: 'Realizou configuração inicial do equipamento',
   },
 ];
+
+export const mockGeneralInfo = {
+  manufacturer: 'ZTE Corporation',
+  softwareVersion: 'V2.1.3_220825',
+  hardwareVersion: 'V1.0',
+  cpuUsage: '12%',
+  totalRam: '128 MB',
+  freeRam: '95 MB',
+  uptime: '15 dias, 8 horas, 23 minutos',
+};
+
+export const mockDeviceLogs = [
+  { timestamp: '2024-01-15 16:30:25', message: 'Sistema iniciado' },
+  { timestamp: '2024-01-15 16:30:45', message: 'WiFi configurado' },
+  { timestamp: '2024-01-15 16:31:00', message: 'DHCP ativo' },
+  { timestamp: '2024-01-15 16:31:15', message: 'Primeira conexão de cliente' },
+];
+
+export const mockLanPorts = [
+  { name: 'LAN1', active: true, connected: true, speed: '1000 Mbps', duplex: 'Full' },
+  { name: 'LAN2', active: false, connected: false, speed: '-', duplex: '-' },
+  { name: 'LAN3', active: true, connected: true, speed: '100 Mbps', duplex: 'Full' },
+  { name: 'LAN4', active: false, connected: false, speed: '-', duplex: '-' },
+];

@@ -54,12 +54,9 @@ export function HostsPanel({ hosts }: Props) {
         component={Paper}
         sx={{
           borderRadius: 2,
-          border: '1px solid #e0e0e0',
+          border: 1,
+          borderColor: 'divider',
           boxShadow: 'none',
-          transition: 'none !important',
-          '&:hover': {
-            boxShadow: 'none !important',
-          },
           overflowX: 'hidden',
         }}
       >
@@ -72,7 +69,7 @@ export function HostsPanel({ hosts }: Props) {
           aria-label="tabela de hosts conectados"
         >
           <TableHead>
-            <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
+            <TableRow sx={{ bgcolor: 'action.hover' }}>
               <TableCell
                 sx={{
                   fontWeight: 600,
@@ -151,9 +148,8 @@ export function HostsPanel({ hosts }: Props) {
                 key={host.id}
                 sx={{
                   '&:hover': {
-                    backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                    bgcolor: 'action.hover',
                   },
-                  transition: 'none !important',
                 }}
               >
                 <TableCell component="th" scope="row">
@@ -193,8 +189,6 @@ export function HostsPanel({ hosts }: Props) {
                     variant="outlined"
                     sx={{
                       fontSize: '11px',
-                      transition: 'none !important',
-                      '&:hover': { transform: 'none !important' },
                     }}
                   />
                 </TableCell>
@@ -228,8 +222,6 @@ export function HostsPanel({ hosts }: Props) {
                     sx={{
                       fontSize: '10px',
                       height: '22px',
-                      transition: 'none !important',
-                      '&:hover': { transform: 'none !important' },
                     }}
                   />
                 </TableCell>
@@ -241,8 +233,6 @@ export function HostsPanel({ hosts }: Props) {
                     sx={{
                       fontSize: '10px',
                       height: '22px',
-                      transition: 'none !important',
-                      '&:hover': { transform: 'none !important' },
                     }}
                   />
                 </TableCell>
