@@ -4,6 +4,7 @@ import { swagger } from "@elysiajs/swagger";
 import { auth } from "./auth";
 import { config } from "./config";
 import { proxyRequest } from "./proxy";
+import { getAuthHeaders, sanitizeRequest } from "./middleware";
 
 const authBasePath = config.betterAuthBasePath.replace(/\/$/, "");
 const authWildcardPath = `${authBasePath}/*`;
@@ -95,7 +96,13 @@ if (config.legacyAuthProxyEnabled) {
 
 app.all(
   "/api/*",
-  ({ request }) => proxyRequest(request, config.backendInternalUrl),
+  async ({ request }) => {
+    const sanitized = sanitizeRequest(request);
+    const authHeaders = await getAuthHeaders(sanitized);
+    return proxyRequest(sanitized, config.backendInternalUrl, {
+      extraHeaders: authHeaders,
+    });
+  },
   {
     detail: {
       tags: ["Core"],
