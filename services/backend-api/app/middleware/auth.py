@@ -16,7 +16,6 @@ PUBLIC_PATH_PREFIXES = (
     "/openapi.json",
     "/redoc",
     "/health",
-    "/api/auth",
 )
 
 PUBLIC_PATHS_EXACT = (
