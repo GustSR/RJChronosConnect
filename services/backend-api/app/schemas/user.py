@@ -1,11 +1,22 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime
 
-class User(BaseModel):
-    id: str
+
+class UserBase(BaseModel):
     email: str
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    role: str = "operator"
+    full_name: Optional[str] = None
+
+
+class UserResponse(UserBase):
+    id: int
+    external_id: Optional[str] = None
+    is_active: bool
     created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# Alias para compatibilidade com imports existentes
+User = UserResponse
