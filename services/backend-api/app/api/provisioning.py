@@ -372,8 +372,20 @@ async def get_pending_onus(db: Session = Depends(get_db)):
         logger.error(f"Erro ao buscar ONUs pendentes: {e}")
         return []
 
-from ..tasks import send_provisioning_task, send_reconfiguration_task
+from ..tasks import send_provisioning_task, send_reconfiguration_task, get_task_status
 import uuid
+
+@router.get("/tasks/{task_id}")
+async def get_provisioning_task_status(task_id: str):
+    """
+    Retorna o status de uma tarefa de provisionamento pelo task_id.
+    """
+    try:
+        status = get_task_status(task_id)
+        return status
+    except Exception as e:
+        logger.error(f"Erro ao consultar status da task {task_id}: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao consultar status da tarefa")
 
 @router.post("/{onu_id}/authorize-async")
 async def authorize_onu_async(onu_id: str, provision_data: ONUProvisionRequest, db: Session = Depends(get_db)):

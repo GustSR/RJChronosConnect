@@ -87,21 +87,26 @@ class BackendClient:
         self.base_url = os.getenv("BACKEND_API_URL", "http://backend:8000")
 
     async def update_ont_id_by_serial(self, serial_number: str, ont_id: int):
-        url = f"{self.base_url}/api/v1/subscribers/by-serial/{serial_number}/ont-id"
+        url = f"{self.base_url}/api/provisioning/clients/serial/{serial_number}"
         async with httpx.AsyncClient() as client:
             response = await client.put(url, json={"ont_id": ont_id}, timeout=20.0)
             response.raise_for_status()
             return response.json()
 
 
-def update_status(task_id: str, status: str, message: str):
+def update_status(task_id: str, status: str, message: str, step_current: int = 0, step_total: int = 8, step_name: str = ""):
     redis_client = get_redis()
-    result = {
+    data = {
         "task_id": task_id,
         "status": status,
-        "message": message
+        "message": message,
+        "step_current": step_current,
+        "step_total": step_total,
+        "step_name": step_name,
     }
-    redis_client.lpush("task_results", json.dumps(result))
+    key = f"task:{task_id}"
+    redis_client.hset(key, mapping=data)
+    redis_client.expire(key, 86400)
 
 
 @celery_app.task(bind=True, name="app.tasks.provisioning.provision_ont", max_retries=3, default_retry_delay=60)
@@ -119,7 +124,9 @@ def provision_ont(self: Task, event_data: dict):
 
     async def run_provisioning():
         nonlocal ont_created, target_ont_id
-        
+
+        update_status(event["task_id"], "running", "Iniciando provisionamento", step_current=0, step_name="init")
+
         if not target_ont_id or target_ont_id <= 0:
             logger.info(f"[Celery] Descobrindo ID livre na porta {event.get('port')}...")
             provisioned = await olt_client.get_provisioned_onts(event["olt_id"], event["port"])
@@ -135,6 +142,7 @@ def provision_ont(self: Task, event_data: dict):
             
             logger.info(f"[Celery] ID {target_ont_id} selecionado")
 
+        update_status(event["task_id"], "running", "Registrando ONT na OLT", step_current=1, step_name="add_ont_basic")
         basic_data = {
             "port": event["port"],
             "ont_id": target_ont_id,
@@ -146,6 +154,7 @@ def provision_ont(self: Task, event_data: dict):
         await olt_client.add_ont_basic(event["olt_id"], basic_data)
         ont_created = True
 
+        update_status(event["task_id"], "running", "Configurando WAN", step_current=2, step_name="configure_wan")
         if event.get("mgmt_vlan"):
             wan_data = {
                 "port": event["port"],
@@ -159,6 +168,7 @@ def provision_ont(self: Task, event_data: dict):
             }
             await olt_client.configure_wan(event["olt_id"], wan_data)
 
+        update_status(event["task_id"], "running", "Configurando TR-069", step_current=3, step_name="configure_tr069")
         if event.get("tr069_profile_id"):
             tr069_data = {
                 "port": event["port"],
@@ -167,6 +177,7 @@ def provision_ont(self: Task, event_data: dict):
             }
             await olt_client.configure_tr069(event["olt_id"], tr069_data)
 
+        update_status(event["task_id"], "running", "Criando service port de gerência", step_current=4, step_name="mgmt_service_port")
         if event.get("mgmt_vlan") and event.get("create_mgmt_service_port"):
             mgmt_sp_data = {
                 "port": event["port"],
@@ -178,6 +189,7 @@ def provision_ont(self: Task, event_data: dict):
             }
             await olt_client.add_service_port(event["olt_id"], mgmt_sp_data)
 
+        update_status(event["task_id"], "running", "Criando service port de internet", step_current=5, step_name="internet_service_port")
         if event.get("vlan_id"):
             service_port_data = {
                 "port": event["port"],
@@ -189,14 +201,16 @@ def provision_ont(self: Task, event_data: dict):
             }
             await olt_client.add_service_port(event["olt_id"], service_port_data)
 
+        update_status(event["task_id"], "running", "Reiniciando ONT", step_current=6, step_name="reboot_ont")
         await olt_client.reboot_ont(event["olt_id"], event["port"], target_ont_id)
 
+        update_status(event["task_id"], "running", "Sincronizando banco de dados", step_current=7, step_name="db_sync")
         try:
             await backend_client.update_ont_id_by_serial(event["serial_number"], target_ont_id)
         except Exception as db_err:
             logger.warning(f"[Celery] Provisionamento físico OK, falha DB: {db_err}")
 
-        update_status(event["task_id"], "completed", f"Provisionamento concluído (ID: {target_ont_id})")
+        update_status(event["task_id"], "completed", f"Provisionamento concluído (ID: {target_ont_id})", step_current=8, step_name="done")
         logger.info(f"[Celery] SUCESSO para {event.get('serial_number')}")
 
     async def run_rollback():
@@ -214,7 +228,7 @@ def provision_ont(self: Task, event_data: dict):
         logger.error(f"[Celery] FALHA no provisionamento: {str(e)}")
         if ont_created:
             asyncio.run(run_rollback())
-        update_status(event["task_id"], "failed", f"Falha: {str(e)}")
+        update_status(event["task_id"], "failed", f"Falha: {str(e)}", step_name="error")
         
         try:
             raise self.retry(exc=e)
