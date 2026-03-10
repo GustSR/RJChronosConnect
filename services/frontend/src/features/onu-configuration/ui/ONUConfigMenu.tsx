@@ -15,11 +15,6 @@ export function ONUConfigMenu({ selectedItem, onSelect }: Props) {
         boxShadow: 'none',
         border: 1,
         borderColor: 'divider',
-        transition: 'none !important',
-        '&:hover': {
-          boxShadow: 'none !important',
-          transform: 'none !important',
-        },
       }}
     >
       <CardContent sx={{ p: 3 }}>
@@ -27,16 +22,7 @@ export function ONUConfigMenu({ selectedItem, onSelect }: Props) {
           Opções de Configuração
         </Typography>
 
-        <Grid
-          container
-          spacing={2}
-          sx={{
-            '& .MuiGrid-item': {
-              transition: 'none !important',
-              transform: 'none !important',
-            },
-          }}
-        >
+        <Grid container spacing={2}>
           {menuItems.map((item) => {
             const IconComponent = item.icon;
             const isSelected = selectedItem === item.id;
@@ -48,16 +34,11 @@ export function ONUConfigMenu({ selectedItem, onSelect }: Props) {
                     cursor: 'pointer',
                     border: isSelected ? '2px solid' : '1px solid',
                     borderColor: isSelected ? 'primary.main' : 'divider',
-                    backgroundColor: isSelected
-                      ? 'action.selected'
-                      : 'background.paper',
+                    bgcolor: isSelected ? 'action.selected' : 'background.paper',
                     boxShadow: 'none',
-                    transition: 'none !important',
                     '&:hover': {
                       borderColor: 'primary.main',
-                      backgroundColor: 'action.hover',
-                      boxShadow: 'none !important',
-                      transform: 'none !important',
+                      bgcolor: 'action.hover',
                     },
                   }}
                   onClick={() => onSelect(item.id)}

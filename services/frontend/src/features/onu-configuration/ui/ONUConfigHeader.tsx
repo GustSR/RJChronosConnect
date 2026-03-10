@@ -15,11 +15,6 @@ export function ONUConfigHeader({ onuDetails, onOpenHistorico }: Props) {
         boxShadow: 'none',
         border: 1,
         borderColor: 'divider',
-        transition: 'none !important',
-        '&:hover': {
-          boxShadow: 'none !important',
-          transform: 'none !important',
-        },
       }}
     >
       <CardContent sx={{ p: 3 }}>

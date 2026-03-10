@@ -14,16 +14,7 @@ type Props = {
 export function LanDhcpPanel({ config, setConfig, hasChanges, onSave }: Props) {
   return (
     <Box>
-      <Grid
-        container
-        spacing={2}
-        sx={{
-          '& .MuiGrid-item': {
-            transition: 'none !important',
-            transform: 'none !important',
-          },
-        }}
-      >
+      <Grid container spacing={2}>
         <Grid item xs={12} sm={6}>
           <LabeledTextField
             label="LAN IP interface"

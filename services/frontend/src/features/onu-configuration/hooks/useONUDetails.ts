@@ -27,9 +27,11 @@ export function useONUDetails(id: string | undefined) {
         ontId: onu.onuId,
         status: onu.status === 'disabled' ? 'offline' : onu.status,
         authorizedAt: onu.authorizedAt,
-        ip: '192.168.2.1',
-        temperature: 45,
+        ip: '192.168.2.1', // TODO: buscar da API
+        temperature: 45, // TODO: buscar da API
       });
+    } else {
+      setOnuDetails(null);
     }
 
     setLoading(false);

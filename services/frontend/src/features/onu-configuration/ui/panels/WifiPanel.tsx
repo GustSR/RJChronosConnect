@@ -124,16 +124,7 @@ export function WifiPanel({
           </>
         }
       >
-          <Grid
-            container
-            spacing={2}
-            sx={{
-              '& .MuiGrid-item': {
-                transition: 'none !important',
-                transform: 'none !important',
-              },
-            }}
-          >
+          <Grid container spacing={2}>
             {(() => {
               const network =
                 wifiNetworks[selectedWifiLan as keyof typeof wifiNetworks];
