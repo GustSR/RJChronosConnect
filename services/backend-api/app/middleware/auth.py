@@ -56,6 +56,8 @@ class EdgeAuthMiddleware(BaseHTTPMiddleware):
                 email=user_email or f"{user_id}@edge.local",
             )
             db.commit()
+            db.refresh(user)
+            db.expunge(user)
             request.state.current_user = user
         except Exception as e:
             db.rollback()
