@@ -161,48 +161,70 @@ services/backend-api/app/
 
 ---
 
-## 5. Autenticação (estado atual)
+## 5. Autenticação
 
-### Backend (JWT)
-- Login: `POST /api/auth/token` → JWT access token
-- Validação: `get_current_user()` dependency em rotas protegidas
-- Libs: python-jose + passlib[bcrypt]
+### Arquitetura
+- **Fonte de verdade:** Better Auth 1.3.4 no Edge Gateway
+- **Sessões:** PostgreSQL (tabela `session` do Better Auth)
+- **Fluxo:** Edge valida sessão → injeta `X-User-Id`/`X-User-Email` → Backend lê headers
+- **Proteção:** Middleware global no Backend, todas as rotas protegidas por padrão
+- **Auto-provision:** Backend cria user local automaticamente no primeiro request
 
-### Edge (Better Auth)
-- Better Auth v1.3.4 com sessões nativas
-- PostgreSQL como store
-- Proxy para backend via `/api/*`
+### Tabelas de usuário
+- `user` (Better Auth, Edge) — auth, sessões, email/password
+- `users` (Backend) — dados de negócio, FKs, campo `external_id` linkando ao Better Auth
 
-### Problema: Edge e Backend NÃO compartilham contexto de autenticação. São sistemas separados.
+### Rotas públicas (whitelist)
+- `/docs`, `/openapi.json`, `/redoc` — documentação
+- `/health` — healthcheck
+- `/` — root
 
 ---
 
 ## 6. Estado do Projeto (atualizado 09/03/2026)
 
+**Progresso geral auditado: ~35%** (Cronograma formal: 33/162 tarefas = 20%)
+
 ### Por Camada
-| Camada | Progresso | Notas |
-|--------|-----------|-------|
-| Frontend (UI/UX) | ~85% | 14+ páginas, 51 componentes. FSD 40%. Componentes gigantes precisam refatorar |
-| Infraestrutura | ~60% | Docker multi-stage, CI/CD, backup, Nginx enterprise |
-| Segurança | ~30% | CORS, rate limiting, security headers. Falta CSRF, TLS 1.3 |
-| Monitoramento | ~30% | Prometheus + Grafana base. Falta dashboards e alertas |
-| Backend API | ~25% | FastAPI + GenieACS real. Vários endpoints ainda usam fake data |
-| Mensageria | ~15% | RabbitMQ + Celery funcionais. Logging centralizado operacional |
-| Dados | ~15% | 13 models, 8 migrations, CRUDs para OLT/Device/Subscriber |
-| IA/ML | 0% | Libs instaladas, zero modelos |
 
-### Endpoints: Mock vs Real
-- **Real:** auth, olt-management, provisioning, wifi (via GenieACS)
-- **Mock/Fake:** subscribers, devices, monitoring, relatórios
+| Camada | % | Métricas Concretas | O que falta |
+|--------|---|-------------------|-------------|
+| OLT Manager Huawei | 95% | 58 endpoints, 13K LOC, SSH+SNMP completo | Testes, retry avançado |
+| Frontend (UI/UX) | 85% | 18 páginas, 269 arquivos TS/TSX, 10 features | Zero testes, FSD 40%, 139 refs mock data, componentes >400 linhas |
+| OLT Manager FiberHome | 80% | 15 endpoints, 2.2K LOC | Menos maduro que Huawei |
+| Edge Gateway | 85% | ~700 LOC, Better Auth 1.3.4, proxy com auth headers | Testes E2E do Edge |
+| Workers/Celery | 70% | 8 tasks Celery, handlers RabbitMQ, 2 services | Error handling, retry logic, monitoramento |
+| Infraestrutura | 60% | 12 containers Docker, Nginx enterprise, 6 CI/CD workflows | TLS 1.3, HSTS, dashboards Grafana |
+| Logging/Monitoramento | 40% | PostgreSQL + ClickHouse consumers, Prometheus integrado | Dashboards, alertas, métricas customizadas |
+| Dados (Schema) | 40% | 13 models, 8 migrations, 33 CRUD functions | TimescaleDB, séries temporais |
+| Segurança | 30% | CORS, JWT, bcrypt, headers Nginx, criptografia OLT | CSRF, TLS 1.3, HSTS, 2FA, API key rotation |
+| Backend API | 25% | 42 endpoints em 10 routers, ~6.5K LOC | ~10% testes, tasks incompleto, mock data em monitoring |
+| Testes | 8% | 6 arquivos, 76 testes, ~800 LOC (backend apenas) | 0% frontend, 0% workers, 0% OLT managers, 0% edge |
+| IA/ML | 0% | Libs instaladas (numpy, pandas, scikit-learn) | Zero modelos implementados |
 
-### O que falta (prioridade)
-1. Testes (0% cobertura em todo o projeto)
-2. Integrar endpoints de subscribers/devices com banco real (saindo de fake data)
-3. Sincronizar autenticação Edge ↔ Backend
-4. Completar FSD no frontend (componentes gigantes)
-5. WebSocket para alertas real-time
-6. TimescaleDB para séries temporais
-7. Agentes de IA (anomalia, churn, diagnóstico)
+### Endpoints Backend: Real vs Mock
+
+| Endpoint | Status |
+|----------|--------|
+| `/api/auth/*` | ✅ Real (JWT + bcrypt) |
+| `/api/subscribers/*` | ✅ Real (CRUD DB) |
+| `/api/devices/onus` | ✅ Real (DB) |
+| `/api/devices/cpes` | ✅ Real (GenieACS NBI) |
+| `/api/provisioning/*` | ✅ Real (Celery async) |
+| `/api/wifi/*` | ✅ Real (GenieACS config) |
+| `/api/olt-management/*` | ✅ Real (Huawei manager) |
+| `/api/monitoring/alerts` | ✅ Real (GenieACS faults) |
+| `/api/monitoring/dashboard` | 🟡 Híbrido (GenieACS + fallback) |
+| `/api/tasks/*` | 🟡 Parcial (schema existe, lógica incompleta) |
+
+### Problemas Críticos (por prioridade)
+
+1. ~~**P1 — Auth desincronizada:**~~ **RESOLVIDO** — Edge injeta headers, Backend valida via middleware global
+2. **P1 — Testes:** 8% cobertura global, impossível validar refactorings com segurança
+3. **P2 — TLS 1.3 + HSTS:** Produção em HTTP é inaceitável, config Nginx comentada
+4. **P3 — FSD Frontend:** Componentes gigantes (>400 LOC), 139 refs a mock/fakeData
+5. **P4 — IA/ML:** Libs instaladas sem ROI, zero modelos
+6. **P5 — Séries temporais:** ClickHouse rodando mas subutilizado, sem TimescaleDB
 
 ---
 
