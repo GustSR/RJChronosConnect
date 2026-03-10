@@ -38,8 +38,8 @@ export const LoginPage: FC<Props> = ({ onSuccess }) => {
     watch,
   } = useForm({
     defaultValues: {
-      email: 'demo@example.com',
-      password: 'v&)3?2]:',
+      email: '',
+      password: '',
       remember: true,
     },
   });
