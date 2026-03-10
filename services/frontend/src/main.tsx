@@ -13,7 +13,10 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import 'simplebar/dist/simplebar.min.css';
 import App from './App';
-import './__fakeData__';
+
+if (import.meta.env.VITE_USE_MOCK === 'true') {
+  import('./__fakeData__');
+}
 
 const container = document.getElementById('root');
 const root = createRoot(container!);
