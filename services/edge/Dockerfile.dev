@@ -2,10 +2,13 @@ FROM oven/bun:latest
 
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/apt/lists/*
+
 COPY services/edge/package.json ./
 RUN bun install
 
 COPY services/edge .
+RUN chmod +x start.sh
 
 EXPOSE 8081
-CMD ["bun", "--hot", "src/index.ts"]
+CMD ["./start.sh"]
